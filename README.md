@@ -27,7 +27,7 @@
 | Containerization | Docker Compose? | [...] |
 
 ## Database Schema
-[diagram or description once designed]
+(to add: diagram or description once we have one)
 
 (to be refined & confirmed:)
 ## Modules
@@ -64,7 +64,7 @@
 - **Additional browsers:** May add in Week 6 if time permits
 
 ## Features List
-[Add as implemented, with owner]
+(to add while implementing)
 
 ## Individual Contributions
 [Each person can update their section weekly]
