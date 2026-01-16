@@ -1,8 +1,7 @@
 *This project has been created for 42 Belgium by Ahmet, Louis, Nicolas, Simon.*
 
 ## Description
-[esportendence]: A tournament organizer for esports competitions...
-[to Update weekly with features]
+esportendence: A tournament organizer for esports competitions...
 
 ## Team Information
 | Member | Role(s) | Responsibilities |
@@ -13,10 +12,10 @@
 | Louis | Developer | Backend features, ... |
 
 ## Project Management
-- **Communication:** [Whatsapp]
-- **Task tracking:** [Google Sheet]
-- **Meetings:** [Every Friday at 14h, in person]
-- **Branch strategy:** [feature branches → PR → main]
+- **Communication:** Whatsapp
+- **Task tracking:** Google Sheet
+- **Meetings:** Every Friday at 14h, in person
+- **Branch strategy:** feature branches → PR → main
 
 ## Technical Stack
 | Layer | Technology | Justification |
@@ -67,7 +66,7 @@
 (to add while implementing)
 
 ## Individual Contributions
-[Each person can update their section weekly]
+Each person can update their section weekly
 
 ### Ahmet
 - Week 1: ...
@@ -77,7 +76,7 @@
 - Week 5: ...
 - Week 6: ...
 
-- ### Louis
+### Louis
 - Week 1: ...
 - Week 2: ...
 - Week 3: ...
@@ -105,7 +104,7 @@
 ## Instructions
 ### Prerequisites
 - Docker and Docker Compose
-- [versions]
+- (versions)
 
 ### Installation
 ```bash
@@ -119,8 +118,8 @@ docker-compose up --build
 - API docs: https://localhost:8443/api/docs
 
 ## Resources
-- [Links to docs, tutorials used]
+- (Links to docs, tutorials)
 - **AI Usage:**
-- used to develop product dashboard in Google Sheet
+  - used to develop product dashboard in Google Sheet
 
 # 42-Transcendence
