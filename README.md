@@ -59,8 +59,8 @@
 ### Modules NOT Selected (with reason)
 - **WCAG 2.1 AA Accessibility:** Disproportionate effort for 2 points
 - **SSR:** Nuxt.js complexity overhead not justified for 1 point
-- **Match history:** Requires hosted game (dependency conflict)
-- **Tournament system module:** Requires hosted game (dependency conflict)
+- **Match history:** Requires hosted game (to discuss with corrector or bocal)
+- **Tournament system module:** Requires hosted game (to discuss with corrector or bocal)
 - **Additional browsers:** May add in Week 6 if time permits
 
 ## Features List
