@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # --- BACKEND (NestJS) ---
+  backend:
+    build: ./backend
+    container_name: ft_backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - db
+    networks:
+      - transcendence-net
+
+  # --- FRONTEND (Vue) ---
+  frontend:
+    build: ./frontend
+    container_name: ft_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - transcendence-net
+
+  # --- DATABASE (PostgreSQL) ---
+  db:
+    image: postgres:15
+    container_name: ft_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: transcendence_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - transcendence-net
+
+  # --- Database GUI ---
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: ft_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - transcendence-net
+
+networks:
+  transcendence-net:
+    driver: bridge
+
+volumes:
+  pgdata:
