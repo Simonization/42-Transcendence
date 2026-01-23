@@ -13,6 +13,8 @@ import {
 import { UserProfile } from './user-profile.entity';
 import { UserSettings } from './user-settings.entity';
 import { UserGameAccount } from './user-game-account.entity';
+import { Friend } from '../../friends/entities/friend.entity';
+import { Block } from '../../friends/entities/block.entity';
 
 @Entity('users')
 export class User {
@@ -44,15 +46,18 @@ export class User {
     // RELATIONSHIPS
     // =====================
 
-    // 1:1 Relationship with Profiles
     @OneToOne(() => UserProfile, (profile) => profile.user, { cascade: true })
     profile: UserProfile;
 
-    // 1:1 Relationship with Settings
     @OneToOne(() => UserSettings, (settings) => settings.user, { cascade: true })
     settings: UserSettings;
 
-    // 1:N Relationship with Game Accounts (League, Chess, etc.)
     @OneToMany(() => UserGameAccount, (account) => account.user)
     gameAccounts: UserGameAccount[];
+
+    @OneToMany(() => Friend, (friend) => friend.user)
+    friends: Friend[];
+
+    @OneToMany(() => Block, (block) => block.blocker)
+    blockedUsers: Block[];
 }
