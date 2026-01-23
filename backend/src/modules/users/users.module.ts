@@ -21,7 +21,6 @@ import { UsersController } from './users.controller';
 
 @Module({
     imports: [
-        // This connects the entities to the MySQL driver
         TypeOrmModule.forFeature([
             User, 
             UserProfile, 
@@ -37,6 +36,6 @@ import { UsersController } from './users.controller';
         DeleteUserCommand,
     ],
     controllers: [UsersController],
-    exports: [UsersService], // Export so your mate can use it for Auth
+    exports: [UsersService],
 })
 export class UsersModule {}
