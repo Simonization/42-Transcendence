@@ -13,6 +13,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
+import { UpdateProfileDto} from './dto/update-profile.dto'
 
 @Controller('users')
 export class UsersController {
@@ -29,6 +30,14 @@ export class UsersController {
         @Body() updateSettingsDto: UpdateSettingsDto,
     ) {
         return await this.usersService.updateSettings(id, updateSettingsDto);
+    }
+
+    @Patch(':id/profile')
+    async updateProfile(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() updateProfileDto: UpdateProfileDto,
+    ) {
+        return await this.usersService.updateProfile(id, updateProfileDto);
     }
 
     @Delete(':id')

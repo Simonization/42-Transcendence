@@ -12,6 +12,7 @@ import { UserGameAccount } from './entities/user-game-account.entity';
 // Commands
 import { CreateUserCommand } from './commands/create-user.command';
 import { UpdateSettingsCommand } from './commands/update-settings.command';
+import { UpdateProfileCommand } from './commands/update-profile.command';
 import { DeleteUserCommand } from './commands/delete-user.command';
 
 // Main Service & Controller
@@ -19,22 +20,23 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 
 @Module({
-  imports: [
-    // This connects the entities to the MySQL driver
-    TypeOrmModule.forFeature([
-      User, 
-      UserProfile, 
-      UserSettings, 
-      UserGameAccount
-    ]),
-  ],
-  providers: [
-    UsersService,
-    CreateUserCommand,
-    UpdateSettingsCommand,
-    DeleteUserCommand,
-  ],
-  controllers: [UsersController],
-  exports: [UsersService], // Export so your mate can use it for Auth
+    imports: [
+        // This connects the entities to the MySQL driver
+        TypeOrmModule.forFeature([
+            User, 
+            UserProfile, 
+            UserSettings, 
+            UserGameAccount
+        ]),
+    ],
+    providers: [
+        UsersService,
+        CreateUserCommand,
+        UpdateSettingsCommand,
+        UpdateProfileCommand,
+        DeleteUserCommand,
+    ],
+    controllers: [UsersController],
+    exports: [UsersService], // Export so your mate can use it for Auth
 })
 export class UsersModule {}

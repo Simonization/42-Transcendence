@@ -17,6 +17,7 @@ import { UsersModule } from './modules/users/users.module';
 @Module({
   imports: [
 
+    //TODO put login in a .env
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: 'localhost',
