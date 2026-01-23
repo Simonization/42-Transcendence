@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
+import bcrypt from 'node_modules/bcryptjs/umd/types';
 
 @Injectable()
 export class CreateUserCommand {
@@ -25,11 +26,15 @@ export class CreateUserCommand {
             throw new ConflictException('User already exists');
         }
 
-        // 2. Setup object
+        // 2.1 Hash password
+        const saltRounds = 10;
+
+        const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
+        // 2.2 Setup object
         const user = this.userRepository.create({
             username,
             mail,
-            passwordHash: password, // TODO : HASHING
+            passwordHash: hashedPassword,
             profile: { displayName: username },
             settings: { language: 'en', theme: 0 },
         });
