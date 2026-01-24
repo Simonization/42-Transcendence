@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8' -> now deprecated, so we can delete
 
 services:
   # --- BACKEND (NestJS) ---

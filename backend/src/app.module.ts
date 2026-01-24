@@ -19,13 +19,13 @@ import { UsersModule } from './modules/users/users.module';
 
     //TODO put login in a .env
     TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: 'root',
-      database: 'bloom',
-      entities: [User, UserProfile, UserSettings, UserGameAccount],
+      type: 'postgres',
+      host: 'db',
+      port: 5432,
+      username: 'user',
+      password: 'password',
+      database: 'transcendence_db',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
 
