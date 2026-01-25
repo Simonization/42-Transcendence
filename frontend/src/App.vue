@@ -1,8 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { io } from 'socket.io-client'
 
 const message = ref('')
 const isLoading = ref(false)
+const chatMessages = ref<string[]>([])
+
+const timer = ref('0.0')
+let timerInterval: any = null
+let startTime: number = 0
 
 const fetchData = async () => {
   isLoading.value = true
@@ -18,6 +24,32 @@ const fetchData = async () => {
     isLoading.value = false
   }
 }
+
+onMounted(() => {
+  const socket = io('/', {
+    path: '/socket.io/',
+  });
+
+  socket.on('connect', () => {
+    console.log('Connected Chat Server! ID:', socket.id);
+  });
+
+  socket.on('message', (msg: string) => {
+    chatMessages.value.push(msg);
+  });
+
+  startTime = Date.now()
+  
+  timerInterval = setInterval(() => {
+    const now = Date.now()
+    const diff = now - startTime
+    timer.value = (diff / 1000).toFixed(1)
+  }, 100)
+})
+
+onUnmounted(() => {
+  if (timerInterval) clearInterval(timerInterval)
+})
 </script>
 
 <template>
@@ -25,6 +57,11 @@ const fetchData = async () => {
     <div class="card">
       <h1 class="title">Transcendence</h1>
       <p class="description">Test for Backend-Frontend connection</p>
+
+      <div class="timer-display">
+        <span class="timer-label">Session Time:</span>
+        <span class="timer-value">{{ timer }}s</span>
+      </div>
 
       <button @click="fetchData" class="connect-btn" :disabled="isLoading">
         {{ isLoading ? 'Connecting...' : "Connect to Backend" }}
@@ -34,6 +71,19 @@ const fetchData = async () => {
         <span class="status-dot"></span>
         {{ message }}
       </div>
+      
+      <div class="chat-section">
+        <h3 class="chat-title">Live Chat Test</h3>
+        <ul class="chat-list">
+          <li v-for="msg in chatMessages" :key="msg" class="chat-item">
+            {{ msg }}
+          </li>
+          <li v-if="chatMessages.length === 0" style="color: #666; font-size: 0.8rem;">
+            no message yet..
+          </li>
+        </ul>
+      </div>
+
     </div>
   </div>
 </template>
@@ -64,10 +114,8 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  
   width: 100%;
   height: 100vh;
-  
   padding-top: 15vh; 
 }
 
@@ -78,11 +126,39 @@ html, body {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   text-align: center;
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
+}
+
+.timer-display {
+  background-color: #1a1a1a;
+  border: 1px solid #444;
+  padding: 10px 20px;
+  border-radius: 50px; 
+  font-family: 'Courier New', monospace;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.timer-label {
+  color: #888;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.timer-value {
+  color: #ffcc00;
+  font-size: 1.2rem;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: right;
 }
 
 .title {
@@ -145,6 +221,38 @@ html, body {
   background-color: #42b883;
   border-radius: 50%;
   box-shadow: 0 0 8px #42b883;
+}
+
+.chat-section {
+  width: 100%;
+  margin-top: 20px;
+  border-top: 1px solid #444;
+  padding-top: 20px;
+}
+
+.chat-title {
+  color: #fff;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.chat-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.chat-item {
+  background-color: #3a3a3a;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  animation: slideUp 0.2s ease-out;
 }
 
 @keyframes slideUp {
