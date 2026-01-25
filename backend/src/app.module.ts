@@ -11,6 +11,7 @@ import { UserGameAccount } from './modules/users/entities/user-game-account.enti
 
 // Feature Modules
 import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 //TODO we need to create the database once before
 
@@ -30,6 +31,7 @@ import { UsersModule } from './modules/users/users.module';
     }),
 
     UsersModule,
+    AuthModule,
 
   ],
 
