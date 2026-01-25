@@ -1,5 +1,3 @@
-// src/modules/users/users.module.ts
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -8,6 +6,7 @@ import { User } from './entities/user.entity';
 import { UserProfile } from './entities/user-profile.entity';
 import { UserSettings } from './entities/user-settings.entity';
 import { UserGameAccount } from './entities/user-game-account.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
 
 // Commands
 import { CreateUserCommand } from './commands/create-user.command';
@@ -25,7 +24,8 @@ import { UsersController } from './users.controller';
             User, 
             UserProfile, 
             UserSettings, 
-            UserGameAccount
+            UserGameAccount,
+            RefreshToken
         ]),
     ],
     providers: [
