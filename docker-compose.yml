@@ -1,12 +1,30 @@
 # version: '3.8' -> now deprecated, so we can delete
 
 services:
+  # --- NGINX ---
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ft_nginx
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - transcendence-net
+    restart: always
+
   # --- BACKEND (NestJS) ---
   backend:
     build: ./backend
     container_name: ft_backend
-    ports:
-      - "3000:3000"
+    # ports:
+    #   - "3000:3000"             WILL DELETE, NOW NGINX HANDLES THIS
+    expose:
+      - "3000"
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
@@ -19,8 +37,8 @@ services:
   frontend:
     build: ./frontend
     container_name: ft_frontend
-    ports:
-      - "5173:5173"
+    # ports:
+    #   - "5173:5173"              WILL DELETE, NOW NGINX HANDLES THIS
     volumes:
       - ./frontend:/app
       - /app/node_modules

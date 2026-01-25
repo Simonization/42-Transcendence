@@ -9,7 +9,7 @@ const fetchData = async () => {
   message.value = ''
   
   try {
-    const response = await fetch('http://localhost:3000')
+    const response = await fetch('/api/')
     const text = await response.text()
     message.value = text
   } catch (error) {
