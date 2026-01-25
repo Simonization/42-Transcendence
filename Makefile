@@ -10,6 +10,8 @@ endif
 
 all: up
 
+re: down up
+
 up:
 	$(CMD) -f $(YML_FILE) up
 
