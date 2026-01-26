@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import LoginPage from './components/LoginPage.vue'
 
 const message = ref('')
 const isLoading = ref(false)
+const showLogin = ref(true)
 
 const fetchData = async () => {
   isLoading.value = true
@@ -21,13 +23,18 @@ const fetchData = async () => {
 </script>
 
 <template>
-  <div class="wrapper">
+  <LoginPage v-if="showLogin" />
+  <div v-else class="wrapper">
     <div class="card">
       <h1 class="title">Transcendence</h1>
       <p class="description">Test for Backend-Frontend connection</p>
 
       <button @click="fetchData" class="connect-btn" :disabled="isLoading">
         {{ isLoading ? 'Connecting...' : "Connect to Backend" }}
+      </button>
+
+      <button @click="showLogin = true" class="login-btn">
+        Go to Login
       </button>
 
       <div v-if="message" class="message-box">
@@ -122,6 +129,25 @@ html, body {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.login-btn {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.login-btn:hover {
+  background-color: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .message-box {

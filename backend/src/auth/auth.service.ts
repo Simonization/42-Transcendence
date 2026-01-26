@@ -48,6 +48,9 @@ export class AuthService {
         // Generate Refresh Token
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
         
+        // Single session (delete the old refresh token)
+        await this.refreshTokenRepository.delete({ userId: user.id });
+        
         // Save Refresh Token to DB
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
@@ -69,11 +72,15 @@ export class AuthService {
         });
     }
 
+    async logout(userId: number) {
+        await this.refreshTokenRepository.delete({ userId });
+        return { message: 'Logged out successfully' };
+    }
+
     async refresh(refreshToken: string) {
         try {
             const payload = await this.jwtService.verifyAsync(refreshToken);
             
-            // Vérifier que le token existe en DB et n'est pas expiré
             const storedToken = await this.refreshTokenRepository.findOne({
                 where: { token: refreshToken, userId: payload.sub },
             });
@@ -82,7 +89,6 @@ export class AuthService {
                 throw new UnauthorizedException('Invalid or expired refresh token');
             }
 
-            // Générer un nouveau access token
             const newPayload = { sub: payload.sub, username: payload.username };
             const newAccessToken = this.jwtService.sign(newPayload);
 

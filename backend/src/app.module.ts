@@ -13,31 +13,23 @@ import { UserGameAccount } from './modules/users/entities/user-game-account.enti
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './auth/auth.module';
 
-//TODO we need to create the database once before
-
 @Module({
   imports: [
-
-    //TODO put login in a .env
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'db',
-      port: 5432,
-      username: 'user',
-      password: 'password',
-      database: 'transcendence_db',
+      type: (process.env.DB_TYPE as any) || 'postgres',
+      host: process.env.DB_HOST || 'db',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      username: process.env.DB_USERNAME || 'user',
+      password: process.env.DB_PASSWORD || 'password',
+      database: process.env.DB_DATABASE || 'transcendence_db',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+      synchronize: process.env.DB_SYNCHRONIZE === 'true' || true,
     }),
-
     UsersModule,
     AuthModule,
-
   ],
-
   controllers: [AppController],
   providers: [AppService],
-
 })
 
 export class AppModule {}

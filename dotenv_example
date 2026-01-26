@@ -1,0 +1,16 @@
+# Database Configuration
+DB_HOST=
+DB_PORT=
+DB_USERNAME=
+DB_PASSWORD=
+DB_DATABASE=
+DB_TYPE=
+DB_SYNCHRONIZE=
+
+# JWT Configuration
+JWT_SECRET=
+JWT_EXPIRATION= # example JWT_EXPIRATION=1h
+
+# Application Configuration
+NODE_ENV=
+PORT=
