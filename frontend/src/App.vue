@@ -46,6 +46,25 @@ const fetchData = async () => {
   }
 }
 
+const logout = async () => {
+  const token = localStorage.getItem('accessToken')
+  
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+  } catch (error) {
+    console.error('Logout error:', error)
+  } finally {
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    isAuthenticated.value = false
+  }
+}
+
 onMounted(async () => {
   await checkAuth()
   
@@ -112,6 +131,9 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+
+  <!-- Logout Button -->
+  <button v-if="isAuthenticated" @click="logout" class="logout-btn">Logout</button>
 </template>
 
 <style>
@@ -262,6 +284,33 @@ html, body {
   color: #42b883;
   font-weight: 600;
   font-size: 1.2rem;
+}
+
+.logout-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+  z-index: 1000;
+}
+
+.logout-btn:hover {
+  background-color: #ff5252;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
 }
 
 @keyframes slideUp {
