@@ -71,4 +71,36 @@ export class MailService {
             throw error;
         }
     }
+
+    async send2FACode(email: string, code: string, username: string) {
+        try {
+            await this.transporter.sendMail({
+                from: `"Transcendence" <${this.configService.get('MAIL_FROM')}>`,
+                to: email,
+                subject: 'Your Transcendence 2FA Code',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #42b883;">Two-Factor Authentication</h2>
+                        <p>Hi ${username},</p>
+                        <p>Your 2FA code to enable two-factor authentication is:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <div style="background-color: #f0f0f0; padding: 20px; border-radius: 5px; display: inline-block;">
+                                <h1 style="color: #42b883; margin: 0; letter-spacing: 5px; font-family: monospace;">
+                                    ${code}
+                                </h1>
+                            </div>
+                        </div>
+                        <p style="color: #666;">This code will expire in 10 minutes.</p>
+                        <p style="color: #999; font-size: 12px; margin-top: 30px;">
+                            If you didn't request this code, please ignore this email.
+                        </p>
+                    </div>
+                `,
+            });
+            this.logger.log(`2FA code sent to ${email}`);
+        } catch (error) {
+            this.logger.error(`Failed to send 2FA code to ${email}`, error);
+            throw error;
+        }
+    }
 }

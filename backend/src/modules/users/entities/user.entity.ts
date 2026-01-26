@@ -46,6 +46,12 @@ export class User {
     @Column({ nullable: true, select: false })
     verificationToken?: string;
 
+    @Column({ default: false })
+    twoFactorEnabled: boolean;
+
+    @Column({ nullable: true, select: false })
+    twoFactorCode?: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

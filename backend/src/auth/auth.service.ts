@@ -10,6 +10,7 @@ import { User } from '../modules/users/entities/user.entity'
 import { RefreshToken } from '../modules/users/entities/refresh-token.entity';
 import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -58,7 +59,7 @@ export class AuthService {
     {
         const user = await this.userRepository.findOne({
             where: { username: dto.username },
-            select: ['id', 'username', 'mail', 'passwordHash', 'isEmailVerified']
+            select: ['id', 'username', 'mail', 'passwordHash', 'isEmailVerified', 'twoFactorEnabled']
         })
         if (!user)
             throw new BadRequestException('Invalid credentials');
@@ -68,6 +69,30 @@ export class AuthService {
         
         if (!user.isEmailVerified) {
             throw new UnauthorizedException('Please verify your email address before logging in');
+        }
+
+        // If 2FA is enabled, generate and send code - don't login yet
+        if (user.twoFactorEnabled) {
+            // Generate a 6-digit code
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            // Store the code temporarily
+            user.twoFactorCode = code;
+            await this.userRepository.save(user);
+
+            // Send the code via email
+            try {
+                await this.mailService.send2FACode(user.mail, code, user.username);
+            } catch (error) {
+                console.error('Failed to send 2FA code:', error);
+                throw new BadRequestException('Failed to send verification code');
+            }
+
+            return {
+                requiresTwoFactor: true,
+                userId: user.id,
+                message: 'Verification code sent to your email. Please enter it to continue.'
+            };
         }
 
         // Generate Access Token
@@ -145,5 +170,116 @@ export class AuthService {
         } catch {
             throw new UnauthorizedException('Invalid refresh token');
         }
+    }
+
+    // ====================================
+    // TWO-FACTOR AUTHENTICATION METHODS
+    // ====================================
+
+    async enable2FA(userId: number) {
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        // Generate a 6-digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Store the code temporarily (will expire in 10 minutes)
+        user.twoFactorCode = code;
+        await this.userRepository.save(user);
+
+        // Send the code via email
+        try {
+            await this.mailService.send2FACode(user.mail, code, user.username);
+        } catch (error) {
+            console.error('Failed to send 2FA code:', error);
+            throw new BadRequestException('Failed to send verification code');
+        }
+
+        return {
+            message: 'A verification code has been sent to your email address',
+        };
+    }
+
+    async confirm2FA(userId: number, code: string) {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            select: ['id', 'twoFactorCode']
+        });
+
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        if (user.twoFactorCode !== code) {
+            throw new BadRequestException('Invalid verification code');
+        }
+
+        // Enable 2FA
+        user.twoFactorEnabled = true;
+        user.twoFactorCode = undefined;
+        await this.userRepository.save(user);
+
+        return {
+            message: 'Two-factor authentication has been enabled successfully'
+        };
+    }
+
+    async verify2FA(userId: number, code: string) {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            select: ['id', 'username', 'twoFactorCode', 'twoFactorEnabled']
+        });
+
+        if (!user || !user.twoFactorEnabled) {
+            throw new BadRequestException('Two-factor authentication is not enabled');
+        }
+
+        if (user.twoFactorCode !== code) {
+            throw new BadRequestException('Invalid verification code');
+        }
+
+        // Generate tokens for login
+        const payload = { sub: user.id, username: user.username };
+        const accessToken = this.jwtService.sign(payload);
+        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+        // Single session
+        await this.refreshTokenRepository.delete({ userId: user.id });
+
+        // Save Refresh Token to DB
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        await this.refreshTokenRepository.save({
+            token: refreshToken,
+            userId: user.id,
+            expiresAt,
+        });
+
+        return {
+            user: {
+                id: user.id,
+                username: user.username,
+            },
+            accessToken,
+            refreshToken
+        };
+    }
+
+    async disable2FA(userId: number) {
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        user.twoFactorEnabled = false;
+        user.twoFactorCode = undefined;
+        await this.userRepository.save(user);
+
+        return {
+            message: 'Two-factor authentication has been disabled'
+        };
     }
 }
