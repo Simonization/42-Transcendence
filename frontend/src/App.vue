@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { io } from 'socket.io-client'
+import { useRoute } from 'vue-router'
 import LoginPage from './components/LoginPage.vue'
+
+const route = useRoute()
 
 const message = ref('')
 const isLoading = ref(false)
@@ -95,7 +98,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <LoginPage v-if="!isAuthenticated" @auth-changed="checkAuth" />
+  <router-view v-if="route.name === 'verify-email'" />
+  <LoginPage v-else-if="!isAuthenticated" @auth-changed="checkAuth" />
   <div v-else class="wrapper">
     <!-- Test Backend Section -->
     <div class="card">

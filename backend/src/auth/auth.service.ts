@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../modules/users/entities/user.entity'
 import { RefreshToken } from '../modules/users/entities/refresh-token.entity';
+import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class AuthService {
     constructor(
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
+        private readonly mailService: MailService,
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
         @InjectRepository(RefreshToken)
@@ -27,13 +29,36 @@ export class AuthService {
             mail: dto.mail,
             password: dto.password,
         };
-        return (await this.usersService.create(createUserDto));
+        const user = await this.usersService.create(createUserDto);
+        
+        // Send verification email
+        try {
+            if (user.verificationToken) {
+                await this.mailService.sendVerificationEmail(
+                    user.mail,
+                    user.verificationToken,
+                    user.username
+                );
+            }
+        } catch (error) {
+            console.error('Failed to send verification email:', error);
+        }
+        
+        return {
+            message: 'Registration successful. Please check your email to verify your account.',
+            user: {
+                id: user.id,
+                username: user.username,
+                mail: user.mail,
+                isEmailVerified: user.isEmailVerified
+            }
+        };
     }
     async login(dto: LoginDto)
     {
         const user = await this.userRepository.findOne({
             where: { username: dto.username },
-            select: ['id', 'username', 'mail', 'passwordHash']
+            select: ['id', 'username', 'mail', 'passwordHash', 'isEmailVerified']
         })
         if (!user)
             throw new BadRequestException('Invalid credentials');
@@ -41,6 +66,10 @@ export class AuthService {
         if (!isPasswordValid)
             throw new BadRequestException('Invalid credentials');
         
+        if (!user.isEmailVerified) {
+            throw new UnauthorizedException('Please verify your email address before logging in');
+        }
+
         // Generate Access Token
         const payload = { sub: user.id, username: user.username };
         const accessToken = this.jwtService.sign(payload);
@@ -75,6 +104,24 @@ export class AuthService {
     async logout(userId: number) {
         await this.refreshTokenRepository.delete({ userId });
         return { message: 'Logged out successfully' };
+    }
+
+    async verifyEmail(token: string) {
+        const user = await this.userRepository.findOne({
+            where: { verificationToken: token }
+        });
+
+        if (!user) {
+            throw new BadRequestException('Invalid or expired verification token');
+        }
+
+        user.isEmailVerified = true;
+        user.verificationToken = undefined;
+        await this.userRepository.save(user);
+
+        return {
+            message: 'Email verified successfully! You can now log in.'
+        };
     }
 
     async refresh(refreshToken: string) {

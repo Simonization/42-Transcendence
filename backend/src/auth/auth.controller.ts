@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Query } from '@nestjs/common';
 import { BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service'
 import { RegisterDto } from './dto/register-user.dto'
@@ -28,6 +28,14 @@ export class AuthController {
         if (req.user)
             throw new BadRequestException('Already logged in');
         return (this.authService.login(dto));
+    }
+
+    @Get('verify-email')
+    verifyEmail(@Query('token') token: string) {
+        if (!token) {
+            throw new BadRequestException('Verification token is required');
+        }
+        return this.authService.verifyEmail(token);
     }
 
     @Post('logout')

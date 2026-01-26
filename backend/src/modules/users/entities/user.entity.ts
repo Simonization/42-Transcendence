@@ -40,6 +40,12 @@ export class User {
     @Column({ type: 'timestamp', name: 'ban_until', nullable: true })
     banUntil: Date;
 
+    @Column({ default: false })
+    isEmailVerified: boolean;
+
+    @Column({ nullable: true, select: false })
+    verificationToken?: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
