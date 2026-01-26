@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -14,9 +15,13 @@ import { ChatGateway } from './chat/chat.gateway';
 // Feature Modules
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot({
       type: (process.env.DB_TYPE as any) || 'postgres',
       host: process.env.DB_HOST || 'db',
@@ -29,6 +34,7 @@ import { AuthModule } from './auth/auth.module';
     }),
     UsersModule,
     AuthModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService, ChatGateway],

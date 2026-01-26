@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { MailService } from './mail/mail.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,5 +19,13 @@ async function bootstrap() {
   });
 
   await app.listen(3000);
+  
+  // Send test email on startup
+  const mailService = app.get(MailService);
+  try {
+    await mailService.sendTestEmail('louis.watelle@proton.me');
+  } catch (error) {
+    console.error('Email test failed, but server continues...');
+  }
 }
 bootstrap();

@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const emit = defineEmits(['auth-changed'])
 
 const isLogin = ref(true)
@@ -82,12 +84,21 @@ const login = async () => {
     const data = await response.json()
     
     if (response.ok) {
-      message.value = `✓ Login successful! Welcome ${data.user.username}`
-      localStorage.setItem('accessToken', data.accessToken)
-      localStorage.setItem('refreshToken', data.refreshToken)
-      isAuthenticated.value = true
-      currentUser.value = data.user
-      emit('auth-changed')
+      // Check if 2FA is required
+      if (data.requiresTwoFactor) {
+        message.value = '✓ Credentials valid. Please verify your 2FA code.'
+        // Redirect to 2FA verification page with userId
+        setTimeout(() => {
+          router.push(`/verify-2fa?userId=${data.userId}`)
+        }, 1000)
+      } else {
+        message.value = `✓ Login successful! Welcome ${data.user.username}`
+        localStorage.setItem('accessToken', data.accessToken)
+        localStorage.setItem('refreshToken', data.refreshToken)
+        isAuthenticated.value = true
+        currentUser.value = data.user
+        emit('auth-changed')
+      }
     } else {
       message.value = `✗ Error: ${data.message}`
     }
@@ -118,7 +129,7 @@ const register = async () => {
     const data = await response.json()
     
     if (response.ok) {
-      message.value = `✓ Registration successful! User ${data.username} created`
+      message.value = `✓ Registration successful!`
       username.value = ''
       email.value = ''
       password.value = ''

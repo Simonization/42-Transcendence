@@ -16,6 +16,12 @@ JWT_SECRET=${JWT_SECRET:-super-secret-jwt-key-change-in-production}
 JWT_EXPIRATION=${JWT_EXPIRATION:-24h}
 NODE_ENV=${NODE_ENV:-development}
 PORT=${PORT:-3000}
+MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+MAIL_PORT=${MAIL_PORT:-587}
+MAIL_USER=${MAIL_USER}
+MAIL_PASSWORD=${MAIL_PASSWORD}
+MAIL_FROM=${MAIL_FROM}
+FRONTEND_URL=${FRONTEND_URL:-http://localhost}
 
 # create env file for backend
 cat > backend/.env <<EOF
@@ -32,6 +38,14 @@ JWT_EXPIRATION=${JWT_EXPIRATION}
 
 NODE_ENV=${NODE_ENV}
 PORT=${PORT}
+
+MAIL_HOST=${MAIL_HOST}
+MAIL_PORT=${MAIL_PORT}
+MAIL_USER=${MAIL_USER}
+MAIL_PASSWORD=${MAIL_PASSWORD}
+MAIL_FROM=${MAIL_FROM}
+
+FRONTEND_URL=${FRONTEND_URL}
 EOF
 
 # create pgAdmin json to access db
