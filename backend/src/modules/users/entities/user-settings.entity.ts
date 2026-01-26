@@ -13,7 +13,7 @@ import { User } from './user.entity';
 
 @Entity('user_settings')
 export class UserSettings {
-    @PrimaryColumn()
+    @PrimaryColumn({ name: 'user_id' })
     userId: number;
 
     @Column({ length: 10, default: 'en' })

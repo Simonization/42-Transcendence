@@ -15,6 +15,7 @@ import { UserSettings } from './user-settings.entity';
 import { UserGameAccount } from './user-game-account.entity';
 import { Friend } from '../../friends/entities/friend.entity';
 import { Block } from '../../friends/entities/block.entity';
+import { RefreshToken } from './refresh-token.entity';
 
 @Entity('users')
 export class User {
@@ -60,4 +61,7 @@ export class User {
 
     @OneToMany(() => Block, (block) => block.blocker)
     blockedUsers: Block[];
+
+    @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
+    refreshTokens: RefreshToken[];
 }

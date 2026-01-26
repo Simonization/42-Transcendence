@@ -8,9 +8,15 @@ else
     $(error Please install Docker Compose)
 endif
 
-all: up
+all: setup up
 
-up:
+setup:
+	@if [ ! -f .env ]; then cp .env.example .env; fi
+	@bash setup-pgadmin.sh
+
+re: down up
+
+up: setup
 	$(CMD) -f $(YML_FILE) up
 
 down:
@@ -19,9 +25,11 @@ down:
 # WARNING /!\ this command delete containers, networks and volumes of the docker compose file /!\ WARNING
 fclean:
 	$(CMD) -f $(YML_FILE) down -v 
+	@rm -f pgadmin-servers.json pgadmin-pgpass backend/.env
 
 # WARNING /!\ this command local docker image and volumes /!\ WARNING
-fcleanall: fclean
-	$(CMD) -f $(YML_FILE) down --rmi local
+fcleanall:
+	$(CMD) -f $(YML_FILE) down -v --rmi local
+	@rm -f pgadmin-servers.json pgadmin-pgpass backend/.env
 
-.PHONY: up down fclean fcleanall
+.PHONY: all setup up down fclean fcleanall re

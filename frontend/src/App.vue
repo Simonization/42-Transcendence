@@ -1,14 +1,35 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { io } from 'socket.io-client'
+import LoginPage from './components/LoginPage.vue'
 
 const message = ref('')
 const isLoading = ref(false)
 const chatMessages = ref<string[]>([])
+const isAuthenticated = ref(false)
 
 const timer = ref('0.0')
 let timerInterval: any = null
 let startTime: number = 0
+
+const checkAuth = async () => {
+  const token = localStorage.getItem('accessToken')
+  if (!token) {
+    isAuthenticated.value = false
+    return
+  }
+  
+  try {
+    const response = await fetch('/api/users/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    isAuthenticated.value = response.ok
+  } catch (error) {
+    isAuthenticated.value = false
+  }
+}
 
 const fetchData = async () => {
   isLoading.value = true
@@ -25,7 +46,11 @@ const fetchData = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await checkAuth()
+  
+  if (!isAuthenticated.value) return
+
   const socket = io('/', {
     path: '/socket.io/',
   });
@@ -39,11 +64,9 @@ onMounted(() => {
   });
 
   startTime = Date.now()
-  
   timerInterval = setInterval(() => {
-    const now = Date.now()
-    const diff = now - startTime
-    timer.value = (diff / 1000).toFixed(1)
+    const elapsed = (Date.now() - startTime) / 1000
+    timer.value = elapsed.toFixed(1)
   }, 100)
 })
 
@@ -53,15 +76,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="wrapper">
+  <LoginPage v-if="!isAuthenticated" @auth-changed="checkAuth" />
+  <div v-else class="wrapper">
+    <!-- Test Backend Section -->
     <div class="card">
       <h1 class="title">Transcendence</h1>
       <p class="description">Test for Backend-Frontend connection</p>
-
-      <div class="timer-display">
-        <span class="timer-label">Session Time:</span>
-        <span class="timer-value">{{ timer }}s</span>
-      </div>
 
       <button @click="fetchData" class="connect-btn" :disabled="isLoading">
         {{ isLoading ? 'Connecting...' : "Connect to Backend" }}
@@ -71,19 +91,25 @@ onUnmounted(() => {
         <span class="status-dot"></span>
         {{ message }}
       </div>
-      
-      <div class="chat-section">
-        <h3 class="chat-title">Live Chat Test</h3>
-        <ul class="chat-list">
-          <li v-for="msg in chatMessages" :key="msg" class="chat-item">
-            {{ msg }}
-          </li>
-          <li v-if="chatMessages.length === 0" style="color: #666; font-size: 0.8rem;">
-            no message yet..
-          </li>
-        </ul>
-      </div>
 
+      <p class="timer">{{ timer }}s</p>
+    </div>
+
+    <!-- Chat Section -->
+    <div class="card">
+      <h1 class="title">Transcendence Chat</h1>
+      <p class="description">Real-time Chat</p>
+
+      <div class="chat-container">
+        <div class="messages">
+          <div v-for="(msg, idx) in chatMessages" :key="idx" class="message">
+            {{ msg }}
+          </div>
+          <div v-if="chatMessages.length === 0" class="message empty">
+            No messages yet...
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -98,8 +124,8 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: #1a1a1a;
-  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   overflow: hidden;
 }
 
@@ -114,51 +140,30 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  gap: 2rem;
   width: 100%;
   height: 100vh;
-  padding-top: 15vh; 
+  padding-top: 3rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 .card {
   background-color: #2c2c2c;
-  padding: 3rem;
+  padding: 2rem;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   text-align: center;
   width: 100%;
   max-width: 450px;
+  min-width: 350px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-}
-
-.timer-display {
-  background-color: #1a1a1a;
-  border: 1px solid #444;
-  padding: 10px 20px;
-  border-radius: 50px; 
-  font-family: 'Courier New', monospace;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 10px;
-  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
-}
-
-.timer-label {
-  color: #888;
-  font-size: 0.8rem;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.timer-value {
-  color: #ffcc00;
-  font-size: 1.2rem;
-  font-weight: bold;
-  min-width: 60px;
-  text-align: right;
+  gap: 15px;
 }
 
 .title {
@@ -200,6 +205,36 @@ html, body {
   box-shadow: none;
 }
 
+.chat-container {
+  width: 100%;
+  height: 250px;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  background-color: #3a3a3a;
+  color: #e0e0e0;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.message.empty {
+  color: #666;
+  font-size: 0.85rem;
+  background-color: transparent;
+}
+
 .message-box {
   background-color: rgba(66, 184, 131, 0.1);
   border: 1px solid rgba(66, 184, 131, 0.3);
@@ -223,36 +258,10 @@ html, body {
   box-shadow: 0 0 8px #42b883;
 }
 
-.chat-section {
-  width: 100%;
-  margin-top: 20px;
-  border-top: 1px solid #444;
-  padding-top: 20px;
-}
-
-.chat-title {
-  color: #fff;
+.timer {
+  color: #42b883;
+  font-weight: 600;
   font-size: 1.2rem;
-  margin-bottom: 10px;
-}
-
-.chat-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  text-align: left;
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.chat-item {
-  background-color: #3a3a3a;
-  padding: 8px 12px;
-  margin-bottom: 5px;
-  border-radius: 6px;
-  color: #e0e0e0;
-  font-size: 0.9rem;
-  animation: slideUp 0.2s ease-out;
 }
 
 @keyframes slideUp {

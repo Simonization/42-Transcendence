@@ -1,6 +1,9 @@
 // src/modules/users/users.service.ts
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './entities/user.entity';
 import { CreateUserCommand } from './commands/create-user.command';
 import { UpdateSettingsCommand } from './commands/update-settings.command';
 import { UpdateProfileCommand } from './commands/update-profile.command';
@@ -12,11 +15,30 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 @Injectable()
 export class UsersService {
     constructor(
+        @InjectRepository(User)
+        private readonly userRepository: Repository<User>,
         private readonly createUserCmd: CreateUserCommand,
         private readonly updateSettingsCmd: UpdateSettingsCommand,
         private readonly updateProfileCmd: UpdateProfileCommand,
         private readonly deleteUserCmd: DeleteUserCommand,
     ) {}
+
+    async findOne(id: number) {
+        const user = await this.userRepository.findOne({
+            where: { id },
+            relations: ['profile', 'settings']
+        });
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+        return {
+            id: user.id,
+            username: user.username,
+            mail: user.mail,
+            profile: user.profile,
+            settings: user.settings
+        };
+    }
 
     async create(dto: CreateUserDto) {
         return await this.createUserCmd.execute(dto);

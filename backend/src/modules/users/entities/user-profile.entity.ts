@@ -13,7 +13,7 @@ import { User } from './user.entity';
 
 @Entity('user_profiles')
 export class UserProfile {
-    @PrimaryColumn()
+    @PrimaryColumn({ name: 'user_id' })
     userId: number;
 
     @Column({ name: 'display_name', nullable: true })
