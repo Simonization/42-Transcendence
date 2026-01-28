@@ -68,8 +68,11 @@ export class User {
     @OneToMany(() => UserGameAccount, (account) => account.user)
     gameAccounts: UserGameAccount[];
 
-    @OneToMany(() => Friend, (friend) => friend.user)
-    friends: Friend[];
+    @OneToMany(() => Friend, (friend) => friend.user1Entity)
+    friendsInitiated: Friend[];
+
+    @OneToMany(() => Friend, (friend) => friend.user2Entity)
+    friendsReceived: Friend[];
 
     @OneToMany(() => Block, (block) => block.blocker)
     blockedUsers: Block[];

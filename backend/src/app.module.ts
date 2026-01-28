@@ -10,12 +10,12 @@ import { UserProfile } from './modules/users/entities/user-profile.entity';
 import { UserSettings } from './modules/users/entities/user-settings.entity';
 import { UserGameAccount } from './modules/users/entities/user-game-account.entity';
 
-import { ChatGateway } from './chat/chat.gateway';
+import { ChatGateway } from './modules/chat/chat.gateway';
 
 // Feature Modules
 import { UsersModule } from './modules/users/users.module';
-import { AuthModule } from './auth/auth.module';
-import { MailModule } from './mail/mail.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [

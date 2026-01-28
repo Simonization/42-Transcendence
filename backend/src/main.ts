@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { MailService } from './mail/mail.service';
+import { MailService } from './modules/mail/mail.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

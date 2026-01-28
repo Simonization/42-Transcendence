@@ -14,7 +14,7 @@ import { FriendsService } from './friends.service';
 import { ActionFriendDto } from './dto/action-friend.dto';
 import { BlockUserDto } from './dto/block-user.dto';
 import { UnblockUserDto } from './dto/unblock-user.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('social')
 @UseGuards(JwtAuthGuard)
