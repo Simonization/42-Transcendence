@@ -10,6 +10,13 @@ export interface JwtPayload {
     username: string;
 }
 
+/**
+ * JWT Strategy - Validates incoming JWT tokens
+ * 
+ * This strategy is automatically invoked by @UseGuards(JwtAuthGuard)
+ * It extracts the JWT from the Authorization header, verifies its signature
+ * using the secret key, and checks if it hasn't expired.
+ */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
@@ -23,6 +30,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
+    /**
+     * Validate JWT payload and retrieve user
+     * 
+     * This method is called automatically after the JWT signature is verified.
+     * It receives the decoded payload and must return user data that will be
+     * attached to the request object (req.user). If this method throws an error
+     * or returns null/undefined, the request will be rejected with 401 Unauthorized.
+     */
     async validate(payload: JwtPayload) {
         const user = await this.userRepository.findOne({
             where: { id: payload.sub },

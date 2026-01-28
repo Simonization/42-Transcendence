@@ -24,6 +24,7 @@ export class AuthService {
         private readonly refreshTokenRepository: Repository<RefreshToken>,
     ) {}
     
+    // create user and send verification email
     async register(dto: RegisterDto) {
         const createUserDto: CreateUserDto = {
             username: dto.username,
@@ -55,6 +56,8 @@ export class AuthService {
             }
         };
     }
+    
+    //verify credentials and handle 2FA if enabled
     async login(dto: LoginDto)
     {
         const user = await this.userRepository.findOne({
@@ -71,12 +74,11 @@ export class AuthService {
             throw new UnauthorizedException('Please verify your email address before logging in');
         }
 
-        // If 2FA is enabled, generate and send code - don't login yet
+        // If 2FA enabled, send code
         if (user.twoFactorEnabled) {
             // Generate a 6-digit code
             const code = Math.floor(100000 + Math.random() * 900000).toString();
             
-            // Store the code temporarily
             user.twoFactorCode = code;
             await this.userRepository.save(user);
 
@@ -95,17 +97,15 @@ export class AuthService {
             };
         }
 
-        // Generate Access Token
+        // Generate access and refresh tokens
         const payload = { sub: user.id, username: user.username };
         const accessToken = this.jwtService.sign(payload);
-        
-        // Generate Refresh Token
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
         
-        // Single session (delete the old refresh token)
+        // Ensure single active session
         await this.refreshTokenRepository.delete({ userId: user.id });
         
-        // Save Refresh Token to DB
+        // Save the new refresh token
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
         
@@ -126,6 +126,7 @@ export class AuthService {
         });
     }
 
+    // delete refresh token
     async logout(userId: number) {
         await this.refreshTokenRepository.delete({ userId });
         return { message: 'Logged out successfully' };
@@ -149,6 +150,7 @@ export class AuthService {
         };
     }
 
+    // Refresh the access token
     async refresh(refreshToken: string) {
         try {
             const payload = await this.jwtService.verifyAsync(refreshToken);
@@ -176,20 +178,18 @@ export class AuthService {
     // TWO-FACTOR AUTHENTICATION METHODS
     // ====================================
 
+    // generate and send code
     async enable2FA(userId: number) {
         const user = await this.userRepository.findOne({ where: { id: userId } });
         if (!user) {
             throw new BadRequestException('User not found');
         }
 
-        // Generate a 6-digit code
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // Store the code temporarily (will expire in 10 minutes)
         user.twoFactorCode = code;
         await this.userRepository.save(user);
 
-        // Send the code via email
         try {
             await this.mailService.send2FACode(user.mail, code, user.username);
         } catch (error) {
@@ -216,7 +216,7 @@ export class AuthService {
             throw new BadRequestException('Invalid verification code');
         }
 
-        // Enable 2FA
+        // Enable 2FA and clear temporary code
         user.twoFactorEnabled = true;
         user.twoFactorCode = undefined;
         await this.userRepository.save(user);
@@ -226,6 +226,7 @@ export class AuthService {
         };
     }
 
+    // Verify 2FA code during login
     async verify2FA(userId: number, code: string) {
         const user = await this.userRepository.findOne({
             where: { id: userId },
@@ -240,15 +241,13 @@ export class AuthService {
             throw new BadRequestException('Invalid verification code');
         }
 
-        // Generate tokens for login
+        // Valid code -> generate tokens for login
         const payload = { sub: user.id, username: user.username };
         const accessToken = this.jwtService.sign(payload);
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-        // Single session
         await this.refreshTokenRepository.delete({ userId: user.id });
 
-        // Save Refresh Token to DB
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
@@ -268,6 +267,7 @@ export class AuthService {
         };
     }
 
+    // Disable 2FA
     async disable2FA(userId: number) {
         const user = await this.userRepository.findOne({ where: { id: userId } });
         if (!user) {

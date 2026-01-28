@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
+// Optional guard - checks token if exists, otherwise allows request
 @Injectable()
 export class OptionalJwtAuthGuard implements CanActivate {
     constructor(private jwtService: JwtService) {}
