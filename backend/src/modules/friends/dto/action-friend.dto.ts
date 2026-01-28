@@ -1,7 +1,4 @@
-import {
-    IsInt,
-    IsPositive
-} from 'class-validator';
+import { IsInt, IsPositive, NotEquals } from 'class-validator';
 
 export class ActionFriendDto {
     @IsInt()

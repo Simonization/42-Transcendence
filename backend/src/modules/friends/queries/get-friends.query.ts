@@ -11,12 +11,27 @@ export class GetFriendsQuery {
     ) {}
 
     async execute(userId: number) {
-        return await this.friendRepo.find({
+        const friendships = await this.friendRepo.find({
             where: [
-                { user: { id: userId } as any },
-                { friend: { id: userId } as any }
+                { user1: userId, status: 1 }, // Friends where I am user1
+                { user2: userId, status: 1 }    // Friends where I am user2
             ],
-            relations: ['user', 'user.profile', 'friend', 'friend.profile'],
+            // We use the relation names defined in the Entity
+            relations: ['user1Entity', 'user1Entity.profile', 'user2Entity', 'user2Entity.profile'],
+        });
+
+        // We map the results so the frontend doesn't have to guess who is who
+        return friendships.map(f => {
+            // If I am user1, the friend is user2. Otherwise, the friend is user1.
+            const friendData = f.user1 === userId ? f.user2Entity : f.user1Entity;
+            
+            return {
+                id: friendData.id,
+                username: friendData.username,
+                profile: friendData.profile,
+                status: f.status,
+                since: f.createdAt
+            };
         });
     }
 }

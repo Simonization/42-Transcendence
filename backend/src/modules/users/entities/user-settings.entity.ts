@@ -25,6 +25,9 @@ export class UserSettings {
     @Column({ type: 'smallint', default: 0 })
     theme: number;
 
+    @Column({ default: false} )
+    openMessage: boolean;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

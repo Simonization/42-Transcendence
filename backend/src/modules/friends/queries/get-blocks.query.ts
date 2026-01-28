@@ -5,15 +5,15 @@ import { Block } from '../entities/block.entity';
 
 @Injectable()
 export class GetBlocksQuery {
-  constructor(
-    @InjectRepository(Block)
-    private readonly blockRepo: Repository<Block>,
-  ) {}
+    constructor(
+        @InjectRepository(Block)
+        private readonly blockRepo: Repository<Block>,
+    ) {}
 
-  async execute(userId: number) {
-    return await this.blockRepo.find({
-      where: { blocker: { id: userId } as any },
-      relations: ['blocked'],
-    });
-  }
+    async execute(userId: number) {
+        return await this.blockRepo.find({
+            where: { blocker: { id: userId } as any },
+            relations: ['blocked'],
+        });
+    }
 }
