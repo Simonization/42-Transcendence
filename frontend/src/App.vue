@@ -27,6 +27,7 @@ const checkAuth = async () => {
   const token = localStorage.getItem('accessToken')
   if (!token) {
     isAuthenticated.value = false
+    isFetching2FAStatus.value = false
     return
   }
   
@@ -36,9 +37,16 @@ const checkAuth = async () => {
         'Authorization': `Bearer ${token}`
       }
     })
-    isAuthenticated.value = response.ok
+    if (response.ok) {
+      isAuthenticated.value = true
+      await fetchTwoFactorStatus()
+    } else {
+      isAuthenticated.value = false
+      isFetching2FAStatus.value = false
+    }
   } catch (error) {
     isAuthenticated.value = false
+    isFetching2FAStatus.value = false
   }
 }
 
@@ -73,12 +81,20 @@ const logout = async () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     isAuthenticated.value = false
+    twoFactorEnabled.value = false
+    twoFactorCode.value = ''
+    twoFactorMessage.value = ''
+    showTwoFactorForm.value = false
+    isFetching2FAStatus.value = false
   }
 }
 
 const fetchTwoFactorStatus = async () => {
   const token = localStorage.getItem('accessToken')
-  if (!token) return
+  if (!token) {
+    isFetching2FAStatus.value = false
+    return
+  }
 
   isFetching2FAStatus.value = true
   try {
@@ -195,10 +211,7 @@ const disable2FA = async () => {
 
 onMounted(async () => {
   await checkAuth()
-  
   if (!isAuthenticated.value) return
-
-  await fetchTwoFactorStatus()
 
   const socket = io('/', {
     path: '/socket.io/',

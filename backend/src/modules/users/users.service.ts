@@ -35,6 +35,7 @@ export class UsersService {
             id: user.id,
             username: user.username,
             mail: user.mail,
+            twoFactorEnabled: user.twoFactorEnabled,
             profile: user.profile,
             settings: user.settings
         };

@@ -14,7 +14,7 @@
         <h2>Email Verified!</h2>
         <p>Your email address has been successfully verified.</p>
         <p class="subtext">You can now log in with your account.</p>
-        <button @click="redirectToLogin" class="btn-primary">Go to Login</button>
+        <button @click="redirectToApp" class="btn-primary">Go to Login</button>
       </div>
 
       <!-- Error State -->
@@ -68,6 +68,10 @@ onMounted(async () => {
     errorMessage.value = 'Network error. Please try again later.'
   }
 })
+
+const redirectToApp = () => {
+  router.push('/')
+}
 
 const redirectToLogin = () => {
   router.push('/')

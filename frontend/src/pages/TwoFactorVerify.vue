@@ -113,7 +113,7 @@ const handleSubmit = async () => {
 }
 
 const redirectToApp = () => {
-  router.push('/')
+  window.location.href = '/'
 }
 
 const goBackToLogin = () => {
