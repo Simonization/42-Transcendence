@@ -7,6 +7,9 @@ import { Verify2FaDto } from './dto/verify-2fa.dto'
 import { Confirm2FaDto } from '../users/dto/confirm-2fa.dto'
 import { OptionalJwtAuthGuard } from './guards/optional-jwt-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { Res } from '@nestjs/common';
+
 
 export class RefreshDto {
     refreshToken: string;
@@ -79,5 +82,28 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     disable2FA(@Request() req) {
         return this.authService.disable2FA(req.user.sub);
+    }
+
+
+
+    /***       OAUTH 2.0        ***/
+    
+    @Get('google')
+    @UseGuards(AuthGuard('google'))
+    async googleAuth(@Request() req) {
+
+    }
+
+    @Get('google/callback')
+    @UseGuards(AuthGuard('google'))
+    async googleAuthRedirect(@Request() req, @Res() res) {
+        const result = await this.authService.googleLogin(req.user);
+        if ('accessToken' in result) {
+            const successUrl = `http://localhost/login-success?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`;
+            return res.redirect(successUrl);
+        } else {
+            const twoFactorUrl = `http://localhost/verify-2fa?userId=${result.userId}&googleLogin=true`;
+            return res.redirect(twoFactorUrl);
+        }
     }
 }

@@ -1,4 +1,6 @@
-.env
+# .env
 backend/.env
 pgadmin-servers.json
 pgadmin-pgpass
+/node_modules
+/dist

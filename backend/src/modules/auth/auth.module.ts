@@ -9,11 +9,13 @@ import { MailModule } from '../mail/mail.module';
 import { User } from '../users/entities/user.entity';
 import { RefreshToken } from '../users/entities/refresh-token.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
     imports: [
         UsersModule,
         MailModule,
+        PassportModule.register({ defaultStrategy: 'jwt' }),
         TypeOrmModule.forFeature([User, RefreshToken]),
         PassportModule,
         JwtModule.register({
@@ -22,7 +24,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy],
+    providers: [AuthService, JwtStrategy, GoogleStrategy],
     exports: [AuthService]
 })
 export class AuthModule {}

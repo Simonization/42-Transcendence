@@ -282,4 +282,70 @@ export class AuthService {
             message: 'Two-factor authentication has been disabled'
         };
     }
+
+    /***       OAUTH 2.0        ***/
+
+    private async generateAuthTokens(userId: number, username: string) {
+        const payload = { sub: userId, username: username };
+        const accessToken = this.jwtService.sign(payload);
+        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+        await this.refreshTokenRepository.delete({ userId });
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+        await this.refreshTokenRepository.save({
+            token: refreshToken,
+            userId: userId,
+            expiresAt,
+    });
+
+    return { accessToken, refreshToken };
+}
+
+    async googleLogin(googleUser: any) {
+        let user = await this.userRepository.findOne({ 
+            where: { mail: googleUser.email } 
+        });
+
+        if (!user) {
+            const newUser = this.userRepository.create({
+                username: googleUser.email.split('@')[0] + Math.floor(Math.random() * 1000),
+                mail: googleUser.email,
+                firstName: googleUser.firstName,
+                lastName: googleUser.lastName,
+                avatarUrl: googleUser.picture,
+                passwordHash: 'OAUTH_USER',
+                isEmailVerified: true,
+            });
+            user = await this.userRepository.save(newUser);
+            user.firstName = googleUser.firstName;
+            user.lastName = googleUser.lastName;
+            user.avatarUrl = googleUser.picture;
+        }
+        if (user.twoFactorEnabled) {
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            user.twoFactorCode = code;
+            await this.userRepository.save(user);
+
+            try {
+                await this.mailService.send2FACode(user.mail, code, user.username);
+            } catch (error) {
+                throw new BadRequestException('Failed to send 2FA code');
+            }
+
+            return {
+                requiresTwoFactor: true,
+                userId: user.id,
+                message: '2FA required'
+            };
+        }
+        const tokens = await this.generateAuthTokens(user.id, user.username);
+        return {
+            user: {
+                id: user.id,
+                username: user.username,
+                mail: user.mail
+            },
+            ...tokens
+        };
+    }
 }

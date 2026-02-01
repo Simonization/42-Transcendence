@@ -29,6 +29,7 @@ const checkAuth = async () => {
       const data = await response.json()
       isAuthenticated.value = true
       currentUser.value = data
+      router.push('/');
     } else {
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
@@ -84,10 +85,8 @@ const login = async () => {
     const data = await response.json()
     
     if (response.ok) {
-      // Check if 2FA is required
       if (data.requiresTwoFactor) {
         message.value = '✓ Credentials valid. Please verify your 2FA code.'
-        // Redirect to 2FA verification page with userId
         setTimeout(() => {
           router.push(`/verify-2fa?userId=${data.userId}`)
         }, 1000)
@@ -98,6 +97,7 @@ const login = async () => {
         isAuthenticated.value = true
         currentUser.value = data.user
         emit('auth-changed')
+        router.push('/')
       }
     } else {
       message.value = `✗ Error: ${data.message}`
@@ -205,6 +205,15 @@ const toggleMode = () => {
           {{ isLoading ? 'Loading...' : (isLogin ? 'Login' : 'Register') }}
         </button>
       </form>
+
+      <div class="divider">
+        <span>OR</span>
+      </div>
+
+      <a href="http://localhost/api/auth/google" class="google-btn">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" />
+        {{ isLogin ? 'Sign in with Google' : 'Sign in with Google' }}
+      </a>
       
       <p class="toggle-text">
         {{ isLogin ? "Don't have an account?" : 'Already have an account?' }}
@@ -288,6 +297,55 @@ button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.divider {
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #eee;
+}
+
+.divider span {
+  padding: 0 10px;
+}
+
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0.75rem;
+  background: white;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-sizing: border-box; 
+}
+
+.google-btn:hover {
+  background: #f8f9fa;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.google-btn img {
+  width: 18px;
+  height: 18px;
+}
+/* ------------------------ */
 
 .toggle-text {
   text-align: center;

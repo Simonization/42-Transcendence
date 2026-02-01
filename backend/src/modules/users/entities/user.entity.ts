@@ -55,6 +55,16 @@ export class User {
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
+    // Google OAuth
+    @Column({ nullable: true })
+    firstName: string;
+
+    @Column({ nullable: true })
+    lastName: string;
+    
+    @Column({ nullable: true })
+    avatarUrl: string;
+
     // =====================
     // RELATIONSHIPS
     // =====================
