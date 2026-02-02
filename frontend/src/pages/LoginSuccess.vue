@@ -26,7 +26,7 @@ onMounted(() => {
 
 <template>
   <div class="loading-container">
-    <h2>Giriş yapılıyor...</h2>
+    <h2>Logging in...</h2>
     <p>Redirecting...Please Wait...</p>
   </div>
 </template>
