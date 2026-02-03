@@ -3,4 +3,4 @@
 pgadmin-servers.json
 pgadmin-pgpass
 /node_modules
-/dist
+/dist.claude/

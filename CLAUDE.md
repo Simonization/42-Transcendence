@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Frontend:** Vue 3 + Vite + Vue Router
 - **Backend:** NestJS (TypeScript)
 - **Database:** PostgreSQL 15 with TypeORM
-- **Auth:** JWT + Passport, 2FA support
+- **Auth:** JWT + Passport, 2FA support, Google OAuth
 - **Real-time:** Socket.io
 - **Infrastructure:** Docker Compose, Nginx reverse proxy
 
@@ -61,7 +61,7 @@ npm run format  # Prettier formatting (backend)
 ## Architecture
 
 ### Backend Module Structure (`/backend/src/modules/`)
-- **auth/** - Authentication, JWT, 2FA, email verification
+- **auth/** - Authentication, JWT, 2FA, email verification, Google OAuth
 - **users/** - User management, profiles, settings
 - **friends/** - Friend requests, blocking system
 - **chat/** - Real-time messaging with command/query pattern
@@ -69,7 +69,7 @@ npm run format  # Prettier formatting (backend)
 
 ### API Routes
 All API routes are prefixed with `/api/`:
-- `/api/auth/*` - Authentication endpoints
+- `/api/auth/*` - Authentication (login, register, 2FA, Google OAuth)
 - `/api/users/*` - User management
 - `/api/social/*` - Friends and blocking
 - `/api/chat/*` - Chat and messaging
@@ -78,7 +78,8 @@ All API routes are prefixed with `/api/`:
 Main entities in their respective module's `entities/` folder:
 - `User` - Core user with email verification and 2FA fields
 - `UserProfile`, `UserSettings` - User-related data
-- `Friends` - Friend relationships with status (pending/accepted/blocked)
+- `RefreshToken` - JWT refresh tokens for persistent sessions
+- `Friend`, `Block` - Friend relationships and user blocking (in friends module)
 - `Chat`, `Message`, `ChatParticipant` - Chat system
 
 ### Docker Services
@@ -96,11 +97,12 @@ Nginx proxies:
 
 ## Environment Setup
 
-Copy `.env.example` to `.env` (handled by `make setup`). Key variables:
+Copy `dotenv_example` to `.env` (handled by `make setup`). Key variables:
 - `DB_*` - PostgreSQL connection
 - `JWT_SECRET`, `JWT_EXPIRATION` - JWT configuration
 - `MAIL_*` - Gmail SMTP for email verification
 - `FRONTEND_URL` - Used for email verification links
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` - Google OAuth credentials
 
 Backend expects its `.env` at `/backend/.env` (copied during setup).
 
