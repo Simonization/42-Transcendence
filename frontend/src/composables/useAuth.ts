@@ -1,44 +1,69 @@
+/**
+ * Authentication Composable
+ * Manages authentication state and actions
+ */
+
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { usersApi } from '../api/users'
+import { authApi } from '../api/auth'
+import { getAccessToken } from '../api'
+import type { User } from '../types'
 
 export function useAuth() {
   const router = useRouter()
   const isAuthenticated = ref(false)
+  const user = ref<User | null>(null)
+  const isLoading = ref(false)
 
-  const checkAuth = async () => {
-    const token = localStorage.getItem('accessToken')
+  /**
+   * Check if user is authenticated by validating token with backend
+   */
+  const checkAuth = async (): Promise<boolean> => {
+    const token = getAccessToken()
     if (!token) {
       isAuthenticated.value = false
+      user.value = null
       return false
     }
-    
+
+    isLoading.value = true
     try {
-      const response = await fetch('/api/users/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      isAuthenticated.value = response.ok
-      return response.ok
-    } catch (error) {
+      const userData = await usersApi.getMe()
+      user.value = userData
+      isAuthenticated.value = true
+      return true
+    } catch {
       isAuthenticated.value = false
+      user.value = null
       return false
+    } finally {
+      isLoading.value = false
     }
   }
 
-  const logout = async () => {
-    const token = localStorage.getItem('accessToken')
+  /**
+   * Logout current user and redirect to login
+   */
+  const logout = async (): Promise<void> => {
+    isLoading.value = true
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-    } catch (e) { console.error(e) } 
-    finally {
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
+      await authApi.logout()
+    } catch {
+      // Ignore errors, tokens will be cleared anyway
+    } finally {
       isAuthenticated.value = false
+      user.value = null
+      isLoading.value = false
       router.push('/login')
     }
   }
 
-  return { isAuthenticated, checkAuth, logout }
+  return {
+    isAuthenticated,
+    user,
+    isLoading,
+    checkAuth,
+    logout,
+  }
 }

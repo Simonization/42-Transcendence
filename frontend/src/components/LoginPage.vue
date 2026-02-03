@@ -1,9 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { authApi } from '../api/auth'
+import { usersApi } from '../api/users'
+import { getAccessToken, clearTokens } from '../api'
+import { requiresTwoFactor, ApiError } from '../types'
+import type { User } from '../types'
 
 const router = useRouter()
-const emit = defineEmits(['auth-changed'])
+const emit = defineEmits<{
+  'auth-changed': []
+}>()
 
 const isLogin = ref(true)
 const username = ref('')
@@ -12,52 +19,32 @@ const password = ref('')
 const message = ref('')
 const isLoading = ref(false)
 const isAuthenticated = ref(false)
-const currentUser = ref(null)
+const currentUser = ref<User | null>(null)
 
 const checkAuth = async () => {
-  const token = localStorage.getItem('accessToken')
+  const token = getAccessToken()
   if (!token) return
-  
+
   try {
-    const response = await fetch('/api/users/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      isAuthenticated.value = true
-      currentUser.value = data
-      router.push('/');
-    } else {
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-    }
-  } catch (error) {
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
+    const user = await usersApi.getMe()
+    isAuthenticated.value = true
+    currentUser.value = user
+    router.push('/')
+  } catch {
+    clearTokens()
   }
 }
 
 const logout = async () => {
-  const token = localStorage.getItem('accessToken')
-  
   try {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-  } catch (error) {
-    console.error('Logout error:', error)
+    await authApi.logout()
+    message.value = 'Logged out successfully'
+  } catch {
+    // Tokens cleared by authApi.logout() even on error
+    message.value = 'Logged out'
   } finally {
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
     isAuthenticated.value = false
     currentUser.value = null
-    message.value = '✓ Logged out successfully'
     emit('auth-changed')
   }
 }
@@ -69,41 +56,32 @@ onMounted(() => {
 const login = async () => {
   isLoading.value = true
   message.value = ''
-  
+
   try {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: username.value,
-        password: password.value
-      })
+    const response = await authApi.login({
+      username: username.value,
+      password: password.value,
     })
-    
-    const data = await response.json()
-    
-    if (response.ok) {
-      if (data.requiresTwoFactor) {
-        message.value = '✓ Credentials valid. Please verify your 2FA code.'
-        setTimeout(() => {
-          router.push(`/verify-2fa?userId=${data.userId}`)
-        }, 1000)
-      } else {
-        message.value = `✓ Login successful! Welcome ${data.user.username}`
-        localStorage.setItem('accessToken', data.accessToken)
-        localStorage.setItem('refreshToken', data.refreshToken)
-        isAuthenticated.value = true
-        currentUser.value = data.user
-        emit('auth-changed')
-        router.push('/')
-      }
+
+    if (requiresTwoFactor(response)) {
+      message.value = 'Credentials valid. Please verify your 2FA code.'
+      setTimeout(() => {
+        router.push(`/verify-2fa?userId=${response.userId}`)
+      }, 1000)
     } else {
-      message.value = `✗ Error: ${data.message}`
+      message.value = `Login successful! Welcome ${response.user.username}`
+      isAuthenticated.value = true
+      // Fetch full user data
+      currentUser.value = await usersApi.getMe()
+      emit('auth-changed')
+      router.push('/')
     }
   } catch (error) {
-    message.value = '✗ Network error!'
+    if (error instanceof ApiError) {
+      message.value = `Error: ${error.message}`
+    } else {
+      message.value = 'Network error!'
+    }
   } finally {
     isLoading.value = false
   }
@@ -112,32 +90,23 @@ const login = async () => {
 const register = async () => {
   isLoading.value = true
   message.value = ''
-  
+
   try {
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: username.value,
-        mail: email.value,
-        password: password.value
-      })
+    await authApi.register({
+      username: username.value,
+      mail: email.value,
+      password: password.value,
     })
-    
-    const data = await response.json()
-    
-    if (response.ok) {
-      message.value = `✓ Registration successful!`
-      username.value = ''
-      email.value = ''
-      password.value = ''
-    } else {
-      message.value = `✗ Error: ${data.message}`
-    }
+    message.value = 'Registration successful! Check your email to verify.'
+    username.value = ''
+    email.value = ''
+    password.value = ''
   } catch (error) {
-    message.value = '✗ Network error!'
+    if (error instanceof ApiError) {
+      message.value = `Error: ${error.message}`
+    } else {
+      message.value = 'Network error!'
+    }
   } finally {
     isLoading.value = false
   }
@@ -149,6 +118,10 @@ const toggleMode = () => {
   username.value = ''
   email.value = ''
   password.value = ''
+}
+
+const handleGoogleLogin = () => {
+  authApi.googleLogin()
 }
 </script>
 
@@ -163,10 +136,10 @@ const toggleMode = () => {
       <button @click="logout" class="logout-btn">Logout</button>
       <p v-if="message" class="message success">{{ message }}</p>
     </div>
-    
+
     <div class="login-card" v-else>
       <h1>{{ isLogin ? 'Login' : 'Register' }}</h1>
-      
+
       <form @submit.prevent="isLogin ? login() : register()">
         <div class="form-group">
           <label for="username">Username</label>
@@ -178,7 +151,7 @@ const toggleMode = () => {
             required
           />
         </div>
-        
+
         <div v-if="!isLogin" class="form-group">
           <label for="email">Email</label>
           <input
@@ -189,7 +162,7 @@ const toggleMode = () => {
             required
           />
         </div>
-        
+
         <div class="form-group">
           <label for="password">Password</label>
           <input
@@ -200,7 +173,7 @@ const toggleMode = () => {
             required
           />
         </div>
-        
+
         <button type="submit" :disabled="isLoading">
           {{ isLoading ? 'Loading...' : (isLogin ? 'Login' : 'Register') }}
         </button>
@@ -210,17 +183,17 @@ const toggleMode = () => {
         <span>OR</span>
       </div>
 
-      <a href="http://localhost/api/auth/google" class="google-btn">
+      <button @click="handleGoogleLogin" class="google-btn">
         <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" />
-        {{ isLogin ? 'Sign in with Google' : 'Sign in with Google' }}
-      </a>
-      
+        Sign in with Google
+      </button>
+
       <p class="toggle-text">
         {{ isLogin ? "Don't have an account?" : 'Already have an account?' }}
         <a @click="toggleMode">{{ isLogin ? 'Register' : 'Login' }}</a>
       </p>
-      
-      <p v-if="message" class="message" :class="{ success: message.includes('✓'), error: message.includes('✗') }">
+
+      <p v-if="message" class="message" :class="{ success: !message.includes('Error'), error: message.includes('Error') }">
         {{ message }}
       </p>
     </div>
@@ -333,19 +306,19 @@ button:disabled {
   text-decoration: none;
   cursor: pointer;
   transition: background 0.2s, box-shadow 0.2s;
-  box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 .google-btn:hover {
   background: #f8f9fa;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transform: none;
 }
 
 .google-btn img {
   width: 18px;
   height: 18px;
 }
-/* ------------------------ */
 
 .toggle-text {
   text-align: center;

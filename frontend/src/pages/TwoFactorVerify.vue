@@ -17,13 +17,14 @@
         <div class="error-icon">✕</div>
         <h2>Verification Failed</h2>
         <p>{{ errorMessage }}</p>
-        <button @click="goBackToLogin" class="btn-retry">Back to Login</button>
+        <button @click="resetForm" class="btn-retry">Try Again</button>
+        <button @click="goBackToLogin" class="btn-back">Back to Login</button>
       </div>
 
       <div v-else class="form-container">
         <h2>Two-Factor Authentication</h2>
         <p>Enter the 6-digit code sent to your email</p>
-        
+
         <form @submit.prevent="handleSubmit">
           <input
             v-model="code"
@@ -35,7 +36,7 @@
             @input="code = code.replace(/[^0-9]/g, '')"
             autofocus
           />
-          
+
           <button type="submit" class="btn-verify" :disabled="code.length !== 6">
             Verify Code
           </button>
@@ -49,9 +50,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { authApi } from '../api/auth'
+import { ApiError } from '../types'
 
 const route = useRoute()
 const router = useRouter()
@@ -61,18 +64,20 @@ const isLoading = ref(false)
 const isSuccess = ref(false)
 const isError = ref(false)
 const errorMessage = ref('')
-const userId = ref(null)
+const userId = ref<number | null>(null)
 
 onMounted(() => {
-  userId.value = route.query.userId
-  if (!userId.value) {
+  const queryUserId = route.query.userId as string | undefined
+  if (!queryUserId) {
     isError.value = true
     errorMessage.value = 'Invalid session. Please login again.'
+  } else {
+    userId.value = parseInt(queryUserId, 10)
   }
 })
 
 const handleSubmit = async () => {
-  if (code.value.length !== 6) {
+  if (code.value.length !== 6 || userId.value === null) {
     errorMessage.value = 'Please enter a 6-digit code'
     return
   }
@@ -81,43 +86,34 @@ const handleSubmit = async () => {
   isError.value = false
 
   try {
-    const response = await fetch('/api/auth/2fa/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId: parseInt(userId.value),
-        code: code.value
-      })
+    await authApi.verify2FA({
+      userId: userId.value,
+      code: code.value,
     })
-
-    const data = await response.json()
-
-    if (response.ok) {
-      // Store tokens
-      localStorage.setItem('accessToken', data.accessToken)
-      localStorage.setItem('refreshToken', data.refreshToken)
-      isSuccess.value = true
-    } else {
-      isError.value = true
-      errorMessage.value = data.message || 'Invalid verification code'
-    }
+    isSuccess.value = true
   } catch (error) {
     isError.value = true
-    errorMessage.value = 'An error occurred. Please try again.'
-    console.error('2FA verification error:', error)
+    if (error instanceof ApiError) {
+      errorMessage.value = error.message
+    } else {
+      errorMessage.value = 'An error occurred. Please try again.'
+    }
   } finally {
     isLoading.value = false
   }
 }
 
+const resetForm = () => {
+  isError.value = false
+  errorMessage.value = ''
+  code.value = ''
+}
+
 const redirectToApp = () => {
-  window.location.href = '/'
+  router.push('/')
 }
 
 const goBackToLogin = () => {
-  localStorage.removeItem('2faUserId')
   router.push('/login')
 }
 </script>
@@ -312,9 +308,8 @@ const goBackToLogin = () => {
   font-size: 14px;
 }
 
-.btn-retry {
-  background-color: #f44336;
-  color: white;
+.btn-retry,
+.btn-back {
   padding: 12px 30px;
   border: none;
   border-radius: 8px;
@@ -323,9 +318,24 @@ const goBackToLogin = () => {
   cursor: pointer;
   transition: background-color 0.3s;
   margin-top: 10px;
+  width: 100%;
+}
+
+.btn-retry {
+  background-color: #667eea;
+  color: white;
 }
 
 .btn-retry:hover {
-  background-color: #da190b;
+  background-color: #764ba2;
+}
+
+.btn-back {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.btn-back:hover {
+  background-color: #dee2e6;
 }
 </style>

@@ -14,7 +14,7 @@
         <h2>Email Verified!</h2>
         <p>Your email address has been successfully verified.</p>
         <p class="subtext">You can now log in with your account.</p>
-        <button @click="redirectToApp" class="btn-primary">Go to Login</button>
+        <button @click="redirectToLogin" class="btn-primary">Go to Login</button>
       </div>
 
       <!-- Error State -->
@@ -28,9 +28,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { authApi } from '../api/auth'
+import { ApiError } from '../types'
 
 const route = useRoute()
 const router = useRouter()
@@ -41,7 +43,7 @@ const isError = ref(false)
 const errorMessage = ref('')
 
 onMounted(async () => {
-  const token = route.query.token
+  const token = route.query.token as string | undefined
 
   if (!token) {
     isLoading.value = false
@@ -51,30 +53,22 @@ onMounted(async () => {
   }
 
   try {
-    const response = await fetch(`/api/auth/verify-email?token=${token}`)
-    const data = await response.json()
-
-    if (response.ok) {
-      isSuccess.value = true
-      isLoading.value = false
-    } else {
-      isError.value = true
-      isLoading.value = false
-      errorMessage.value = data.message || 'Invalid or expired verification token.'
-    }
+    await authApi.verifyEmail(token)
+    isSuccess.value = true
   } catch (error) {
     isError.value = true
+    if (error instanceof ApiError) {
+      errorMessage.value = error.message
+    } else {
+      errorMessage.value = 'Network error. Please try again later.'
+    }
+  } finally {
     isLoading.value = false
-    errorMessage.value = 'Network error. Please try again later.'
   }
 })
 
-const redirectToApp = () => {
-  router.push('/')
-}
-
 const redirectToLogin = () => {
-  router.push('/')
+  router.push('/login')
 }
 </script>
 

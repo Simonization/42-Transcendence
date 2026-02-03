@@ -112,3 +112,36 @@ Backend expects its `.env` at `/backend/.env` (copied during setup).
 - **Chat module** uses explicit command/query pattern (see `commands/` and `queries/` folders)
 - **WebSocket CORS** is currently permissive - needs restriction for production
 - **Self-signed SSL** certificates in `nginx/ssl/` for local HTTPS
+
+## Available Skills
+
+Skills are located in `.claude/skills/` and provide specialized guidance for different tasks.
+
+### Vue Development
+- **vue** - Vue 3 Composition API, script setup macros, reactivity system, built-in components (Transition, Teleport, Suspense, KeepAlive)
+- **vue-best-practices** - Comprehensive Vue.js patterns. ALWAYS use Composition API with `<script setup>` and TypeScript
+- **vue-router** - Vue Router 4 patterns, navigation guards, route params, lifecycle interactions
+- **vue-testing** - Vitest, Vue Test Utils, component testing, mocking patterns, Playwright E2E
+
+### Frontend Quality
+- **frontend-design** - Create distinctive, production-grade interfaces. Avoid generic AI aesthetics
+- **interface-design** - Dashboard, admin panel, app, and tool interface design (not marketing sites)
+- **web-design** - Web Interface Guidelines compliance, accessibility, UX audit
+- **code-review** - Frontend code review for .tsx, .ts, .js files
+- **component-refactoring** - Refactor high-complexity components, code splitting, hook extraction
+- **frontend-testing** - Vitest + Testing Library tests for components, hooks, utilities
+
+### Commands (in `.claude/commands/`)
+- **init** - Build UI with craft and consistency
+- **audit** - Check code against design system for violations
+- **extract** - Extract design patterns from existing code
+- **status** - Show current design system state
+
+### Other
+- **verifengineer** - Verification engineering skill
+
+## Documentation
+
+- `backend_architecture.md` - Full backend API documentation with all endpoints
+- `frontend_dev.md` - Frontend development guide and how to connect to backend
+- `weekly_planning.md` - Project timeline and task tracking
