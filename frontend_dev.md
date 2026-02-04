@@ -9,6 +9,16 @@
 ```
 frontend/
 ├── src/
+│   ├── api/                 # ✅ NEW: API service layer
+│   │   ├── index.ts         # Base fetch wrapper with auth & token refresh
+│   │   ├── auth.ts          # Auth API calls
+│   │   ├── users.ts         # Users API calls
+│   │   └── __tests__/       # API unit tests
+│   ├── types/               # ✅ NEW: TypeScript interfaces
+│   │   ├── index.ts         # Re-exports all types
+│   │   ├── api.ts           # API layer types
+│   │   ├── auth.ts          # Auth types
+│   │   └── user.ts          # User, Profile, Settings types
 │   ├── assets/              # CSS stylesheets
 │   │   ├── base.css         # Base CSS variables and resets
 │   │   ├── main.css         # Main app styles (dark theme with gradient)
@@ -30,14 +40,16 @@ frontend/
 │   │   ├── TwoFactorVerify.vue # 2FA verification page
 │   │   └── VerifyEmail.vue  # Email verification page
 │   ├── composables/         # Vue composition API utilities
-│   │   ├── useAuth.ts       # Authentication composable
-│   │   └── useTwoFactor.ts  # 2FA management composable
+│   │   ├── useAuth.ts       # Authentication composable (uses API layer)
+│   │   ├── useTwoFactor.ts  # 2FA management composable (uses API layer)
+│   │   └── __tests__/       # Composable unit tests
 │   ├── router/              # Vue Router configuration
 │   │   └── index.js         # Route definitions
 │   ├── App.vue              # Root component
 │   └── main.js              # Application entry point
 ├── public/                  # Static assets
 ├── vite.config.js           # Vite build configuration
+├── vitest.config.ts         # ✅ NEW: Vitest test configuration
 ├── package.json             # Dependencies
 └── index.html               # HTML entry point
 ```
@@ -88,8 +100,10 @@ frontend/
 ### useAuth.ts
 ```typescript
 - isAuthenticated: ref<boolean>
-- checkAuth(): Promise<boolean>  // Validates token via /api/users/me
-- logout(): Promise<void>        // Calls /api/auth/logout, clears storage
+- user: ref<User | null>
+- isLoading: ref<boolean>
+- checkAuth(): Promise<boolean>  // Validates token via usersApi.getMe()
+- logout(): Promise<void>        // Calls authApi.logout(), clears storage
 ```
 
 ### useTwoFactor.ts
@@ -99,29 +113,86 @@ frontend/
 - message: ref<string>
 - showForm: ref<boolean>
 - code: ref<string>
+- isFetching: ref<boolean>
 
 Methods:
-- fetchStatus()    // GET /api/users/me
-- enable()         // POST /api/auth/2fa/enable
-- confirm()        // POST /api/auth/2fa/confirm
-- disable()        // POST /api/auth/2fa/disable
+- fetchStatus()    // Uses usersApi.getMe()
+- enable()         // Uses authApi.enable2FA()
+- confirm()        // Uses authApi.confirm2FA()
+- disable()        // Uses authApi.disable2FA()
 ```
 
 ---
 
-## 5. CURRENT API CALLS
+## 5. API SERVICE LAYER (Phase 1 Complete ✅)
 
-Direct `fetch()` calls with pattern:
-```javascript
-const res = await fetch('/api/endpoint', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${localStorage.accessToken}`
-  },
-  body: JSON.stringify(data)
-});
+### Directory Structure
 ```
+frontend/src/
+├── api/
+│   ├── index.ts          # Base API client with auth & token refresh
+│   ├── auth.ts           # Auth API (login, register, 2FA, OAuth)
+│   └── users.ts          # Users API (profile, settings)
+├── types/
+│   ├── index.ts          # Re-exports all types
+│   ├── api.ts            # ApiError, RequestOptions, pagination
+│   ├── auth.ts           # Auth request/response types
+│   └── user.ts           # User, Profile, Settings types
+```
+
+### Base API Client (`api/index.ts`)
+- Generic fetch wrapper with authentication
+- Automatic token refresh on 401
+- Race condition prevention for concurrent requests
+- Token storage management (localStorage)
+
+### Auth API (`api/auth.ts`)
+```typescript
+authApi.login(data)           // POST /auth/login
+authApi.register(data)        // POST /auth/register
+authApi.logout()              // POST /auth/logout
+authApi.refresh(token)        // POST /auth/refresh
+authApi.verifyEmail(token)    // GET /auth/verify-email
+authApi.enable2FA()           // POST /auth/2fa/enable
+authApi.confirm2FA(data)      // POST /auth/2fa/confirm
+authApi.verify2FA(data)       // POST /auth/2fa/verify
+authApi.disable2FA()          // POST /auth/2fa/disable
+authApi.googleLogin()         // Redirect to /api/auth/google
+authApi.handleOAuthCallback() // Store OAuth tokens
+```
+
+### Users API (`api/users.ts`)
+```typescript
+usersApi.getMe()                      // GET /users/me
+usersApi.updateProfile(userId, data)  // PATCH /users/:id/profile
+usersApi.updateSettings(userId, data) // PATCH /users/:id/settings
+usersApi.deleteAccount(userId)        // DELETE /users/:id
+```
+
+---
+
+## 6. TESTING INFRASTRUCTURE ✅
+
+### Setup
+```bash
+npm test              # Run tests in watch mode
+npm run test:ui       # Run with Vitest UI
+npm run test:coverage # Generate coverage report
+```
+
+### Test Files
+```
+frontend/src/
+├── api/__tests__/
+│   ├── index.spec.ts        # API client tests (22 tests)
+│   ├── auth.spec.ts         # Auth API tests (14 tests)
+│   └── users.spec.ts        # Users API tests (7 tests)
+├── composables/__tests__/
+│   ├── useAuth.spec.ts      # Auth composable tests (7 tests)
+│   └── useTwoFactor.spec.ts # 2FA composable tests (14 tests)
+```
+
+### Coverage: 64 tests, all passing ✅
 
 ---
 
@@ -688,34 +759,46 @@ const routes = [
 
 ---
 
-## 7. IMPLEMENTATION ORDER (Recommended)
+## 7. IMPLEMENTATION ORDER
 
-### Phase 1: Foundation
-1. Create `/src/api/index.ts` (base API wrapper)
-2. Create `/src/types/` folder with TypeScript interfaces
-3. Refactor existing components to use new API layer
+### Phase 1: Foundation ✅ COMPLETE
+1. ✅ Create `/src/api/index.ts` (base API wrapper with token refresh)
+2. ✅ Create `/src/types/` folder with TypeScript interfaces
+3. ✅ Refactor existing composables to use new API layer
+4. ✅ Set up Vitest testing infrastructure
+5. ✅ Write unit tests (64 tests)
 
-### Phase 2: User Features
-4. Create `/src/api/users.ts`
-5. Build Profile.vue page
-6. Build Settings.vue page
+### Phase 2: Complete Auth Module Connection (IN PROGRESS)
+6. Update LoginPage.vue to use authApi
+7. Update Dashboard.vue to use usersApi
+8. Update TwoFactorVerify.vue to use authApi.verify2FA
+9. Build Profile.vue page (edit display name, bio, avatar)
+10. Build Settings.vue page (language, theme, timezone)
+11. Add routes for /profile and /settings
 
 ### Phase 3: Social Features (Requires backend import)
-7. Import FriendsModule in backend's app.module.ts
-8. Create `/src/api/friends.ts`
-9. Build Friends.vue page and components
+12. Import FriendsModule in backend's app.module.ts
+13. Create `/src/api/friends.ts`
+14. Create `/src/types/friend.ts`
+15. Build Friends.vue page with tabs: Friends | Requests | Blocked
+16. Build FriendsList.vue, FriendRequests.vue, BlockedUsers.vue components
+17. Add user search functionality
+18. Add /friends route
 
 ### Phase 4: Chat (Requires backend import)
-10. Import ChatModule in backend's app.module.ts
-11. Create `/src/api/chat.ts`
-12. Create `/src/composables/useChat.ts`
-13. Build Chat.vue page and components
+19. Import ChatModule in backend's app.module.ts
+20. Create `/src/api/chat.ts`
+21. Create `/src/types/chat.ts`
+22. Create `/src/composables/useChat.ts` (WebSocket)
+23. Build Chat.vue page with sidebar and chat window
+24. Build ChatSidebar.vue, ChatWindow.vue, MessageInput.vue components
+25. Add /chat and /chat/:id routes
 
 ### Phase 5: Polish
-14. Add toast notifications system
-15. Add loading states consistency
-16. Error boundary components
-17. Token refresh interceptor
+26. Add toast notifications system
+27. Add loading states consistency
+28. Error boundary components
+29. Add common UI components (Modal, LoadingSpinner, etc.)
 
 ---
 

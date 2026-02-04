@@ -210,6 +210,10 @@ export async function api<T>(
     if (retryResult !== null) {
       return retryResult;
     }
+    // Refresh failed and user was redirected to login
+    // Return a rejected promise to signal the auth failure without throwing
+    // (The redirect is already in progress)
+    return Promise.reject(new ApiError(401, 'SESSION_EXPIRED', 'Session expired'));
   }
 
   // Parse error response
@@ -228,32 +232,4 @@ export async function api<T>(
     errorData.error || 'UNKNOWN_ERROR',
     errorData.message
   );
-}
-
-/**
- * Convenience method for GET requests
- */
-export function apiGet<T>(endpoint: string, options?: Omit<RequestOptions, 'method'>): Promise<T> {
-  return api<T>(endpoint, { ...options, method: 'GET' });
-}
-
-/**
- * Convenience method for POST requests
- */
-export function apiPost<T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
-  return api<T>(endpoint, { ...options, method: 'POST', body });
-}
-
-/**
- * Convenience method for PATCH requests
- */
-export function apiPatch<T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
-  return api<T>(endpoint, { ...options, method: 'PATCH', body });
-}
-
-/**
- * Convenience method for DELETE requests
- */
-export function apiDelete<T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
-  return api<T>(endpoint, { ...options, method: 'DELETE', body });
 }
