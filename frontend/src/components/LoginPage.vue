@@ -210,7 +210,7 @@ const toggleMode = () => {
         <span>OR</span>
       </div>
 
-      <a href="http://localhost/api/auth/google" class="google-btn">
+      <a href="/api/auth/google" class="google-btn">
         <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" />
         {{ isLogin ? 'Sign in with Google' : 'Sign in with Google' }}
       </a>
