@@ -2,6 +2,7 @@
 
 ## Description
 esportendence: A tournament organizer for esports competitions...
+https://docs.google.com/document/d/1zdf079lEJqqbx9p4P-mLMo3ZPIluBtxt0sC1ao2E4Ak
 
 ## Team Information
 | Member | Role(s) | Responsibilities |
@@ -13,9 +14,9 @@ esportendence: A tournament organizer for esports competitions...
 
 ## Project Management
 - **Communication:** Whatsapp
-- **Task tracking:** Google Sheet
-- **Meetings:** Every Friday at 14h, in person
-- **Branch strategy:** feature branches → PR → main
+- **Task tracking:** Google Sheet: https://docs.google.com/spreadsheets/d/1_n5ql6kverWHChRL5XJNWhIwYxnunGBGKnGAgUoVzfk
+- **Meetings:** Every Friday at 14h, in person 
+- **Branch strategy:** feature branches → PR → main https://github.com/Wicoro/42-Transcendence
 
 ## Technical Stack
 | Layer | Technology | Justification |
