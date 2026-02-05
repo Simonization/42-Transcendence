@@ -1,0 +1,158 @@
+/**
+ * Stellar Theme - Clean / White / Futuristic
+ * Inspired by Quantum Break Menu UI
+ *
+ * Visual Identity:
+ * - Ultra-clean white/light gray backgrounds
+ * - Orange accent for selection and active states
+ * - Black text with gray secondary
+ * - Minimal shadows, relies on spacing
+ * - Tesla/SpaceX/Space shuttle vibes
+ */
+
+[data-theme="stellar"] {
+  /* ===== BACKGROUND COLORS ===== */
+  --bg-primary: #f8f9fa;        /* Main background - off-white */
+  --bg-secondary: #ffffff;       /* Card/elevated surfaces */
+  --bg-tertiary: #f1f3f5;       /* Subtle sections */
+  --bg-elevated: #ffffff;        /* Modals, dropdowns */
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.08);
+  --bg-selected: rgba(255, 106, 0, 0.08);
+
+  /* ===== TEXT COLORS ===== */
+  --text-primary: #1a1a1a;       /* Main text - near black */
+  --text-secondary: #6b7280;     /* Secondary text - gray */
+  --text-tertiary: #9ca3af;      /* Disabled, hints */
+  --text-inverse: #ffffff;       /* Text on dark/accent backgrounds */
+  --text-on-accent: #ffffff;     /* Text on accent color */
+
+  /* ===== ACCENT COLORS ===== */
+  /* Primary: Orange (Quantum Break selection color) */
+  --accent-primary: #ff6a00;
+  --accent-primary-hover: #e65c00;
+  --accent-primary-active: #cc5200;
+  --accent-primary-subtle: rgba(255, 106, 0, 0.12);
+  --accent-primary-glow: rgba(255, 106, 0, 0.4);
+
+  /* Secondary accents (from Act Colors) */
+  --accent-purple: #7c3aed;
+  --accent-cyan: #00b4d8;
+  --accent-teal: #14b8a6;
+  --accent-magenta: #a31564;
+
+  /* ===== STATUS COLORS ===== */
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.1);
+  --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-error: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+  --color-info: #3b82f6;
+  --color-info-bg: rgba(59, 130, 246, 0.1);
+
+  /* ===== BORDER COLORS ===== */
+  --border-default: #e5e7eb;
+  --border-subtle: #f3f4f6;
+  --border-strong: #d1d5db;
+  --border-focus: var(--accent-primary);
+  --border-error: var(--color-error);
+
+  /* ===== SHADOW (minimal for clean look) ===== */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.06), 0 10px 10px rgba(0, 0, 0, 0.03);
+  --shadow-glow: 0 0 20px var(--accent-primary-glow);
+  --shadow-none: none;
+
+  /* ===== SELECTION INDICATOR (Quantum Break arrow) ===== */
+  --selection-indicator: "▶";
+  --selection-indicator-color: var(--accent-primary);
+
+  /* ===== TIMELINE COLORS (for progress visualization) ===== */
+  --timeline-line: #d1d5db;
+  --timeline-line-active: var(--accent-primary);
+  --timeline-dot: #9ca3af;
+  --timeline-dot-active: var(--accent-primary);
+  --timeline-dot-complete: #10b981;
+  --timeline-wave: rgba(0, 0, 0, 0.06);
+
+  /* ===== FORM ELEMENTS ===== */
+  --input-bg: #ffffff;
+  --input-border: var(--border-default);
+  --input-border-hover: var(--border-strong);
+  --input-border-focus: var(--accent-primary);
+  --input-placeholder: var(--text-tertiary);
+
+  /* ===== SCROLLBAR ===== */
+  --scrollbar-track: var(--bg-tertiary);
+  --scrollbar-thumb: #d1d5db;
+  --scrollbar-thumb-hover: #9ca3af;
+
+  /* ===== COMPONENT-SPECIFIC ===== */
+  /* Navigation */
+  --nav-item-color: var(--text-primary);
+  --nav-item-color-hover: var(--text-primary);
+  --nav-item-color-active: var(--accent-primary);
+  --nav-item-bg-hover: var(--bg-hover);
+  --nav-item-bg-active: var(--bg-selected);
+
+  /* Cards */
+  --card-bg: var(--bg-secondary);
+  --card-border: var(--border-subtle);
+  --card-shadow: var(--shadow-sm);
+
+  /* Buttons */
+  --btn-primary-bg: var(--accent-primary);
+  --btn-primary-bg-hover: var(--accent-primary-hover);
+  --btn-primary-text: var(--text-on-accent);
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: var(--border-strong);
+  --btn-secondary-text: var(--text-primary);
+  --btn-ghost-text: var(--text-secondary);
+  --btn-ghost-text-hover: var(--text-primary);
+
+  /* Progress */
+  --progress-bg: var(--bg-tertiary);
+  --progress-fill: var(--accent-primary);
+  --progress-text: var(--text-primary);
+}
+
+/* ===== STELLAR THEME SPECIFIC STYLES ===== */
+[data-theme="stellar"] {
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+[data-theme="stellar"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="stellar"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+[data-theme="stellar"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-full);
+}
+
+[data-theme="stellar"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Selection highlight */
+[data-theme="stellar"] ::selection {
+  background: var(--accent-primary-subtle);
+  color: var(--text-primary);
+}
+
+/* Focus outline style */
+[data-theme="stellar"] :focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
