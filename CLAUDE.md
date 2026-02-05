@@ -15,6 +15,64 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Real-time:** Socket.io
 - **Infrastructure:** Docker Compose, Nginx reverse proxy
 
+## Claude Code Workflow: Ask, Plan, Build
+
+Before starting ANY planning or coding work, **Claude Code MUST ask clarifying questions** to understand the full scope and constraints.
+
+### Step 1: Ask Clarifying Questions (REQUIRED)
+
+Do NOT assume you understand the task. Ask the user:
+
+- **What is the goal?** (What should users be able to do after this is done?)
+- **What are the constraints?** (Browser support, performance, accessibility requirements, timeframe?)
+- **What's in scope vs out of scope?** (Related features to avoid, existing patterns to follow?)
+- **What does success look like?** (How will we know this is done?)
+- **Are there any blocking dependencies?** (Other PRs, backend work, design decisions?)
+
+Use `AskUserQuestion` tool if the task is ambiguous. Even if you think you know what's needed, ask. The 2 minutes spent here saves 30 minutes of rework.
+
+### Step 2: Document Learnings (REQUIRED)
+
+If during implementation you discover **repeatable patterns** or **structural knowledge** that would help future work:
+
+**Add to CLAUDE.md only if:**
+- It's fundamental project policy or architectural decision
+- It affects how ALL future work should be done
+- It's concise (< 5 sentences)
+
+**Add to other .md files if:**
+- It's a pattern for a specific module (→ `frontend/docs/modules.md`)
+- It's a component pattern (→ `frontend/docs/components.md`)
+- It's architectural (→ `frontend/docs/architecture.md`)
+- It's a how-to guide (→ `frontend/docs/getting-started.md`)
+- It's a new best practice for the codebase (→ create new file in `/.claude/docs/`)
+- It's a repeatable workflow or process (→ `/.claude/docs/`)
+
+**Example learnings to document:**
+- "All API errors should include a type code for frontend routing"
+- "Composables that manage async state should follow [pattern]"
+- "Auth pages should be theme-agnostic using hardcoded dark colors" ← (then fix this!)
+- "Form validation should happen in composables, not components"
+- "Chat messages render newest-first from API, then reverse for display"
+
+### Step 3: Plan Before Coding
+
+Once you understand the task fully:
+
+1. **Read relevant documentation** (listed in Documentation Index below)
+2. **Use EnterPlanMode** if the task is non-trivial (> 1 file change, new feature, architectural decision)
+3. **Review related code** to understand existing patterns
+4. **Identify blockers** before writing code
+
+### Step 4: Commit with Context
+
+Every commit message should answer:
+- **What** changed? (Be specific: "Fix auth guard to validate token, not just check localStorage")
+- **Why** did it change? (The reason or bug it fixes)
+- **Any known issues** or follow-up work needed?
+
+---
+
 ## Build & Run Commands
 
 ### Docker (Primary Development)
