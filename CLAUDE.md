@@ -231,6 +231,7 @@ All documentation is organized in dedicated directories (no scattered .md files 
 ### Internal Project Planning (`/.claude/docs`, gitignored)
 - **`implementation_plan.md`** - Project implementation roadmap and feature planning
 - **`weekly_planning.md`** - Weekly tasks and progress tracking
+- **`RECOMMENDED_SKILLS.md`** - Skills that should be created/enhanced for frontend (prioritized by impact)
 
 ### Skills & References (`/.claude/skills/`)
 Auto-loaded by Claude Code when using skills like `vue-best-practices`, `code-review`, `web-design`, etc.
