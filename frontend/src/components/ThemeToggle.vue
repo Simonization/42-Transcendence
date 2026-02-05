@@ -16,6 +16,7 @@ const { theme, toggleTheme, themeName } = useTheme()
     @click="toggleTheme"
     :title="`Switch to ${theme === 'stellar' ? 'Dragon' : 'Stellar'} theme`"
     :aria-label="`Current theme: ${themeName}. Click to switch.`"
+    :aria-pressed="theme === 'dragon'"
   >
     <span class="theme-toggle-track">
       <span class="theme-toggle-indicator" :class="theme">

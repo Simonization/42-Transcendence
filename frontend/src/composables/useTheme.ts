@@ -8,12 +8,30 @@ import { ref, computed, watchEffect } from 'vue'
 
 export type ThemeMode = 'stellar' | 'dragon'
 
+const VALID_THEMES: ThemeMode[] = ['stellar', 'dragon']
+
+/**
+ * Get stored theme from localStorage with validation
+ */
+const getStoredTheme = (): ThemeMode => {
+  if (typeof localStorage === 'undefined') return 'stellar'
+  const stored = localStorage.getItem('theme')
+  return stored && VALID_THEMES.includes(stored as ThemeMode)
+    ? (stored as ThemeMode)
+    : 'stellar'
+}
+
+/**
+ * Apply theme to document element
+ */
+function applyThemeToDocument(theme: ThemeMode): void {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute('data-theme', theme)
+  document.documentElement.style.colorScheme = theme === 'dragon' ? 'dark' : 'light'
+}
+
 // Global reactive state (shared across components)
-const currentTheme = ref<ThemeMode>(
-  (typeof localStorage !== 'undefined'
-    ? localStorage.getItem('theme') as ThemeMode
-    : null) || 'stellar'
-)
+const currentTheme = ref<ThemeMode>(getStoredTheme())
 
 export function useTheme() {
   /**
@@ -49,12 +67,7 @@ export function useTheme() {
    * Apply theme to document on change
    */
   watchEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', currentTheme.value)
-      // Also set color-scheme for native elements
-      document.documentElement.style.colorScheme =
-        currentTheme.value === 'dragon' ? 'dark' : 'light'
-    }
+    applyThemeToDocument(currentTheme.value)
   })
 
   return {
@@ -71,8 +84,5 @@ export function useTheme() {
  * Call this in main.ts or App.vue setup
  */
 export function initTheme(): void {
-  const stored = localStorage.getItem('theme') as ThemeMode | null
-  const theme = stored || 'stellar'
-  document.documentElement.setAttribute('data-theme', theme)
-  document.documentElement.style.colorScheme = theme === 'dragon' ? 'dark' : 'light'
+  applyThemeToDocument(getStoredTheme())
 }
