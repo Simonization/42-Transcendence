@@ -140,6 +140,76 @@ Skills are located in `.claude/skills/` and provide specialized guidance for dif
 ### Other
 - **verifengineer** - Verification engineering skill
 
+## Subagent Strategy (Token Optimization)
+
+Claude Code can launch specialized subagents for complex multi-step tasks. **Choose the model strategically based on task type** to minimize token usage while maintaining quality.
+
+### Model Selection by Task Type
+
+| Task Type | Recommended Model | Why | Example |
+|-----------|-------------------|-----|---------|
+| **Planning & Architecture** | `opus` | Complex reasoning, tradeoffs, system design | "Design auth flow", "Plan refactoring approach" |
+| **Implementation (coding)** | `sonnet` | Good balance of capability and cost for most code work | "Add new feature", "Fix bug in component" |
+| **Documentation & Summaries** | `haiku` | Fast, cheap, sufficient for synthesis and writing | "Generate API docs", "Summarize findings" |
+| **Code Review & Analysis** | `sonnet` or `haiku` | Haiku for quick reviews; Sonnet for deep analysis | "Review PR code", "Analyze test coverage" |
+| **Research & Exploration** | `sonnet` | Needs strong reasoning to navigate unknown codebases | "Find where errors are handled" |
+| **Git/CLI Operations** | `haiku` | Simple commands, no reasoning needed | "Commit changes", "Create branches" |
+
+### Token-Saving Best Practices
+
+1. **Don't make agents re-read files**
+   - Main agent reads docs once and summarizes for subagent
+   - Pass specific file paths, not entire repo exploration
+   - Example: Instead of "explore the codebase", give: "Read `/frontend/docs/architecture.md` and `/frontend/docs/components.md`, then..."
+
+2. **Leverage existing documentation**
+   - Subagents can read `/frontend/docs/` files in parallel (no cost to main agent context)
+   - Use documentation to provide context without expanding prompt
+   - Example: `"You have access to /frontend/docs/modules.md which documents the API layer. Use it as reference while..."`
+
+3. **Use background execution for long tasks**
+   - `run_in_background: true` for tasks > 2 minutes
+   - Main agent continues while subagent works
+   - Check progress with `TaskOutput` if needed
+
+4. **Batch related work in one subagent**
+   - Instead of 3 separate agents for 3 files, use 1 agent to process all 3
+   - Same context setup cost, more efficient
+   - Only launch multiple agents for truly parallel, independent tasks
+
+### Example Subagent Launches
+
+**Efficient - Multiple related tasks in one Haiku agent:**
+```
+Task("Generate API documentation",
+     subagent_type="general-purpose",
+     model="haiku",  # Sufficient for synthesis
+     prompt="Read /docs/backend_architecture.md and create OpenAPI docs...")
+```
+
+**Efficient - Parallel Sonnet agents for independent coding tasks:**
+```
+Multiple Task() calls in same message:
+- Agent 1 (Sonnet): "Implement auth guard"
+- Agent 2 (Sonnet): "Add password validation"
+- Agent 3 (Haiku): "Update README with new auth flow"
+```
+
+**Inefficient - Re-reading entire repo:**
+```
+❌ Task("Analyze frontend", prompt="Read all frontend files and...")
+✓ Task("Analyze frontend", prompt="Read /frontend/docs/code-quality-report.md for context, then analyze useChat.ts...")
+```
+
+### When to Use Each Subagent Type
+
+- **`general-purpose`** - Most flexible, use for research, code work, analysis
+- **`Explore`** - Finding patterns across codebase when no docs exist yet
+- **`Plan`** - Architectural planning before implementation
+- **`Bash`** - Git operations, running commands (consider just doing in main agent for simple tasks)
+
+---
+
 ## Documentation Index
 
 All documentation is organized in dedicated directories (no scattered .md files at root level).
