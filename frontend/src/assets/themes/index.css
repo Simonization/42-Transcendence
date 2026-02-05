@@ -74,6 +74,17 @@
   background: var(--bg-hover);
 }
 
+.btn-danger {
+  background: var(--color-error);
+  color: white;
+  border-color: var(--color-error);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-error);
+  opacity: 0.9;
+}
+
 /* Button sizes */
 .btn-sm {
   padding: var(--space-1) var(--space-3);
@@ -321,3 +332,58 @@
 .bg-secondary { background: var(--bg-secondary); }
 .bg-tertiary { background: var(--bg-tertiary); }
 .bg-elevated { background: var(--bg-elevated); }
+
+/* ---------- ALERTS ---------- */
+.alert {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+.alert-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+}
+
+.alert-error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+}
+
+.alert-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+}
+
+.alert-info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid var(--color-info);
+}
+
+/* ---------- FORM UTILITIES ---------- */
+.form-group {
+  margin-bottom: var(--space-4);
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- LINKS ---------- */
+.link {
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}

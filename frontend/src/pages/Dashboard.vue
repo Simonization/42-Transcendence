@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
@@ -9,31 +9,14 @@ import TwoFactorCard from '../components/dashboard/TwoFactorCard.vue'
 import ProfileCard from '../components/dashboard/ProfileCard.vue'
 
 const router = useRouter()
-const { logout, checkAuth } = useAuth()
-const user = ref(null) 
+const { logout, checkAuth, user } = useAuth()
 
 onMounted(async () => {
   const isValid = await checkAuth()
   if (!isValid) {
     router.push('/login')
-  } else {
-    await fetchUserProfile()
   }
 })
-
-const fetchUserProfile = async () => {
-  const token = localStorage.getItem('accessToken')
-  try {
-    const res = await fetch('/api/users/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (res.ok) {
-      user.value = await res.json()
-    }
-  } catch (e) {
-    console.error('User fetch error', e)
-  }
-}
 </script>
 
 <template>
