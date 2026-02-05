@@ -24,6 +24,28 @@ export {
   type SupportedLanguage,
 } from './user';
 
+// Friend types
+export {
+  type Friend,
+  type Block,
+  type AddFriendDto,
+  type RemoveFriendDto,
+  type BlockUserDto,
+  type UnblockUserDto,
+  FriendStatus,
+} from './friend';
+
+// Chat types
+export {
+  type ChatRoom,
+  type Message,
+  type ChatParticipant,
+  type CreateRoomDto,
+  type SendMessageDto,
+  type EditMessageDto,
+  ChatType,
+} from './chat';
+
 // Auth types
 export {
   type LoginRequest,

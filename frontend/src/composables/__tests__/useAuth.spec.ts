@@ -1,21 +1,16 @@
 /**
  * useAuth Composable Unit Tests
- * Tests for authentication state management
+ * Tests for authentication state management (singleton pattern)
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { useAuth } from '../useAuth'
+
+// We need to re-import the module fresh for each test to reset singleton state
+// Since the refs are module-level, we use vi.resetModules()
+
 import * as usersApiModule from '../../api/users'
 import * as authApiModule from '../../api/auth'
 import * as apiIndexModule from '../../api/index'
-
-// Mock the router
-const mockPush = vi.fn()
-vi.mock('vue-router', () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
-}))
 
 // Mock the API modules
 vi.mock('../../api/users', () => ({
@@ -39,9 +34,14 @@ const mockLogout = vi.mocked(authApiModule.authApi.logout)
 const mockGetAccessToken = vi.mocked(apiIndexModule.getAccessToken)
 
 describe('useAuth', () => {
-  beforeEach(() => {
+  let useAuth: typeof import('../useAuth').useAuth
+
+  beforeEach(async () => {
     vi.clearAllMocks()
-    mockPush.mockClear()
+    // Reset modules to get fresh singleton state
+    vi.resetModules()
+    const mod = await import('../useAuth')
+    useAuth = mod.useAuth
   })
 
   afterEach(() => {
@@ -134,37 +134,39 @@ describe('useAuth', () => {
   })
 
   describe('logout', () => {
-    it('should logout and redirect to login page', async () => {
+    it('should logout and clear state', async () => {
       mockLogout.mockResolvedValueOnce({ message: 'Logged out' })
 
-      const { logout, isAuthenticated, user } = useAuth()
+      // First authenticate
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce({ id: 1 } as any)
 
-      // Set some state first
-      isAuthenticated.value = true
-      user.value = { id: 1 } as any
+      const { checkAuth, logout, isAuthenticated, user } = useAuth()
+      await checkAuth()
+
+      expect(isAuthenticated.value).toBe(true)
 
       await logout()
 
       expect(mockLogout).toHaveBeenCalled()
       expect(isAuthenticated.value).toBe(false)
       expect(user.value).toBeNull()
-      expect(mockPush).toHaveBeenCalledWith('/login')
     })
 
-    it('should clear state and redirect even when logout fails', async () => {
+    it('should clear state even when logout fails', async () => {
       mockLogout.mockRejectedValueOnce(new Error('Network error'))
 
-      const { logout, isAuthenticated, user } = useAuth()
+      // First authenticate
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce({ id: 1 } as any)
 
-      // Set some state first
-      isAuthenticated.value = true
-      user.value = { id: 1 } as any
+      const { checkAuth, logout, isAuthenticated, user } = useAuth()
+      await checkAuth()
 
       await logout()
 
       expect(isAuthenticated.value).toBe(false)
       expect(user.value).toBeNull()
-      expect(mockPush).toHaveBeenCalledWith('/login')
     })
 
     it('should set loading state during logout', async () => {
@@ -184,6 +186,23 @@ describe('useAuth', () => {
 
       await promise
       expect(isLoading.value).toBe(false)
+    })
+  })
+
+  describe('singleton behavior', () => {
+    it('should share state between multiple calls', async () => {
+      const mockUser = { id: 1, username: 'test' } as any
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce(mockUser)
+
+      const auth1 = useAuth()
+      const auth2 = useAuth()
+
+      await auth1.checkAuth()
+
+      // Both instances should see the same state
+      expect(auth2.isAuthenticated.value).toBe(true)
+      expect(auth2.user.value).toEqual(mockUser)
     })
   })
 })

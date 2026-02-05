@@ -1,21 +1,20 @@
 /**
- * Authentication Composable
- * Manages authentication state and actions
+ * Authentication Composable (Singleton)
+ * Module-level refs ensure state is shared across all components
  */
 
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, readonly } from 'vue'
 import { usersApi } from '../api/users'
 import { authApi } from '../api/auth'
 import { getAccessToken } from '../api'
 import type { User } from '../types'
 
-export function useAuth() {
-  const router = useRouter()
-  const isAuthenticated = ref(false)
-  const user = ref<User | null>(null)
-  const isLoading = ref(false)
+// Module-level shared state (singleton)
+const user = ref<User | null>(null)
+const isAuthenticated = ref(false)
+const isLoading = ref(false)
 
+export function useAuth() {
   /**
    * Check if user is authenticated by validating token with backend
    */
@@ -43,7 +42,8 @@ export function useAuth() {
   }
 
   /**
-   * Logout current user and redirect to login
+   * Logout current user and clear state
+   * Caller is responsible for navigation after logout
    */
   const logout = async (): Promise<void> => {
     isLoading.value = true
@@ -55,14 +55,13 @@ export function useAuth() {
       isAuthenticated.value = false
       user.value = null
       isLoading.value = false
-      router.push('/login')
     }
   }
 
   return {
-    isAuthenticated,
-    user,
-    isLoading,
+    isAuthenticated: readonly(isAuthenticated),
+    user: readonly(user),
+    isLoading: readonly(isLoading),
     checkAuth,
     logout,
   }

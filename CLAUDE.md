@@ -140,8 +140,28 @@ Skills are located in `.claude/skills/` and provide specialized guidance for dif
 ### Other
 - **verifengineer** - Verification engineering skill
 
-## Documentation
+## Documentation Index
 
-- `backend_architecture.md` - Full backend API documentation with all endpoints
-- `frontend_dev.md` - Frontend development guide and how to connect to backend
-- `weekly_planning.md` - Project timeline and task tracking
+All documentation is organized in dedicated directories (no scattered .md files at root level).
+
+### Project-Level Documentation (`/docs`)
+- **`backend_architecture.md`** - Complete backend API documentation with all endpoints, modules, entities, and flows
+- **`TYPE_SYSTEM_GUIDE.md`** - Type system design, conventions, and patterns used across frontend and backend
+
+### Frontend Documentation (`/frontend/docs`)
+- **`frontend_dev.md`** - Frontend development setup, workflows, and connection to backend
+- **`architecture.md`** - Frontend dependency graphs, data flow, route table, architectural decisions
+- **`modules.md`** - API layer, type system, composables, theme system reference
+- **`components.md`** - Every component documented: props, events, slots, usage patterns
+- **`getting-started.md`** - New contributor onboarding guide with key patterns and common gotchas
+- **`file-index.md`** - Complete file inventory with line counts and cross-references
+- **`code-quality-report.md`** - Code review findings: Vue best practices, TypeScript quality, bug risks, test gaps
+- **`design-ux-report.md`** - Design system audit, accessibility review, responsive assessment, token usage analysis
+
+### Internal Project Planning (`/.claude/docs`, gitignored)
+- **`implementation_plan.md`** - Project implementation roadmap and feature planning
+- **`weekly_planning.md`** - Weekly tasks and progress tracking
+
+### Skills & References (`/.claude/skills/`)
+Auto-loaded by Claude Code when using skills like `vue-best-practices`, `code-review`, `web-design`, etc.
+Each skill includes SKILL.md and reference guides for specific topics.
