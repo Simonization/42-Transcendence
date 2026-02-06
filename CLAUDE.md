@@ -202,16 +202,52 @@ Skills are located in `.claude/skills/` and provide specialized guidance for dif
 
 Claude Code can launch specialized subagents for complex multi-step tasks. **Choose the model strategically based on task type** to minimize token usage while maintaining quality.
 
+### Available Models
+
+| Alias | Model | Status | Best For |
+|-------|-------|--------|----------|
+| `haiku` | Haiku 4.5 | ✓ Latest | Fast, efficient tasks (docs, git, simple operations) |
+| `sonnet` | Sonnet 4.5 | ✓ Latest | Balanced capability/cost (coding, reviews, research) |
+| `opus` | **Opus 4.6** | ✓ Latest, most capable | Complex reasoning (planning, architecture, deep analysis) |
+| `opusplan` | Opus → Sonnet | ✓ Hybrid | Uses Opus during planning, switches to Sonnet for execution (token-efficient) |
+
 ### Model Selection by Task Type
 
 | Task Type | Recommended Model | Why | Example |
 |-----------|-------------------|-----|---------|
-| **Planning & Architecture** | `opus` | Complex reasoning, tradeoffs, system design | "Design auth flow", "Plan refactoring approach" |
+| **Planning & Architecture** | `opus` or `opusplan` | Complex reasoning, tradeoffs, system design | "Design auth flow", "Plan refactoring approach" |
 | **Implementation (coding)** | `sonnet` | Good balance of capability and cost for most code work | "Add new feature", "Fix bug in component" |
 | **Documentation & Summaries** | `haiku` | Fast, cheap, sufficient for synthesis and writing | "Generate API docs", "Summarize findings" |
 | **Code Review & Analysis** | `sonnet` or `haiku` | Haiku for quick reviews; Sonnet for deep analysis | "Review PR code", "Analyze test coverage" |
 | **Research & Exploration** | `sonnet` | Needs strong reasoning to navigate unknown codebases | "Find where errors are handled" |
 | **Git/CLI Operations** | `haiku` | Simple commands, no reasoning needed | "Commit changes", "Create branches" |
+
+### Controlling Reasoning Effort (Opus 4.6 Only)
+
+Opus 4.6 supports **adaptive reasoning** with three effort levels. This controls how much internal reasoning Claude allocates to the task:
+
+| Effort Level | Speed | Token Cost | Best For |
+|--------------|-------|-----------|----------|
+| `low` | Fast | Cheapest | Straightforward tasks, simple operations |
+| `medium` | Balanced | Moderate | Most common tasks (good default) |
+| `high` | Slower | More expensive | Complex problems, deep analysis (default in Claude Code) |
+
+**How to set effort level:**
+
+1. **In CLI:** `/model` command → use arrow keys to adjust effort slider when selecting Opus 4.6
+2. **Environment variable:** `CLAUDE_CODE_EFFORT_LEVEL=low|medium|high`
+3. **Settings file** (`.claude/settings.json`):
+   ```json
+   {
+     "model": "opus",
+     "effortLevel": "medium"
+   }
+   ```
+
+**Toggle extended thinking on/off:**
+- `Alt+T` during a session to disable/enable thinking
+- `Ctrl+O` to view Claude's internal reasoning (verbose mode, shows as gray italic text)
+- Disable entirely: `MAX_THINKING_TOKENS=0` environment variable
 
 ### Token-Saving Best Practices
 
@@ -237,26 +273,43 @@ Claude Code can launch specialized subagents for complex multi-step tasks. **Cho
 
 ### Example Subagent Launches
 
-**Efficient - Multiple related tasks in one Haiku agent:**
+**Efficient - Planning with Opus, execution with Sonnet:**
+```
+Task("Plan and implement auth refactoring",
+     subagent_type="Plan",
+     model="opusplan",  # Opus for planning, Sonnet for implementation
+     prompt="Plan a refactor of auth guard to validate tokens...")
+```
+
+**Efficient - Documentation with Haiku (cheapest):**
 ```
 Task("Generate API documentation",
      subagent_type="general-purpose",
-     model="haiku",  # Sufficient for synthesis
+     model="haiku",  # Sufficient for synthesis, much cheaper
      prompt="Read /docs/backend_architecture.md and create OpenAPI docs...")
 ```
 
-**Efficient - Parallel Sonnet agents for independent coding tasks:**
+**Efficient - Parallel agents with different models:**
 ```
 Multiple Task() calls in same message:
-- Agent 1 (Sonnet): "Implement auth guard"
-- Agent 2 (Sonnet): "Add password validation"
-- Agent 3 (Haiku): "Update README with new auth flow"
+- Agent 1 (Opus, effort="high"): "Plan accessibility fixes strategy"
+- Agent 2 (Sonnet): "Implement accessibility fixes based on plan"
+- Agent 3 (Haiku): "Generate accessibility test checklist"
 ```
 
-**Inefficient - Re-reading entire repo:**
+**Token-efficient - Use existing docs instead of re-reading:**
 ```
 ❌ Task("Analyze frontend", prompt="Read all frontend files and...")
-✓ Task("Analyze frontend", prompt="Read /frontend/docs/code-quality-report.md for context, then analyze useChat.ts...")
+✓ Task("Analyze frontend", model="sonnet", prompt="Read /frontend/docs/code-quality-report.md for context, then analyze useChat.ts...")
+```
+
+**Controlling effort in subagents:**
+```
+Task("Deep analysis of complex bug",
+     subagent_type="general-purpose",
+     model="opus",
+     prompt="...")
+     # Note: To set effort level for Opus, pass it in the prompt or use environment variables
 ```
 
 ### When to Use Each Subagent Type
