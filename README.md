@@ -78,6 +78,9 @@ A tournament organizer for esports competitions, created for 42 Belgium by Ahmet
 
 | Feature | Contributor | Status |
 |---------|-------------|--------|
+| CSS fixes (dashboard, login pages) | Ahmet Tamer | Done |
+| .env generator script improvements | Louis Watelle | Done |
+| Google OAuth integration (ports, configs) | Ahmet Tamer | Done |
 | Phase 1 API Service Layer (typed, auto-refresh) | Simon Langerock | Done |
 | Vue Router setup (auth, menu, nested routes) | Simon Langerock | Done |
 | Enable FriendsModule in app.module.ts | Simon Langerock | Done |
@@ -90,9 +93,9 @@ A tournament organizer for esports competitions, created for 42 Belgium by Ahmet
 | Authentication pages (login, register, 2FA, email verify) | Simon Langerock | Done |
 | Frontend documentation & guides | Simon Langerock | Done |
 
-**Key decisions:** Frontend branch (`simon/frontend`) implements Phase 1 with API integration layer before UI implementation. Tests validate architecture before feature completion.
+**Key decisions:** Frontend branch (`simon/frontend`) implements Phase 1 with API integration layer before UI implementation. Tests validate architecture before feature completion. Google OAuth config finalized across full stack.
 
-**Commits:** 28 | **Contributors:** 2/4
+**Commits:** 31 | **Contributors:** 4/4
 
 ---
 
