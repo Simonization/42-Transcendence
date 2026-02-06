@@ -9,6 +9,7 @@ import { OptionalJwtAuthGuard } from './guards/optional-jwt-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { Res } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 
 export class RefreshDto {
@@ -17,7 +18,10 @@ export class RefreshDto {
 
 @Controller('auth')
 export class AuthController {
-    constructor (private readonly authService: AuthService) {}
+    constructor (
+        private readonly authService: AuthService,
+        private readonly configService: ConfigService
+    ) {}
     
     @Post('register')
     @UseGuards(OptionalJwtAuthGuard)
@@ -97,12 +101,15 @@ export class AuthController {
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     async googleAuthRedirect(@Request() req, @Res() res) {
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL');
         const result = await this.authService.googleLogin(req.user);
         if ('accessToken' in result) {
-            const successUrl = `http://localhost/login-success?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`;
+            // const successUrl = `http://localhost/login-success?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`;
+            const successUrl = `${frontendUrl}/login-success?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`;
             return res.redirect(successUrl);
         } else {
-            const twoFactorUrl = `http://localhost/verify-2fa?userId=${result.userId}&googleLogin=true`;
+            // const twoFactorUrl = `http://localhost/verify-2fa?userId=${result.userId}&googleLogin=true`;
+            const twoFactorUrl = `${frontendUrl}/verify-2fa?userId=${result.userId}&googleLogin=true`;
             return res.redirect(twoFactorUrl);
         }
     }

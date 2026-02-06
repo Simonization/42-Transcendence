@@ -25,7 +25,8 @@ export class MailService {
     // Send email verification link to new users
     async sendVerificationEmail(email: string, token: string, username: string) {
         // Build verification URL with token as query parameter
-        const verificationUrl = `${this.configService.get('FRONTEND_URL', 'http://localhost')}/verify-email?token=${token}`;
+        const verificationUrl = `${this.configService.get('FRONTEND_URL')}/verify-email?token=${token}`;
+        // const verificationUrl = `${this.configService.get('FRONTEND_URL', 'http://localhost')}/verify-email?token=${token}`;
         
         try {
             await this.transporter.sendMail({
