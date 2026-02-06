@@ -64,7 +64,7 @@ A tournament organizer for esports competitions, created for 42 Belgium by Ahmet
 | Chat module (backend) | Nicolas Orban | Done |
 | Friends module (backend improvements) | Nicolas Orban | Done |
 | Google OAuth frontend testing | Ahmet Tamer | Done |
-| CLAUDE.md project guidance | Simon Langerock | Done |
+| Project Planning in and doc in README | Simon Langerock | Done |
 
 **Key decisions:** Switched from Riot OAuth (API unsuitable) to Google OAuth. Implemented email-based 2FA instead of TOTP for MVP simplicity.
 
@@ -89,7 +89,6 @@ A tournament organizer for esports competitions, created for 42 Belgium by Ahmet
 | Core UI components (buttons, forms, cards) | Simon Langerock | Done |
 | Authentication pages (login, register, 2FA, email verify) | Simon Langerock | Done |
 | Frontend documentation & guides | Simon Langerock | Done |
-| Claude Code skills library (7 skills) | Simon Langerock | Done |
 
 **Key decisions:** Frontend branch (`simon/frontend`) implements Phase 1 with API integration layer before UI implementation. Tests validate architecture before feature completion.
 
@@ -236,7 +235,8 @@ npx vitest run   # Run tests
 
 ## Resources & AI Disclosure
 
-This project uses Claude Code (Anthropic's CLI) for development assistance. All contributions are tracked in git history for transparency.
+Simon, for frontend in Vue and for Project Manaaement uses Claude Code (Anthropic's CLI) for development assistance. All contributions are tracked in git history for transparency.
+
 
 - **Claude Code:** https://claude.com/claude-code
 - **42 Transcendence Project:** https://github.com/Wicoro/42-Transcendence
