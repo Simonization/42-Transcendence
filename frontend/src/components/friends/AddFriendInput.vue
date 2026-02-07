@@ -29,6 +29,7 @@ const handleSubmit = () => {
         class="input add-friend-input"
         placeholder="User ID"
         inputmode="numeric"
+        aria-label="User ID to add as friend"
       />
       <button type="submit" class="btn btn-primary btn-sm">ADD</button>
     </form>

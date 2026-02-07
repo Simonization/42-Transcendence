@@ -254,7 +254,7 @@ describe('API Client', () => {
 
       expect(error).toBeInstanceOf(ApiError)
       expect(error.code).toBe('SESSION_EXPIRED')
-      expect(window.location.href).toBe('/login')
+      expect(window.location.href).toBe('/auth')
       expect(getAccessToken()).toBeNull()
       expect(getRefreshToken()).toBeNull()
     })
@@ -268,12 +268,12 @@ describe('API Client', () => {
         json: async () => ({ statusCode: 401, message: 'Unauthorized' }),
       })
 
-      // API throws SESSION_EXPIRED error after redirecting to login
+      // API throws SESSION_EXPIRED error after redirecting to auth
       const error = await api('/protected').catch((e) => e)
 
       expect(error).toBeInstanceOf(ApiError)
       expect(error.code).toBe('SESSION_EXPIRED')
-      expect(window.location.href).toBe('/login')
+      expect(window.location.href).toBe('/auth')
     })
 
     it('should not attempt refresh on 401 when auth=false', async () => {

@@ -4,7 +4,7 @@ A tournament organizer for esports competitions, created for 42 Belgium by Ahmet
 
 ## Project Overview
 
-**esportendence** is a full-stack web application for organizing and managing esports tournaments. Users can create accounts, manage friendships, chat in real-time, and participate in organized tournament brackets.
+**esportendence** is a full-stack web application and esports companion platform. Users can create accounts, manage friendships, chat in real-time, and view match history from external gaming APIs (chess.com, etc.).
 
 - **Project Repository:** https://github.com/Wicoro/42-Transcendence
 - **Documentation:** Google Docs specification: https://docs.google.com/document/d/1zdf079lEJqqbx9p4P-mLMo3ZPIluBtxt0sC1ao2E4Ak
@@ -111,7 +111,7 @@ A tournament organizer for esports competitions, created for 42 Belgium by Ahmet
 | **Chat System (real-time)** | 80% | 0% | 0% | **24%** | Week 4 | ⏳ Not Started |
 | **WebSocket Integration** | 30% | 0% | 0% | **9%** | Week 4 | ⏳ Not Started |
 | **Notifications** | 0% | 0% | 0% | **0%** | Week 4 | ⏳ Not Started |
-| **Tournament System** | 0% | 0% | 0% | **0%** | Week 3-4 | ⏳ Not Started |
+| **Match History (chess.com API)** | 0% | 0% | 0% | **0%** | Week 4 | ⏳ Not Started |
 | **Advanced Search** | 0% | 0% | 0% | **0%** | Week 5 | ⏳ Not Started |
 | **Internationalization (i18n)** | 10% | 0% | 0% | **3%** | Week 5 | ⏳ Not Started |
 
@@ -127,7 +127,7 @@ A tournament organizer for esports competitions, created for 42 Belgium by Ahmet
 |------|--------|--------|-----------|
 | Frontend branch (`simon/frontend`) not merged to main | API layer, tests, theme system, 95% of Week 3 work only on branch | ⚠️ Blocker | Create PR before Week 4; merge to unblock social/chat features |
 | Friends and Chat modules not wired in backend | 6 friend endpoints + 8 chat endpoints inaccessible | ✅ Resolved (Feb 4) | Modules imported in app.module.ts on simon/frontend branch |
-| Tournament module not started | Major deliverable (2 points) with zero progress; was Week 3 goal | ⚠️ Behind | Begin tournament entity + CRUD endpoints in Week 4 |
+| Match history module not started | Replaces tournament (dropped - Riot API requires Apple Store approved app) | 🔄 Pivoted | Build match history with chess.com API in Week 4 |
 
 ### Moderate (Plan mitigation in Weeks 4-5)
 

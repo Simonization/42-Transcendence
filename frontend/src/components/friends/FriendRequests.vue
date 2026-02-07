@@ -66,7 +66,7 @@ const emit = defineEmits<{
 .request-avatar {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-full);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   background: var(--accent-primary-subtle);
   display: flex;
   align-items: center;

@@ -1,12 +1,14 @@
 /**
  * Chat Composable
  * Manages chat state with REST API + Socket.io for real-time updates
+ *
+ * Callers must call `disconnectSocket()` on component unmount to prevent orphaned connections.
  */
 
 import { ref, computed } from 'vue'
 import { chatApi } from '../api/chat'
 import { getAccessToken } from '../api'
-import { ApiError } from '../types'
+import { getErrorMessage } from '../utils/error'
 import type { ChatRoom, Message } from '../types'
 
 export function useChat() {
@@ -39,7 +41,7 @@ export function useChat() {
     try {
       rooms.value = await chatApi.getRooms()
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to load conversations'
+      error.value = getErrorMessage(e, 'Failed to load conversations')
     } finally {
       isLoadingRooms.value = false
     }
@@ -55,15 +57,19 @@ export function useChat() {
     error.value = ''
     try {
       const msgs = await chatApi.getMessages(roomId)
+      // Guard against stale response
+      if (activeRoomId.value !== roomId) return
       // API returns newest first, reverse for display (oldest at top)
       messages.value = msgs.reverse()
       // Mark as read
       await chatApi.markAsRead(roomId).catch(() => {})
       // Update local unread state
-      const room = rooms.value.find(r => r.id === roomId)
-      if (room) room.isUnread = false
+      rooms.value = rooms.value.map(r =>
+        r.id === roomId ? { ...r, isUnread: false } : r
+      )
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to load messages'
+      if (activeRoomId.value !== roomId) return
+      error.value = getErrorMessage(e, 'Failed to load messages')
     } finally {
       isLoadingMessages.value = false
     }
@@ -83,12 +89,11 @@ export function useChat() {
       })
       messages.value.push(msg)
       // Update room's last message
-      const room = rooms.value.find(r => r.id === activeRoomId.value)
-      if (room) {
-        room.lastMessage = msg
-      }
+      rooms.value = rooms.value.map(r =>
+        r.id === activeRoomId.value ? { ...r, lastMessage: msg } : r
+      )
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to send message'
+      error.value = getErrorMessage(e, 'Failed to send message')
     } finally {
       isSending.value = false
     }
@@ -106,7 +111,7 @@ export function useChat() {
       activeRoomId.value = room.id
       return room
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to create conversation'
+      error.value = getErrorMessage(e, 'Failed to create conversation')
       return null
     }
   }
@@ -123,7 +128,7 @@ export function useChat() {
         msg.deletedAt = new Date().toISOString()
       }
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to delete message'
+      error.value = getErrorMessage(e, 'Failed to delete message')
     }
   }
 
@@ -160,13 +165,15 @@ export function useChat() {
                 }
               }
               // Update room list
-              const room = rooms.value.find(r => r.id === msg.chatId)
-              if (room) {
-                room.lastMessage = msg
-                if (msg.chatId !== activeRoomId.value) {
-                  room.isUnread = true
-                }
-              }
+              rooms.value = rooms.value.map(r =>
+                r.id === msg.chatId
+                  ? {
+                      ...r,
+                      lastMessage: msg,
+                      isUnread: msg.chatId !== activeRoomId.value ? true : r.isUnread
+                    }
+                  : r
+              )
             }
           } catch {
             // Ignore parse errors from socket.io protocol messages

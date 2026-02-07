@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '../../api/auth'
 import { ApiError } from '../../types'
 
+const REDIRECT_DELAY = 800
+
 const route = useRoute()
 const router = useRouter()
 
@@ -36,7 +38,7 @@ const handleSubmit = async () => {
       code: code.value,
     })
     isSuccess.value = true
-    setTimeout(() => router.push('/menu'), 800)
+    setTimeout(() => router.push('/menu'), REDIRECT_DELAY)
   } catch (error) {
     isError.value = true
     if (error instanceof ApiError) {
@@ -97,6 +99,7 @@ const goBackToLogin = () => {
             placeholder="000000"
             maxlength="6"
             inputmode="numeric"
+            aria-label="Two-factor authentication code"
             @input="code = code.replace(/[^0-9]/g, '')"
             autofocus
           />
@@ -124,33 +127,6 @@ const goBackToLogin = () => {
 </template>
 
 <style scoped>
-.auth-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #0a0e1a;
-  padding: var(--space-4);
-}
-
-.auth-panel {
-  width: 100%;
-  max-width: 420px;
-  padding: var(--space-12) var(--space-8);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 0 40px rgba(100, 120, 200, 0.06);
-}
-
-.state-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  text-align: center;
-}
-
 .state-title {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
@@ -168,7 +144,7 @@ const goBackToLogin = () => {
 .state-icon {
   width: 64px;
   height: 64px;
-  border-radius: var(--radius-full);
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -186,19 +162,6 @@ const goBackToLogin = () => {
   background: rgba(248, 113, 113, 0.1);
   color: #f87171;
   border: 1px solid rgba(248, 113, 113, 0.3);
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 2px solid rgba(255, 255, 255, 0.08);
-  border-top-color: #6b7280;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 .tfa-form {
@@ -219,7 +182,7 @@ const goBackToLogin = () => {
   color: #e8e6e3;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% 100%, 0 100%, 0 var(--chamfer-xs));
   outline: none;
   transition: border-color var(--duration-fast) var(--ease-default),
               box-shadow var(--duration-fast) var(--ease-default);
@@ -241,7 +204,7 @@ const goBackToLogin = () => {
   color: #0a0e1a;
   background: #e8e6e3;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
 }
@@ -271,7 +234,7 @@ const goBackToLogin = () => {
 .auth-message {
   width: 100%;
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   font-size: var(--text-sm);
 }
 

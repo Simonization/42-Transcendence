@@ -73,7 +73,7 @@ const { theme, toggleTheme, themeName } = useTheme()
   width: 52px;
   height: 28px;
   background: var(--bg-tertiary);
-  border-radius: var(--radius-full);
+  clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
   border: 1px solid var(--border-default);
   transition: all var(--duration-normal) var(--ease-default);
 }
@@ -84,7 +84,7 @@ const { theme, toggleTheme, themeName } = useTheme()
   left: 2px;
   width: 22px;
   height: 22px;
-  border-radius: var(--radius-full);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   display: flex;
   align-items: center;
   justify-content: center;

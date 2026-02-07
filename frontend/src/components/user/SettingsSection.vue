@@ -24,10 +24,10 @@ const openMessage = ref(props.user.settings?.openMessage ?? true)
 
 const languageLabels: Record<string, string> = {
   en: 'English',
-  fr: 'Francais',
-  tr: 'Turkce',
+  fr: 'Français',
+  tr: 'Türkçe',
   nl: 'Nederlands',
-  ko: 'Korean',
+  ko: '한국어',
 }
 
 const saveSettings = async () => {
@@ -57,9 +57,9 @@ const saveSettings = async () => {
     <div class="settings-grid">
       <div class="setting-row">
         <div class="setting-label">
-          <span class="label-caps">LANGUAGE</span>
+          <label for="language-select" class="label-caps">LANGUAGE</label>
         </div>
-        <select v-model="language" class="input setting-select">
+        <select id="language-select" v-model="language" class="input setting-select">
           <option v-for="lang in SUPPORTED_LANGUAGES" :key="lang" :value="lang">
             {{ languageLabels[lang] || lang }}
           </option>
@@ -101,19 +101,6 @@ const saveSettings = async () => {
 </template>
 
 <style scoped>
-.section {
-  padding: var(--space-6);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.section-title {
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-  letter-spacing: var(--tracking-widest);
-  color: var(--text-secondary);
-  margin: 0 0 var(--space-4) 0;
-}
-
 .settings-grid {
   display: flex;
   flex-direction: column;
@@ -165,7 +152,7 @@ const saveSettings = async () => {
   inset: 0;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-full);
+  clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
   transition: all var(--duration-fast) var(--ease-default);
 }
 
@@ -177,7 +164,7 @@ const saveSettings = async () => {
   width: 18px;
   height: 18px;
   background: var(--text-secondary);
-  border-radius: var(--radius-full);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   transition: all var(--duration-fast) var(--ease-default);
 }
 
@@ -200,7 +187,7 @@ const saveSettings = async () => {
 .section-message {
   margin-top: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   font-size: var(--text-xs);
 }
 

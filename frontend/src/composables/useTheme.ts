@@ -4,7 +4,7 @@
  * Inspired by Quantum Break UI design system
  */
 
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect, readonly } from 'vue'
 
 export type ThemeMode = 'stellar' | 'dragon'
 
@@ -71,7 +71,7 @@ export function useTheme() {
   })
 
   return {
-    theme: currentTheme,
+    theme: readonly(currentTheme),
     setTheme,
     toggleTheme,
     isDark,

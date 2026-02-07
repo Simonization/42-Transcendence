@@ -6,7 +6,7 @@
 import { ref } from 'vue'
 import { usersApi } from '../api/users'
 import { authApi } from '../api/auth'
-import { ApiError } from '../types'
+import { getErrorMessage } from '../utils/error'
 
 export function useTwoFactor() {
   const enabled = ref(false)
@@ -43,11 +43,7 @@ export function useTwoFactor() {
       message.value = 'Code sent to email.'
       showForm.value = true
     } catch (error) {
-      if (error instanceof ApiError) {
-        message.value = `Error: ${error.message}`
-      } else {
-        message.value = 'Network error!'
-      }
+      message.value = `Error: ${getErrorMessage(error, 'Network error!')}`
     } finally {
       loading.value = false
     }
@@ -66,11 +62,7 @@ export function useTwoFactor() {
       showForm.value = false
       code.value = ''
     } catch (error) {
-      if (error instanceof ApiError) {
-        message.value = `Error: ${error.message}`
-      } else {
-        message.value = 'Network error!'
-      }
+      message.value = `Error: ${getErrorMessage(error, 'Network error!')}`
     } finally {
       loading.value = false
     }
@@ -88,11 +80,7 @@ export function useTwoFactor() {
       enabled.value = false
       showForm.value = false
     } catch (error) {
-      if (error instanceof ApiError) {
-        message.value = `Error: ${error.message}`
-      } else {
-        message.value = 'Network error!'
-      }
+      message.value = `Error: ${getErrorMessage(error, 'Network error!')}`
     } finally {
       loading.value = false
     }

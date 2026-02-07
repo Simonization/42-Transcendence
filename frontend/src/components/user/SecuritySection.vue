@@ -65,6 +65,7 @@ onMounted(() => {
             placeholder="000000"
             maxlength="6"
             inputmode="numeric"
+            aria-label="Two-factor authentication code"
             @input="code = code.replace(/[^0-9]/g, '')"
           />
           <button
@@ -91,19 +92,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.section {
-  padding: var(--space-6);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.section-title {
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-  letter-spacing: var(--tracking-widest);
-  color: var(--text-secondary);
-  margin: 0 0 var(--space-4) 0;
-}
-
 .loading-text {
   font-size: var(--text-sm);
   color: var(--text-tertiary);
@@ -149,7 +137,7 @@ onMounted(() => {
 .section-message {
   margin-top: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   font-size: var(--text-xs);
 }
 

@@ -101,7 +101,7 @@ const getTime = (room: ChatRoom): string => {
 .room-avatar {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-full);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   background: var(--accent-primary-subtle);
   color: var(--accent-primary);
   display: flex;
@@ -155,7 +155,7 @@ const getTime = (room: ChatRoom): string => {
 .unread-dot {
   width: 8px;
   height: 8px;
-  border-radius: var(--radius-full);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   background: var(--accent-primary);
   flex-shrink: 0;
 }

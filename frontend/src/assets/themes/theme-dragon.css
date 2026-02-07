@@ -17,29 +17,20 @@
   --bg-tertiary: #132743;        /* Subtle sections */
   --bg-elevated: #162d50;        /* Modals, dropdowns */
   --bg-hover: rgba(212, 175, 55, 0.08);
-  --bg-active: rgba(212, 175, 55, 0.12);
   --bg-selected: rgba(212, 175, 55, 0.15);
 
   /* ===== TEXT COLORS ===== */
   --text-primary: #e8e6e3;       /* Main text - warm off-white */
   --text-secondary: #9ca3af;     /* Secondary text - muted */
   --text-tertiary: #6b7280;      /* Disabled, hints */
-  --text-inverse: #0a1628;       /* Text on light/accent backgrounds */
   --text-on-accent: #0a1628;     /* Text on gold accent */
 
   /* ===== ACCENT COLORS ===== */
   /* Primary: Gold (Dragon/Regal color) */
   --accent-primary: #d4af37;
   --accent-primary-hover: #e6c54a;
-  --accent-primary-active: #c4a030;
   --accent-primary-subtle: rgba(212, 175, 55, 0.15);
   --accent-primary-glow: rgba(212, 175, 55, 0.5);
-
-  /* Secondary accents */
-  --accent-purple: #a78bfa;      /* Lighter purple for dark bg */
-  --accent-cyan: #22d3ee;        /* Brighter cyan */
-  --accent-teal: #2dd4bf;        /* Brighter teal */
-  --accent-magenta: #f472b6;     /* Lighter magenta */
 
   /* ===== STATUS COLORS ===== */
   --color-success: #34d399;
@@ -55,18 +46,14 @@
   --border-default: #1e3a5f;
   --border-subtle: #162d50;
   --border-strong: #2a4a73;
-  --border-focus: var(--accent-primary);
   --border-error: var(--color-error);
 
   /* ===== SHADOW (with gold glow option) ===== */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.3);
   --shadow-glow: 0 0 30px var(--accent-primary-glow);
   --shadow-glow-sm: 0 0 15px rgba(212, 175, 55, 0.3);
-  --shadow-none: none;
 
   /* ===== SELECTION INDICATOR ===== */
   --selection-indicator: "◆";    /* Diamond for dragon theme */
@@ -139,7 +126,6 @@
 
 [data-theme="dragon"] ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border-radius: var(--radius-full);
 }
 
 [data-theme="dragon"] ::-webkit-scrollbar-thumb:hover {

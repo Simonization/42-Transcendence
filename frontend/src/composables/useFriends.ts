@@ -5,7 +5,7 @@
 
 import { ref, computed } from 'vue'
 import { friendsApi } from '../api/friends'
-import { ApiError } from '../types'
+import { getErrorMessage } from '../utils/error'
 import type { Friend, Block } from '../types'
 
 export function useFriends() {
@@ -28,7 +28,7 @@ export function useFriends() {
     try {
       friends.value = await friendsApi.getFriends(userId)
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to load friends'
+      error.value = getErrorMessage(e, 'Failed to load friends')
     } finally {
       isLoading.value = false
     }
@@ -38,7 +38,7 @@ export function useFriends() {
     try {
       blocks.value = await friendsApi.getBlocked(userId)
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to load blocks'
+      error.value = getErrorMessage(e, 'Failed to load blocks')
     }
   }
 
@@ -48,7 +48,7 @@ export function useFriends() {
       await friendsApi.addFriend({ friendId })
       return true
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to add friend'
+      error.value = getErrorMessage(e, 'Failed to add friend')
       return false
     }
   }
@@ -60,7 +60,7 @@ export function useFriends() {
       friends.value = friends.value.filter(f => f.id !== friendId)
       return true
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to remove friend'
+      error.value = getErrorMessage(e, 'Failed to remove friend')
       return false
     }
   }
@@ -74,7 +74,7 @@ export function useFriends() {
       friends.value = friends.value.filter(f => f.id !== targetId)
       return true
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to block user'
+      error.value = getErrorMessage(e, 'Failed to block user')
       return false
     }
   }
@@ -86,7 +86,7 @@ export function useFriends() {
       blocks.value = blocks.value.filter(b => b.blocked.id !== targetId)
       return true
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : 'Failed to unblock user'
+      error.value = getErrorMessage(e, 'Failed to unblock user')
       return false
     }
   }

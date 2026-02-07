@@ -5,7 +5,8 @@ import { authApi } from '../../api/auth'
 import { usersApi } from '../../api/users'
 import { getAccessToken, clearTokens } from '../../api'
 import { requiresTwoFactor, ApiError } from '../../types'
-import type { User } from '../../types'
+
+const REDIRECT_DELAY = 800
 
 const router = useRouter()
 
@@ -43,7 +44,7 @@ const login = async () => {
       messageType.value = 'success'
       setTimeout(() => {
         router.push(`/auth/2fa?userId=${response.userId}`)
-      }, 800)
+      }, REDIRECT_DELAY)
     } else {
       message.value = `Welcome, ${response.user.username}`
       messageType.value = 'success'
@@ -183,23 +184,8 @@ const handleGoogleLogin = () => {
 </template>
 
 <style scoped>
-.auth-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #0a0e1a;
-  padding: var(--space-4);
-}
-
 .auth-panel {
-  width: 100%;
-  max-width: 420px;
   padding: var(--space-10) var(--space-8);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 0 40px rgba(100, 120, 200, 0.06);
 }
 
 .auth-header {
@@ -251,7 +237,7 @@ const handleGoogleLogin = () => {
   color: #e8e6e3;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% 100%, 0 100%, 0 var(--chamfer-xs));
   outline: none;
   transition: border-color var(--duration-fast) var(--ease-default),
               box-shadow var(--duration-fast) var(--ease-default);
@@ -278,7 +264,7 @@ const handleGoogleLogin = () => {
   color: #0a0e1a;
   background: #e8e6e3;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
 }
@@ -351,7 +337,7 @@ const handleGoogleLogin = () => {
 .auth-message {
   margin-top: var(--space-4);
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   font-size: var(--text-sm);
   text-align: center;
 }

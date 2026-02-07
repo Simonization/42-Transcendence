@@ -58,7 +58,7 @@ const time = computed(() => {
   position: relative;
   max-width: 75%;
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-lg);
+  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   background: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
 }
@@ -118,13 +118,17 @@ const time = computed(() => {
   color: var(--text-tertiary);
   background: transparent;
   border: none;
-  border-radius: var(--radius-full);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   cursor: pointer;
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-default);
 }
 
 .bubble:hover .bubble-delete {
+  opacity: 1;
+}
+
+.bubble-delete:focus-visible {
   opacity: 1;
 }
 

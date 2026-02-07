@@ -126,7 +126,7 @@ describe('useTwoFactor', () => {
 
       await enable()
 
-      expect(message.value).toBe('Network error!')
+      expect(message.value).toBe('Error: Network error!')
     })
 
     it('should set loading state during enable', async () => {
@@ -183,7 +183,7 @@ describe('useTwoFactor', () => {
       code.value = '123456'
       await confirm()
 
-      expect(message.value).toBe('Network error!')
+      expect(message.value).toBe('Error: Network error!')
     })
   })
 
@@ -223,7 +223,7 @@ describe('useTwoFactor', () => {
 
       await disable()
 
-      expect(message.value).toBe('Network error!')
+      expect(message.value).toBe('Error: Network error!')
     })
 
     it('should set loading state during disable', async () => {

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**esportendence** - A tournament organizer for esports competitions. Full-stack web application built by a 4-person team for 42 Belgium.
+**esportendence** - An esports companion platform with social features and match history. Full-stack web application built by a 4-person team for 42 Belgium.
 
 ## Tech Stack
 
@@ -318,6 +318,74 @@ Task("Deep analysis of complex bug",
 - **`Explore`** - Finding patterns across codebase when no docs exist yet
 - **`Plan`** - Architectural planning before implementation
 - **`Bash`** - Git operations, running commands (consider just doing in main agent for simple tasks)
+
+---
+
+## Agent Teams (Experimental)
+
+Claude Code supports **agent teams** - multiple Claude Code instances working in parallel, coordinated by a team lead. This is more powerful than subagents for complex, multi-file work.
+
+### Enable Agent Teams
+
+Already configured in project settings. If not working, ensure this env var is set:
+```json
+// .claude/settings.local.json or environment
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+### Recommended Week 4 Team Configuration
+
+For the remaining sprint (chat polish, match history, notifications, friends UI), use this team:
+
+```
+Create an agent team for our Week 4 sprint. Here's the structure:
+
+Team Lead (you, Opus 4.6, delegate mode):
+- Plan and coordinate all work
+- Review teammate output before approving
+- Require plan approval from all teammates before they code
+
+Teammates:
+1. "frontend" (Sonnet) - Chat UI polish, Match history page (chess.com API),
+   notification toasts. Owns: frontend/src/pages/, frontend/src/components/,
+   frontend/src/composables/
+
+2. "backend" (Sonnet) - Match history API proxy endpoint, friends/chat module
+   improvements. Owns: backend/src/modules/
+
+3. "testing" (Sonnet) - Component tests, integration tests, E2E smoke tests.
+   Owns: **/*.spec.ts, **/*.test.ts
+
+4. "docs" (Haiku) - Keep documentation in sync with changes.
+   Owns: docs/, frontend/docs/, README.md
+```
+
+### File Ownership Rules
+
+To avoid merge conflicts, teammates must NOT edit files owned by other teammates:
+- **frontend** owns `frontend/src/` (except test files)
+- **backend** owns `backend/src/`
+- **testing** owns all `*.spec.ts` and `*.test.ts` files
+- **docs** owns `docs/`, `frontend/docs/`, and README files
+
+### Key Commands
+- `Shift+Up/Down` - Select a teammate to message directly
+- `Shift+Tab` - Toggle delegate mode (lead coordinates only, doesn't code)
+- `Ctrl+T` - Toggle task list view
+
+### When to Use Teams vs Subagents
+
+| Scenario | Use |
+|----------|-----|
+| Quick research, file reads | Subagent |
+| Independent code generation | Subagent |
+| Cross-layer feature (frontend + backend + tests) | Agent Team |
+| Debugging with competing hypotheses | Agent Team |
+| Parallel code review | Agent Team |
 
 ---
 

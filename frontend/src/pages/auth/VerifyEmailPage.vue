@@ -72,33 +72,6 @@ const redirectToLogin = () => {
 </template>
 
 <style scoped>
-.auth-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #0a0e1a;
-  padding: var(--space-4);
-}
-
-.auth-panel {
-  width: 100%;
-  max-width: 420px;
-  padding: var(--space-12) var(--space-8);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 0 40px rgba(100, 120, 200, 0.06);
-}
-
-.state-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  text-align: center;
-}
-
 .state-title {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
@@ -116,7 +89,7 @@ const redirectToLogin = () => {
 .state-icon {
   width: 64px;
   height: 64px;
-  border-radius: var(--radius-full);
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -136,19 +109,6 @@ const redirectToLogin = () => {
   border: 1px solid rgba(248, 113, 113, 0.3);
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 2px solid rgba(255, 255, 255, 0.08);
-  border-top-color: #6b7280;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .auth-btn {
   width: 100%;
   padding: var(--space-3) var(--space-4);
@@ -161,7 +121,7 @@ const redirectToLogin = () => {
   color: #0a0e1a;
   background: #e8e6e3;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
 }

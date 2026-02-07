@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '../../composables/useAuth'
 import { useChat } from '../../composables/useChat'
 import ChatRoomList from '../../components/chat/ChatRoomList.vue'
@@ -28,6 +28,13 @@ const {
 
 const newChatUserId = ref('')
 const showNewChat = ref(false)
+
+const activeRoomTitle = computed(() => {
+  if (!activeRoom.value) return 'Chat'
+  return activeRoom.value.title
+    || activeRoom.value.participants.find(p => p.id !== user.value?.id)?.username
+    || 'Chat'
+})
 
 onMounted(() => {
   fetchRooms()
@@ -74,6 +81,7 @@ const handleNewChat = async () => {
           class="input"
           placeholder="User ID"
           inputmode="numeric"
+          aria-label="User ID to start chat with"
           @keydown.enter.prevent="handleNewChat"
         />
         <button class="btn btn-primary btn-sm" @click="handleNewChat">START</button>
@@ -94,7 +102,7 @@ const handleNewChat = async () => {
       <template v-if="activeRoom">
         <div class="chat-main-header">
           <h3 class="chat-main-title">
-            {{ activeRoom.title || activeRoom.participants.find(p => p.id !== user?.id)?.username || 'Chat' }}
+            {{ activeRoomTitle }}
           </h3>
           <span class="badge badge-primary" v-if="activeRoom.type === 1">GROUP</span>
         </div>
@@ -132,14 +140,15 @@ const handleNewChat = async () => {
 
 .chat-layout {
   display: flex;
-  height: 520px;
+  min-height: 400px;
+  max-height: 80vh;
   overflow: hidden;
   position: relative;
 }
 
 /* Sidebar */
 .chat-sidebar {
-  width: 260px;
+  width: var(--sidebar-width);
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
@@ -171,7 +180,7 @@ const handleNewChat = async () => {
 .ws-dot {
   width: 8px;
   height: 8px;
-  border-radius: var(--radius-full);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
 .ws-dot-on {

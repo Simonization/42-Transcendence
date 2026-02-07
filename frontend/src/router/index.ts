@@ -58,13 +58,13 @@ const router = createRouter({
     { path: '/login-success', redirect: '/auth/callback' },
     { path: '/verify-email', redirect: '/auth/verify-email' },
     { path: '/verify-2fa', redirect: '/auth/2fa' },
-    { path: '/', redirect: '/menu' },
+    { path: '/', name: 'landing', component: () => import('../pages/LandingPage.vue') },
   ],
 })
 
 // Auth guard
 router.beforeEach((to) => {
-  const publicPaths = ['/auth', '/auth/verify-email', '/auth/2fa', '/auth/callback']
+  const publicPaths = ['/', '/auth', '/auth/verify-email', '/auth/2fa', '/auth/callback']
   const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/')
   const hasToken = !!localStorage.getItem('accessToken')
 

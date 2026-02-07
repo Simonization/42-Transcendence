@@ -1,6 +1,6 @@
 # Frontend - esportendence
 
-Vue 3 + Vite frontend for the esportendence tournament organizer.
+Vue 3 + Vite frontend for the esportendence esports companion platform.
 
 ## Quick Start
 
@@ -25,16 +25,26 @@ src/
 ├── api/                 # API service layer
 │   ├── index.ts         # Base API client with auth & token refresh
 │   ├── auth.ts          # Authentication endpoints
-│   └── users.ts         # User management endpoints
+│   ├── users.ts         # User management endpoints
+│   ├── chat.ts          # Chat and messaging endpoints
+│   └── friends.ts       # Friends and blocking endpoints
 ├── types/               # TypeScript interfaces
 │   ├── api.ts           # API types (ApiError, RequestOptions)
 │   ├── auth.ts          # Auth types (LoginRequest, AuthResponse)
 │   └── user.ts          # User types (User, Profile, Settings)
 ├── composables/         # Vue composition utilities
 │   ├── useAuth.ts       # Authentication state management
-│   └── useTwoFactor.ts  # 2FA flow management
+│   ├── useTwoFactor.ts  # 2FA flow management
+│   ├── useChat.ts       # Chat and messaging state
+│   ├── useFriends.ts    # Friends and blocking state
+│   ├── useTheme.ts      # Theme switching and persistence
+│   └── useShader.ts     # Shader effects utilities
 ├── components/          # Reusable Vue components
+├── assets/
+│   └── themes/          # Design tokens and theme CSS
+├── layouts/             # Layout wrapper components
 ├── pages/               # Page-level components (routes)
+├── utils/               # Utility functions
 └── router/              # Vue Router configuration
 ```
 
@@ -100,9 +110,13 @@ npm run test:coverage
 | API Client | 22 | Pass |
 | Auth API | 14 | Pass |
 | Users API | 7 | Pass |
+| Chat API | 18 | Pass |
+| Friends API | 16 | Pass |
 | useAuth | 7 | Pass |
 | useTwoFactor | 14 | Pass |
-| **Total** | **64** | Pass |
+| useChat | 9 | Pass |
+| useFriends | 8 | Pass |
+| **Total** | **115** | Pass |
 
 ## Implementation Status
 
@@ -111,24 +125,24 @@ npm run test:coverage
 - [x] TypeScript types (`/src/types/`)
 - [x] Composables refactored to use API layer
 - [x] Testing infrastructure (Vitest)
-- [x] Unit tests (64 tests)
+- [x] Unit tests (115 tests)
 
-### Phase 2: Auth Module Connection (In Progress)
-- [ ] Update LoginPage.vue to use authApi
-- [ ] Update Dashboard.vue to use usersApi
-- [ ] Build Profile.vue page
-- [ ] Build Settings.vue page
-- [ ] Add /profile and /settings routes
+### Phase 2: Auth Module Connection - Complete
+- [x] Update LoginPage.vue to use authApi
+- [x] Update Dashboard.vue to use usersApi
+- [x] Build Profile.vue page
+- [x] Build Settings.vue page
+- [x] Add /profile and /settings routes
 
-### Phase 3: Friends Module
-- [ ] Create `/src/api/friends.ts`
-- [ ] Build Friends.vue page
-- [ ] Build friend components (list, requests, blocked)
+### Phase 3: Friends Module - Complete
+- [x] Create `/src/api/friends.ts`
+- [x] Build Friends.vue page
+- [x] Build friend components (list, requests, blocked)
 
-### Phase 4: Chat Module
-- [ ] Create `/src/api/chat.ts`
-- [ ] Create useChat composable (WebSocket)
-- [ ] Build Chat.vue page and components
+### Phase 4: Chat Module - Complete
+- [x] Create `/src/api/chat.ts`
+- [x] Create useChat composable (WebSocket)
+- [x] Build Chat.vue page and components
 
 ## Available Types
 
@@ -180,7 +194,11 @@ if (requiresTwoFactor(response)) {
 - Vite 7+
 - TypeScript
 
+## Beta Testing
+
+See the [Beta Testing Guide](../docs/BETA_TESTING_GUIDE.md) for test scenarios, known issues, and how to report bugs.
+
 ## Related Documentation
 
-- [Frontend Development Guide](../frontend_dev.md) - Detailed implementation guide
-- [Backend Architecture](../backend_architecture.md) - API endpoint documentation
+- [Frontend Development Guide](../docs/frontend_dev.md) - Detailed implementation guide
+- [Backend Architecture](../docs/backend_architecture.md) - API endpoint documentation

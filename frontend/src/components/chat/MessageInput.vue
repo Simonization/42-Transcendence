@@ -33,6 +33,7 @@ const handleKeydown = (e: KeyboardEvent) => {
       class="input message-field"
       placeholder="Type a message..."
       :disabled="disabled"
+      aria-label="Type a message"
       @keydown="handleKeydown"
       autocomplete="off"
     />

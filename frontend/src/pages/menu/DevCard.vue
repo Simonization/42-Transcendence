@@ -4,6 +4,8 @@ import { useAuth } from '../../composables/useAuth'
 import { useTheme } from '../../composables/useTheme'
 import { getAccessToken, getRefreshToken } from '../../api'
 
+const WS_TEST_TIMEOUT = 3000
+
 const { user } = useAuth()
 const { theme, setTheme, themeName } = useTheme()
 
@@ -32,6 +34,7 @@ const pingBackend = async () => {
 // WebSocket status
 const wsStatus = ref<'disconnected' | 'connecting' | 'connected'>('disconnected')
 let ws: WebSocket | null = null
+let wsTimeout: ReturnType<typeof setTimeout> | null = null
 
 const checkWebSocket = () => {
   wsStatus.value = 'connecting'
@@ -41,17 +44,18 @@ const checkWebSocket = () => {
     ws.onopen = () => { wsStatus.value = 'connected' }
     ws.onclose = () => { wsStatus.value = 'disconnected' }
     ws.onerror = () => { wsStatus.value = 'disconnected' }
-    // Close after 3s test
-    setTimeout(() => {
+    // Close after test timeout
+    wsTimeout = setTimeout(() => {
       ws?.close()
       ws = null
-    }, 3000)
+    }, WS_TEST_TIMEOUT)
   } catch {
     wsStatus.value = 'disconnected'
   }
 }
 
 onUnmounted(() => {
+  if (wsTimeout) clearTimeout(wsTimeout)
   ws?.close()
 })
 
@@ -272,7 +276,7 @@ onUnmounted(() => {
   color: var(--text-secondary);
   background: transparent;
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
 }
@@ -321,7 +325,7 @@ onUnmounted(() => {
   margin-top: var(--space-2);
   padding: var(--space-3);
   background: var(--bg-tertiary);
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--text-secondary);

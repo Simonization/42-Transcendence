@@ -32,7 +32,10 @@ const navItems = [
 <template>
   <div class="menu-layout" :data-theme="theme">
     <header class="menu-header">
-      <h1 class="menu-title">ESPORTENDENCE</h1>
+      <div class="menu-header-left">
+        <h1 class="menu-title">ESPORTENDENCE</h1>
+        <span class="hud-serial">SYS::ONLINE</span>
+      </div>
       <div class="menu-header-actions">
         <ThemeToggle />
         <button @click="handleLogout" class="menu-quit-btn">QUIT</button>
@@ -58,6 +61,11 @@ const navItems = [
         </Transition>
       </RouterView>
     </main>
+
+    <!-- HUD footer decoration -->
+    <div class="menu-hud-footer">
+      <span class="hud-serial">ESP-2026 // TOURNAMENT PLATFORM v3.0</span>
+    </div>
   </div>
 </template>
 
@@ -75,7 +83,26 @@ const navItems = [
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4) var(--space-8);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: var(--hud-border) solid var(--border-subtle);
+  position: relative;
+}
+
+/* HUD accent line under header */
+.menu-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 120px;
+  height: var(--hud-border-thick);
+  background: var(--accent-primary);
+  opacity: 0.5;
+}
+
+.menu-header-left {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
 }
 
 .menu-title {
@@ -101,15 +128,23 @@ const navItems = [
   text-transform: uppercase;
   color: var(--text-secondary);
   background: transparent;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
+  border: var(--hud-border) solid var(--border-default);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
+  clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
 }
 
 .menu-quit-btn:hover {
   color: var(--color-error);
   border-color: var(--color-error);
+  box-shadow: 0 0 10px var(--color-error-bg);
 }
 
 .menu-nav {
@@ -130,21 +165,30 @@ const navItems = [
   text-decoration: none;
   color: var(--text-secondary);
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border: var(--hud-border) solid transparent;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
+  clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
 }
 
 .menu-nav-btn:hover {
   color: var(--text-primary);
   border-color: var(--border-default);
+  background: var(--bg-hover);
 }
 
 .menu-nav-btn-active {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
-  box-shadow: var(--shadow-glow-sm);
+  box-shadow: 0 0 15px var(--accent-primary-subtle);
+  background: var(--bg-selected);
 }
 
 .menu-nav-btn-active::before {
@@ -162,6 +206,12 @@ const navItems = [
   display: flex;
   justify-content: center;
   padding: 0 var(--space-8) var(--space-8);
+}
+
+.menu-hud-footer {
+  padding: var(--space-2) var(--space-8);
+  border-top: var(--hud-border) solid var(--border-subtle);
+  text-align: right;
 }
 
 /* Card slide transition */

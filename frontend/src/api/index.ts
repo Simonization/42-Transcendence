@@ -129,7 +129,7 @@ async function handle401<T>(
     const newToken = await refreshAccessToken();
     if (!newToken) {
       // Redirect to login
-      window.location.href = '/login';
+      window.location.href = '/auth';
       return null;
     }
 

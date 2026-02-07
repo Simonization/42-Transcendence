@@ -115,19 +115,6 @@ const saveProfile = async () => {
 </template>
 
 <style scoped>
-.section {
-  padding: var(--space-6);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.section-title {
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-  letter-spacing: var(--tracking-widest);
-  color: var(--text-secondary);
-  margin: 0 0 var(--space-4) 0;
-}
-
 .profile-header {
   display: flex;
   gap: var(--space-5);
@@ -137,7 +124,7 @@ const saveProfile = async () => {
 .avatar {
   width: 64px;
   height: 64px;
-  border-radius: var(--radius-full);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   background: var(--accent-primary-subtle);
   display: flex;
   align-items: center;
@@ -213,7 +200,7 @@ const saveProfile = async () => {
 .section-message {
   margin-top: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   font-size: var(--text-xs);
 }
 

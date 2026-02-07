@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+
 defineProps<{
   title: string
   message: string
@@ -11,16 +13,60 @@ const emit = defineEmits<{
   confirm: []
   cancel: []
 }>()
+
+const dialogRef = ref<HTMLElement | null>(null)
+const cancelButtonRef = ref<HTMLButtonElement | null>(null)
+
+const handleEscape = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    emit('cancel')
+  }
+}
+
+const handleTabTrap = (e: KeyboardEvent) => {
+  if (e.key !== 'Tab' || !dialogRef.value) return
+
+  const focusableElements = dialogRef.value.querySelectorAll<HTMLElement>(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  )
+  const firstElement = focusableElements[0]
+  const lastElement = focusableElements[focusableElements.length - 1]
+
+  if (e.shiftKey && document.activeElement === firstElement) {
+    e.preventDefault()
+    lastElement?.focus()
+  } else if (!e.shiftKey && document.activeElement === lastElement) {
+    e.preventDefault()
+    firstElement?.focus()
+  }
+}
+
+onMounted(() => {
+  cancelButtonRef.value?.focus()
+  document.addEventListener('keydown', handleEscape)
+  document.addEventListener('keydown', handleTabTrap)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscape)
+  document.removeEventListener('keydown', handleTabTrap)
+})
 </script>
 
 <template>
   <Teleport to="body">
     <div class="dialog-backdrop" @click.self="emit('cancel')">
-      <div class="dialog-panel">
-        <h3 class="dialog-title">{{ title }}</h3>
+      <div
+        ref="dialogRef"
+        class="dialog-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+      >
+        <h3 id="confirm-dialog-title" class="dialog-title">{{ title }}</h3>
         <p class="dialog-message">{{ message }}</p>
         <div class="dialog-actions">
-          <button class="btn btn-secondary" @click="emit('cancel')">
+          <button ref="cancelButtonRef" class="btn btn-secondary" @click="emit('cancel')">
             {{ cancelLabel || 'CANCEL' }}
           </button>
           <button
@@ -54,7 +100,14 @@ const emit = defineEmits<{
   padding: var(--space-6);
   background: var(--bg-elevated);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-md)) 0,
+    100% var(--chamfer-md),
+    100% 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
   box-shadow: var(--shadow-xl);
 }
 

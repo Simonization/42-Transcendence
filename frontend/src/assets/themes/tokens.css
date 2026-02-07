@@ -1,18 +1,17 @@
 /**
- * Design Tokens - Quantum Break Inspired
+ * Design Tokens - WipEout HUD Inspired
  * Shared structure for both themes
  *
  * Design Philosophy:
- * - Ultra-clean, minimal aesthetic
- * - Typography-driven hierarchy (weight, not decoration)
- * - Accent colors for selection/active states only
- * - Generous whitespace
- * - Timeline/progress visualizations
+ * - Aggressive angularity, zero border-radius
+ * - Chamfered (45° cut) corners via clip-path
+ * - Technical precision, HUD readout aesthetic
+ * - Generous whitespace + monospace data labels
+ * - Anti-gravity racing league vibes
  */
 
 :root {
   /* ===== SPACING SCALE (4px base) ===== */
-  --space-0: 0;
   --space-1: 0.25rem;   /* 4px */
   --space-2: 0.5rem;    /* 8px */
   --space-3: 0.75rem;   /* 12px */
@@ -44,33 +43,32 @@
   --text-6xl: 3.75rem;    /* 60px - for large stats like "49%" */
 
   /* Font weights */
-  --font-normal: 400;
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
 
   /* Line heights */
   --leading-none: 1;
-  --leading-tight: 1.25;
-  --leading-snug: 1.375;
   --leading-normal: 1.5;
   --leading-relaxed: 1.625;
 
   /* Letter spacing */
   --tracking-tight: -0.025em;
-  --tracking-normal: 0;
   --tracking-wide: 0.025em;
   --tracking-wider: 0.05em;
   --tracking-widest: 0.1em;    /* For ALL CAPS text */
 
-  /* ===== BORDER RADIUS ===== */
-  --radius-none: 0;
-  --radius-sm: 0.125rem;  /* 2px - very subtle */
-  --radius-md: 0.25rem;   /* 4px */
-  --radius-lg: 0.5rem;    /* 8px */
-  --radius-xl: 0.75rem;   /* 12px */
-  --radius-2xl: 1rem;     /* 16px */
-  --radius-full: 9999px;  /* Pill shape */
+  /* ===== CHAMFER SYSTEM (replaces border-radius) ===== */
+  /* Cut sizes for clip-path polygon corners */
+  --chamfer-xs: 3px;     /* Micro cut - badges, small elements */
+  --chamfer-sm: 6px;     /* Subtle cut - buttons, inputs */
+  --chamfer-md: 10px;    /* Standard cut - cards, panels */
+  --chamfer-lg: 16px;    /* Aggressive cut - hero cards, modals */
+  --chamfer-xl: 24px;    /* Deep cut - feature panels */
+
+  /* HUD border width for double-hull effect */
+  --hud-border: 1px;
+  --hud-border-thick: 2px;
 
   /* ===== TRANSITIONS ===== */
   --duration-fast: 150ms;
@@ -141,4 +139,130 @@ body {
   font-weight: var(--font-bold);
   line-height: var(--leading-none);
   letter-spacing: var(--tracking-tight);
+}
+
+/* ===== HUD CLIP-PATH SHAPES ===== */
+
+/* Button chamfer: top-left + bottom-right cut */
+.clip-btn {
+  clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
+}
+
+/* Card chamfer: deep top-right cut, subtle others */
+.clip-card {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-lg)) 0,
+    100% var(--chamfer-lg),
+    100% 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
+}
+
+/* Panel chamfer: symmetric opposing cuts */
+.clip-panel {
+  clip-path: polygon(
+    var(--chamfer-md) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-md)),
+    calc(100% - var(--chamfer-md)) 100%,
+    0 100%,
+    0 var(--chamfer-md)
+  );
+}
+
+/* Input chamfer: subtle top-left cut only */
+.clip-input {
+  clip-path: polygon(
+    var(--chamfer-xs) 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 var(--chamfer-xs)
+  );
+}
+
+/* Hexagon for avatars */
+.clip-hex {
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* Badge chamfer: tiny opposing cuts */
+.clip-badge {
+  clip-path: polygon(
+    var(--chamfer-xs) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-xs)),
+    calc(100% - var(--chamfer-xs)) 100%,
+    0 100%,
+    0 var(--chamfer-xs)
+  );
+}
+
+/* Dialog/modal chamfer: deep top-right, medium bottom-left */
+.clip-dialog {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-xl)) 0,
+    100% var(--chamfer-xl),
+    100% 100%,
+    var(--chamfer-md) 100%,
+    0 calc(100% - var(--chamfer-md))
+  );
+}
+
+/* Message bubble: asymmetric */
+.clip-bubble {
+  clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-xs)),
+    calc(100% - var(--chamfer-xs)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
+}
+
+.clip-bubble-own {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-sm)) 0,
+    100% var(--chamfer-sm),
+    100% 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
+}
+
+/* Tab: bottom-left and bottom-right cuts */
+.clip-tab {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-xs)),
+    calc(100% - var(--chamfer-xs)) 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
+}
+
+/* Status icon: octagon */
+.clip-octagon {
+  clip-path: polygon(
+    30% 0%, 70% 0%, 100% 30%, 100% 70%,
+    70% 100%, 30% 100%, 0% 70%, 0% 30%
+  );
+}
+
+/* Toggle track: parallelogram */
+.clip-toggle-track {
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
