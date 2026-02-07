@@ -10,7 +10,7 @@ A tournament organizer for esports competitions, created for 42 Belgium by Ahmet
 - **Documentation:** Google Docs specification: https://docs.google.com/document/d/1zdf079lEJqqbx9p4P-mLMo3ZPIluBtxt0sC1ao2E4Ak
 - **Task Tracking:** https://docs.google.com/spreadsheets/d/1_n5ql6kverWHChRL5XJNWhIwYxnunGBGKnGAgUoVzfk
 - **Project Timeline:** 6 weeks (Jan 19 - Mar 1, 2026)
-- **Status:** End of Week 3 (Friday, Feb 6)
+- **Status:** Start of Week 4 (Friday, Feb 7)
 
 ## Technical Stack
 
@@ -27,125 +27,27 @@ A tournament organizer for esports competitions, created for 42 Belgium by Ahmet
 
 ### Week 1 (Jan 19-25): Foundation ✅
 
-**Goal:** Set up Docker, initialize frameworks, begin authentication.
+Docker infrastructure (5 containers: nginx, backend, frontend, db, pgadmin), NestJS + Vue 3 scaffolds, TypeORM entities, JWT auth with refresh tokens, Friends module backend. **Key decision:** Django → NestJS for TypeScript consistency. 18 commits, 3/4 contributors.
 
-| Feature | Contributor | Status |
-|---------|-------------|--------|
-| Docker Compose (nginx, backend, frontend, db, pgadmin) | Ahmet Tamer | Done |
-| NestJS backend scaffold | Ahmet Tamer | Done |
-| Vue 3 + Vite frontend scaffold | Ahmet Tamer | Done |
-| TypeORM database setup | Ahmet Tamer, Nicolas Orban | Done |
-| TypeORM entities (User, Profile, Settings, Friends, Chat) | Nicolas Orban | Done |
-| User management & password hashing | Nicolas Orban | Done |
-| JWT authentication foundation | Louis Watelle | Done |
-| Refresh token implementation | Louis Watelle | Done |
-| Friends module (add/remove/block/unblock) | Nicolas Orban | Done |
-| Makefile (up, down, fclean) | Louis Watelle | Done |
+### Week 2 (Jan 26 - Feb 1): Core Auth ✅
 
-**Key decisions:** Switched from Django to NestJS for backend consistency with TypeScript.
+Complete auth flow (registration, email verify, 2FA, login/logout), Google OAuth backend + frontend, chat module backend, user profile endpoints. **Key decision:** Riot OAuth → Google OAuth (Riot requires App Store approval); email-based 2FA for MVP. 22 commits, 4/4 contributors.
 
-**Commits:** 18 | **Contributors:** 3/4
+### Week 3 (Feb 2-8): Frontend Architecture ✅
 
----
+Full frontend foundation — typed API service layer with auto-refresh, Vue Router (auth + nested menu routes), 115 unit tests (Vitest + Vue Test Utils), dual-theme system (Stellar/Dragon), design tokens, core UI components, auth pages. **Key decision:** API-first architecture on feature branch. 28 commits, 2/4 contributors.
 
-### Week 2 (Jan 26 - Feb 1): Core Auth & API Structure ✅
+### Week 4 (Feb 9-15): Real-time + Social UI
 
-**Goal:** Complete user registration/login flow, implement OAuth, establish backend API patterns.
+Merge frontend branch to main. Friends UI (list, requests, blocked tabs). Chat UI with WebSocket integration. Notification toast system. Match history API (chess.com). Advanced permissions (RBAC: admin/user/moderator roles).
 
-| Feature | Contributor | Status |
-|---------|-------------|--------|
-| JWT access + refresh token flow | Louis Watelle | Done |
-| User registration with email verification | Louis Watelle | Done |
-| Email verification via Nodemailer | Louis Watelle | Done |
-| User login + logout | Louis Watelle | Done |
-| Two-factor authentication (email-based) | Louis Watelle | Done |
-| Google OAuth 2.0 integration (backend) | Nicolas Orban | Done |
-| User profile management endpoints | Nicolas Orban | Done |
-| Chat module (backend) | Nicolas Orban | Done |
-| Friends module (backend improvements) | Nicolas Orban | Done |
-| Google OAuth frontend testing | Ahmet Tamer | Done |
-| Project Planning in and doc in README | Simon Langerock | Done |
+### Week 5 (Feb 16-22): Polish + Modules
 
-**Key decisions:** Switched from Riot OAuth (API unsuitable) to Google OAuth. Implemented email-based 2FA instead of TOTP for MVP simplicity.
+Advanced chat features (block, invite, typing indicators, chat history). Custom design system (10+ reusable components). i18n (English, French, Turkish). Advanced search with filters/sorting/pagination.
 
-**Commits:** 22 | **Contributors:** 4/4
+### Week 6 (Feb 23 - Mar 1): Hardening
 
----
-
-### Week 3 (Feb 2-8): Frontend Architecture & API Integration 🔄 IN PROGRESS
-
-**Goal:** Build frontend application structure, implement API layer, enable social features, establish design system.
-
-| Feature | Contributor | Status |
-|---------|-------------|--------|
-| Phase 1 API Service Layer (typed, auto-refresh) | Simon Langerock | Done |
-| Vue Router setup (auth, menu, nested routes) | Simon Langerock | Done |
-| Enable FriendsModule in app.module.ts | Simon Langerock | Done |
-| Enable ChatModule in app.module.ts | Simon Langerock | Done |
-| Frontend testing infrastructure (Vitest + Vue Test Utils) | Simon Langerock | Done |
-| 115 unit tests (API, composables, components) | Simon Langerock | Done |
-| Dual-theme system (Stellar light/orange + Dragon dark/gold) | Simon Langerock | Done |
-| Design tokens and CSS variable system | Simon Langerock | Done |
-| Core UI components (buttons, forms, cards) | Simon Langerock | Done |
-| Authentication pages (login, register, 2FA, email verify) | Simon Langerock | Done |
-| Frontend documentation & guides | Simon Langerock | Done |
-
-**Key decisions:** Frontend branch (`simon/frontend`) implements Phase 1 with API integration layer before UI implementation. Tests validate architecture before feature completion.
-
-**Commits:** 28 | **Contributors:** 2/4
-
----
-
-## Feature Burndown
-
-| Feature Area | Backend | Frontend | Integration | Overall | Target Week | Status |
-|---|---|---|---|---|---|---|
-| **Docker / Infrastructure** | 100% | 100% | 100% | **100%** | Week 1 | ✅ Done |
-| **Standard User Auth (JWT, email, 2FA)** | 100% | 80% | 70% | **83%** | Week 2 | 🔄 In Progress |
-| **OAuth 2.0 (Google)** | 100% | 50% | 30% | **60%** | Week 2 | 🔄 In Progress |
-| **ORM (TypeORM)** | 100% | — | 100% | **100%** | Week 1 | ✅ Done |
-| **Frontend Framework (Vue 3)** | — | 95% | — | **95%** | Week 3 | 🔄 In Progress |
-| **Design System & Tokens** | — | 60% | — | **60%** | Week 5 | 🔄 In Progress |
-| **User Profiles & Settings** | 100% | 30% | 20% | **50%** | Week 3 | 🔄 In Progress |
-| **Friends / Social System** | 90% | 0% | 0% | **27%** | Week 3 | ⏳ Not Started |
-| **Chat System (real-time)** | 80% | 0% | 0% | **24%** | Week 4 | ⏳ Not Started |
-| **WebSocket Integration** | 30% | 0% | 0% | **9%** | Week 4 | ⏳ Not Started |
-| **Notifications** | 0% | 0% | 0% | **0%** | Week 4 | ⏳ Not Started |
-| **Match History (chess.com API)** | 0% | 0% | 0% | **0%** | Week 4 | ⏳ Not Started |
-| **Advanced Search** | 0% | 0% | 0% | **0%** | Week 5 | ⏳ Not Started |
-| **Internationalization (i18n)** | 10% | 0% | 0% | **3%** | Week 5 | ⏳ Not Started |
-
-**Summary:** 3/13 major features complete | 5/13 in progress | 5/13 not started | **Points earned (estimated): 7 of 20 (35%)**
-
----
-
-## Blockers & Risks
-
-### Critical (Must resolve Week 4)
-
-| Risk | Impact | Status | Mitigation |
-|------|--------|--------|-----------|
-| Frontend branch (`simon/frontend`) not merged to main | API layer, tests, theme system, 95% of Week 3 work only on branch | ⚠️ Blocker | Create PR before Week 4; merge to unblock social/chat features |
-| Friends and Chat modules not wired in backend | 6 friend endpoints + 8 chat endpoints inaccessible | ✅ Resolved (Feb 4) | Modules imported in app.module.ts on simon/frontend branch |
-| Match history module not started | Replaces tournament (dropped - Riot API requires Apple Store approved app) | 🔄 Pivoted | Build match history with chess.com API in Week 4 |
-
-### Moderate (Plan mitigation in Weeks 4-5)
-
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| Friends UI not implemented | Social system 0% integrated frontend | Build friends list, requests, block UI in Week 4 |
-| Chat UI not implemented | Real-time messaging 0% integrated frontend | Build chat room selector, message display, input in Week 4 |
-| WebSocket security wide open (CORS: *) | Would fail security review | Restrict to frontend URL before final submission |
-| 2FA flow missing frontend | Backend done, but UI flow not connected | Add 2FA form + verification UI (low effort) |
-| No notification system | Required module (1 point), 0% progress | Implement lightweight toast notifications + WS integration in Week 4 |
-
-### Low (Buffer for Week 6)
-
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| No E2E tests | May miss integration failures | Add Playwright smoke tests in Week 5-6 |
-| Design system incomplete | Visual inconsistency | Focus on core components (buttons, inputs, cards, modals) in Week 5 |
-| User endpoints lack auth guards | Some endpoints exposed without JWT check | Audit endpoints Week 4; add JwtAuthGuard where missing |
+Cross-browser testing (Firefox, Safari/Edge). Bug fixes and security hardening (WebSocket CORS). Documentation cleanup. Evaluation dry-runs. Stretch: Organization system.
 
 ---
 
@@ -243,4 +145,4 @@ Simon, for frontend in Vue and for Project Manaaement uses Claude Code (Anthropi
 
 ---
 
-**Last Updated:** Friday, February 6, 2026 (End of Week 3)
+**Last Updated:** Friday, February 7, 2026 (Start of Week 4)
