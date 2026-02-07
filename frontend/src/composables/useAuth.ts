@@ -1,44 +1,68 @@
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+/**
+ * Authentication Composable (Singleton)
+ * Module-level refs ensure state is shared across all components
+ */
+
+import { ref, readonly } from 'vue'
+import { usersApi } from '../api/users'
+import { authApi } from '../api/auth'
+import { getAccessToken } from '../api'
+import type { User } from '../types'
+
+// Module-level shared state (singleton)
+const user = ref<User | null>(null)
+const isAuthenticated = ref(false)
+const isLoading = ref(false)
 
 export function useAuth() {
-  const router = useRouter()
-  const isAuthenticated = ref(false)
-
-  const checkAuth = async () => {
-    const token = localStorage.getItem('accessToken')
+  /**
+   * Check if user is authenticated by validating token with backend
+   */
+  const checkAuth = async (): Promise<boolean> => {
+    const token = getAccessToken()
     if (!token) {
       isAuthenticated.value = false
+      user.value = null
       return false
     }
-    
+
+    isLoading.value = true
     try {
-      const response = await fetch('/api/users/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      isAuthenticated.value = response.ok
-      return response.ok
-    } catch (error) {
+      const userData = await usersApi.getMe()
+      user.value = userData
+      isAuthenticated.value = true
+      return true
+    } catch {
       isAuthenticated.value = false
+      user.value = null
       return false
+    } finally {
+      isLoading.value = false
     }
   }
 
-  const logout = async () => {
-    const token = localStorage.getItem('accessToken')
+  /**
+   * Logout current user and clear state
+   * Caller is responsible for navigation after logout
+   */
+  const logout = async (): Promise<void> => {
+    isLoading.value = true
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-    } catch (e) { console.error(e) } 
-    finally {
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
+      await authApi.logout()
+    } catch {
+      // Ignore errors, tokens will be cleared anyway
+    } finally {
       isAuthenticated.value = false
-      router.push('/login')
+      user.value = null
+      isLoading.value = false
     }
   }
 
-  return { isAuthenticated, checkAuth, logout }
+  return {
+    isAuthenticated: readonly(isAuthenticated),
+    user: readonly(user),
+    isLoading: readonly(isLoading),
+    checkAuth,
+    logout,
+  }
 }

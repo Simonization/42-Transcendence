@@ -1,4 +1,12 @@
+/**
+ * Two-Factor Authentication Composable
+ * Manages 2FA enable/disable/verify flows
+ */
+
 import { ref } from 'vue'
+import { usersApi } from '../api/users'
+import { authApi } from '../api/auth'
+import { getErrorMessage } from '../utils/error'
 
 export function useTwoFactor() {
   const enabled = ref(false)
@@ -8,84 +16,86 @@ export function useTwoFactor() {
   const code = ref('')
   const isFetching = ref(true)
 
-  const getToken = () => localStorage.getItem('accessToken')
-
-  const fetchStatus = async () => {
-    const token = getToken()
-    if (!token) return
+  /**
+   * Fetch current 2FA status from user profile
+   */
+  const fetchStatus = async (): Promise<void> => {
     isFetching.value = true
     try {
-      const res = await fetch('/api/users/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      if (res.ok) {
-        const data = await res.json()
-        enabled.value = data.twoFactorEnabled || false
-      }
-    } finally { isFetching.value = false }
+      const user = await usersApi.getMe()
+      enabled.value = user.twoFactorEnabled || false
+    } catch {
+      // User not authenticated or error fetching
+      enabled.value = false
+    } finally {
+      isFetching.value = false
+    }
   }
 
-  const enable = async () => {
+  /**
+   * Enable 2FA - sends code to user's email
+   */
+  const enable = async (): Promise<void> => {
     loading.value = true
     message.value = ''
     try {
-      const res = await fetch('/api/auth/2fa/enable', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${getToken()}` }
-      })
-      const data = await res.json()
-      if (res.ok) {
-        message.value = '✓ Code sent to email.'
-        showForm.value = true
-      } else {
-        message.value = `✗ Error: ${data.message}`
-      }
-    } catch { message.value = '✗ Network error!' }
-    finally { loading.value = false }
+      await authApi.enable2FA()
+      message.value = 'Code sent to email.'
+      showForm.value = true
+    } catch (error) {
+      message.value = `Error: ${getErrorMessage(error, 'Network error!')}`
+    } finally {
+      loading.value = false
+    }
   }
 
-  const confirm = async () => {
+  /**
+   * Confirm 2FA with code from email
+   */
+  const confirm = async (): Promise<void> => {
     loading.value = true
+    message.value = ''
     try {
-      const res = await fetch('/api/auth/2fa/confirm', {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${getToken()}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ code: code.value })
-      })
-      const data = await res.json()
-      if (res.ok) {
-        message.value = '✓ 2FA Enabled!'
-        enabled.value = true
-        showForm.value = false
-        code.value = ''
-      } else {
-        message.value = `✗ Error: ${data.message}`
-      }
-    } catch { message.value = '✗ Network error!' }
-    finally { loading.value = false }
+      await authApi.confirm2FA({ code: code.value })
+      message.value = '2FA Enabled!'
+      enabled.value = true
+      showForm.value = false
+      code.value = ''
+    } catch (error) {
+      message.value = `Error: ${getErrorMessage(error, 'Network error!')}`
+    } finally {
+      loading.value = false
+    }
   }
 
-  const disable = async () => {
+  /**
+   * Disable 2FA for current user
+   */
+  const disable = async (): Promise<void> => {
     loading.value = true
+    message.value = ''
     try {
-      const res = await fetch('/api/auth/2fa/disable', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${getToken()}` }
-      })
-      if (res.ok) {
-        message.value = '✓ 2FA Disabled'
-        enabled.value = false
-        showForm.value = false
-      }
-    } catch { message.value = '✗ Network error!' }
-    finally { loading.value = false }
+      await authApi.disable2FA()
+      message.value = '2FA Disabled'
+      enabled.value = false
+      showForm.value = false
+    } catch (error) {
+      message.value = `Error: ${getErrorMessage(error, 'Network error!')}`
+    } finally {
+      loading.value = false
+    }
   }
 
   return {
-    enabled, loading, message, showForm, code, isFetching,
-    fetchStatus, enable, confirm, disable
+    enabled,
+    loading,
+    message,
+    showForm,
+    code,
+    isFetching,
+    fetchStatus,
+    enable,
+    confirm,
+    disable,
   }
 }

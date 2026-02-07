@@ -1,0 +1,155 @@
+/**
+ * Dragon Theme - Dark / Gold / Mystical
+ * Inspired by Quantum Break HUD + Fantasy elements
+ *
+ * Visual Identity:
+ * - Deep navy/dark backgrounds
+ * - Gold accent for selection and active states
+ * - Off-white text with muted secondary
+ * - Subtle gold glows and highlights
+ * - Magic dragon / fantasy / regal vibes
+ */
+
+[data-theme="dragon"] {
+  /* ===== BACKGROUND COLORS ===== */
+  --bg-primary: #0a1628;         /* Main background - deep navy */
+  --bg-secondary: #0f1f38;       /* Card/elevated surfaces */
+  --bg-tertiary: #132743;        /* Subtle sections */
+  --bg-elevated: #162d50;        /* Modals, dropdowns */
+  --bg-hover: rgba(212, 175, 55, 0.08);
+  --bg-selected: rgba(212, 175, 55, 0.15);
+
+  /* ===== TEXT COLORS ===== */
+  --text-primary: #e8e6e3;       /* Main text - warm off-white */
+  --text-secondary: #9ca3af;     /* Secondary text - muted */
+  --text-tertiary: #6b7280;      /* Disabled, hints */
+  --text-on-accent: #0a1628;     /* Text on gold accent */
+
+  /* ===== ACCENT COLORS ===== */
+  /* Primary: Gold (Dragon/Regal color) */
+  --accent-primary: #d4af37;
+  --accent-primary-hover: #e6c54a;
+  --accent-primary-subtle: rgba(212, 175, 55, 0.15);
+  --accent-primary-glow: rgba(212, 175, 55, 0.5);
+
+  /* ===== STATUS COLORS ===== */
+  --color-success: #34d399;
+  --color-success-bg: rgba(52, 211, 153, 0.15);
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(251, 191, 36, 0.15);
+  --color-error: #f87171;
+  --color-error-bg: rgba(248, 113, 113, 0.15);
+  --color-info: #60a5fa;
+  --color-info-bg: rgba(96, 165, 250, 0.15);
+
+  /* ===== BORDER COLORS ===== */
+  --border-default: #1e3a5f;
+  --border-subtle: #162d50;
+  --border-strong: #2a4a73;
+  --border-error: var(--color-error);
+
+  /* ===== SHADOW (with gold glow option) ===== */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 30px var(--accent-primary-glow);
+  --shadow-glow-sm: 0 0 15px rgba(212, 175, 55, 0.3);
+
+  /* ===== SELECTION INDICATOR ===== */
+  --selection-indicator: "◆";    /* Diamond for dragon theme */
+  --selection-indicator-color: var(--accent-primary);
+
+  /* ===== TIMELINE COLORS ===== */
+  --timeline-line: #1e3a5f;
+  --timeline-line-active: var(--accent-primary);
+  --timeline-dot: #4a5568;
+  --timeline-dot-active: var(--accent-primary);
+  --timeline-dot-complete: var(--color-success);
+  --timeline-wave: rgba(212, 175, 55, 0.08);
+
+  /* ===== FORM ELEMENTS ===== */
+  --input-bg: #0f1f38;
+  --input-border: var(--border-default);
+  --input-border-hover: var(--border-strong);
+  --input-border-focus: var(--accent-primary);
+  --input-placeholder: var(--text-tertiary);
+
+  /* ===== SCROLLBAR ===== */
+  --scrollbar-track: var(--bg-secondary);
+  --scrollbar-thumb: #2a4a73;
+  --scrollbar-thumb-hover: #3d5a80;
+
+  /* ===== COMPONENT-SPECIFIC ===== */
+  /* Navigation */
+  --nav-item-color: var(--text-secondary);
+  --nav-item-color-hover: var(--text-primary);
+  --nav-item-color-active: var(--accent-primary);
+  --nav-item-bg-hover: var(--bg-hover);
+  --nav-item-bg-active: var(--bg-selected);
+
+  /* Cards */
+  --card-bg: var(--bg-secondary);
+  --card-border: var(--border-subtle);
+  --card-shadow: var(--shadow-md);
+
+  /* Buttons */
+  --btn-primary-bg: var(--accent-primary);
+  --btn-primary-bg-hover: var(--accent-primary-hover);
+  --btn-primary-text: var(--text-on-accent);
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: var(--accent-primary);
+  --btn-secondary-text: var(--accent-primary);
+  --btn-ghost-text: var(--text-secondary);
+  --btn-ghost-text-hover: var(--text-primary);
+
+  /* Progress */
+  --progress-bg: var(--bg-tertiary);
+  --progress-fill: var(--accent-primary);
+  --progress-text: var(--accent-primary);
+}
+
+/* ===== DRAGON THEME SPECIFIC STYLES ===== */
+[data-theme="dragon"] {
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+[data-theme="dragon"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="dragon"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+[data-theme="dragon"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+[data-theme="dragon"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Selection highlight */
+[data-theme="dragon"] ::selection {
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+}
+
+/* Focus outline style - gold glow */
+[data-theme="dragon"] :focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-glow-sm);
+}
+
+/* Special dragon theme effects */
+[data-theme="dragon"] .glow {
+  box-shadow: var(--shadow-glow);
+}
+
+[data-theme="dragon"] .glow-sm {
+  box-shadow: var(--shadow-glow-sm);
+}

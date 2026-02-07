@@ -1,0 +1,235 @@
+/**
+ * Base API Client
+ * Centralized fetch wrapper with authentication and error handling
+ */
+
+import { ApiError, TOKEN_KEYS } from '../types';
+import type { RequestOptions, ApiErrorResponse } from '../types';
+
+const API_BASE = '/api';
+
+/** Flag to prevent multiple simultaneous refresh attempts */
+let isRefreshing = false;
+/** Queue of requests waiting for token refresh */
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+/**
+ * Subscribe to token refresh completion
+ */
+function subscribeToRefresh(callback: (token: string) => void): void {
+  refreshSubscribers.push(callback);
+}
+
+/**
+ * Notify all subscribers that refresh is complete
+ */
+function onRefreshComplete(newToken: string): void {
+  refreshSubscribers.forEach((callback) => callback(newToken));
+  refreshSubscribers = [];
+}
+
+/**
+ * Get the current access token from storage
+ */
+export function getAccessToken(): string | null {
+  return localStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
+}
+
+/**
+ * Get the current refresh token from storage
+ */
+export function getRefreshToken(): string | null {
+  return localStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
+}
+
+/**
+ * Store tokens in localStorage
+ */
+export function setTokens(accessToken: string, refreshToken?: string): void {
+  localStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, accessToken);
+  if (refreshToken) {
+    localStorage.setItem(TOKEN_KEYS.REFRESH_TOKEN, refreshToken);
+  }
+}
+
+/**
+ * Clear all tokens from storage
+ */
+export function clearTokens(): void {
+  localStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN);
+  localStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
+}
+
+/**
+ * Attempt to refresh the access token
+ * @returns New access token or null if refresh failed
+ */
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      // Refresh token is invalid, clear tokens
+      clearTokens();
+      return null;
+    }
+
+    const data = await response.json();
+    setTokens(data.accessToken);
+    return data.accessToken;
+  } catch {
+    clearTokens();
+    return null;
+  }
+}
+
+/**
+ * Handle 401 response - attempt token refresh
+ */
+async function handle401<T>(
+  endpoint: string,
+  options: RequestOptions
+): Promise<T | null> {
+  if (isRefreshing) {
+    // Wait for the ongoing refresh to complete
+    return new Promise((resolve) => {
+      subscribeToRefresh(async (newToken) => {
+        // Retry the original request with new token
+        const retryOptions = {
+          ...options,
+          headers: {
+            ...options.headers,
+            Authorization: `Bearer ${newToken}`,
+          },
+        };
+        try {
+          const result = await api<T>(endpoint, { ...retryOptions, auth: false });
+          resolve(result);
+        } catch {
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  isRefreshing = true;
+
+  try {
+    const newToken = await refreshAccessToken();
+    if (!newToken) {
+      // Redirect to login
+      window.location.href = '/auth';
+      return null;
+    }
+
+    onRefreshComplete(newToken);
+
+    // Retry the original request
+    const retryOptions = {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${newToken}`,
+      },
+    };
+    return await api<T>(endpoint, { ...retryOptions, auth: false });
+  } finally {
+    isRefreshing = false;
+  }
+}
+
+/**
+ * Main API function - generic fetch wrapper with auth support
+ *
+ * @param endpoint - API endpoint (e.g., '/users/me')
+ * @param options - Request options
+ * @returns Parsed JSON response
+ * @throws ApiError on non-2xx responses
+ *
+ * @example
+ * // GET request with auth
+ * const user = await api<User>('/users/me');
+ *
+ * @example
+ * // POST request without auth
+ * const response = await api<AuthResponse>('/auth/login', {
+ *   method: 'POST',
+ *   body: { username: 'test', password: 'test' },
+ *   auth: false,
+ * });
+ */
+export async function api<T>(
+  endpoint: string,
+  options: RequestOptions = {}
+): Promise<T> {
+  const { auth = true, body, ...fetchOptions } = options;
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+  // Add auth header if required
+  if (auth) {
+    const token = getAccessToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...fetchOptions,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  // Handle successful responses
+  if (response.ok) {
+    // Handle empty responses (204 No Content)
+    const text = await response.text();
+    if (!text) {
+      return {} as T;
+    }
+    return JSON.parse(text);
+  }
+
+  // Handle 401 - attempt token refresh
+  if (response.status === 401 && auth) {
+    const retryResult = await handle401<T>(endpoint, options);
+    if (retryResult !== null) {
+      return retryResult;
+    }
+    // Refresh failed and user was redirected to login
+    // Return a rejected promise to signal the auth failure without throwing
+    // (The redirect is already in progress)
+    return Promise.reject(new ApiError(401, 'SESSION_EXPIRED', 'Session expired'));
+  }
+
+  // Parse error response
+  let errorData: ApiErrorResponse;
+  try {
+    errorData = await response.json();
+  } catch {
+    errorData = {
+      statusCode: response.status,
+      message: response.statusText || 'An error occurred',
+    };
+  }
+
+  throw new ApiError(
+    response.status,
+    errorData.error || 'UNKNOWN_ERROR',
+    errorData.message
+  );
+}
