@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '../../api/auth'
-import { ApiError } from '../../types'
+import { useErrorHandler } from '../../composables/useErrorHandler'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,7 +10,8 @@ const router = useRouter()
 const isLoading = ref(true)
 const isSuccess = ref(false)
 const isError = ref(false)
-const errorMessage = ref('')
+
+const { message: errorMessage } = useErrorHandler()
 
 onMounted(async () => {
   const token = route.query.token as string | undefined
@@ -27,11 +28,7 @@ onMounted(async () => {
     isSuccess.value = true
   } catch (error) {
     isError.value = true
-    if (error instanceof ApiError) {
-      errorMessage.value = error.message
-    } else {
-      errorMessage.value = 'Network error. Please try again later.'
-    }
+    errorMessage.value = error instanceof Error ? error.message : 'Network error. Please try again later.'
   } finally {
     isLoading.value = false
   }
@@ -76,13 +73,13 @@ const redirectToLogin = () => {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
   letter-spacing: var(--tracking-widest);
-  color: #e8e6e3;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .state-text {
   font-size: var(--text-sm);
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -99,13 +96,13 @@ const redirectToLogin = () => {
 
 .state-icon-success {
   background: rgba(52, 211, 153, 0.1);
-  color: #34d399;
+  color: var(--color-success);
   border: 1px solid rgba(52, 211, 153, 0.3);
 }
 
 .state-icon-error {
   background: rgba(248, 113, 113, 0.1);
-  color: #f87171;
+  color: var(--color-error);
   border: 1px solid rgba(248, 113, 113, 0.3);
 }
 
@@ -113,13 +110,13 @@ const redirectToLogin = () => {
   width: 100%;
   padding: var(--space-3) var(--space-4);
   margin-top: var(--space-4);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
-  color: #0a0e1a;
-  background: #e8e6e3;
+  color: var(--bg-primary);
+  background: var(--text-primary);
   border: 1px solid transparent;
   clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
@@ -127,19 +124,19 @@ const redirectToLogin = () => {
 }
 
 .auth-btn:hover {
-  background: #ffffff;
+  background: var(--bg-secondary);
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
 .auth-btn-secondary {
   background: transparent;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .auth-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.04);
-  color: #e8e6e3;
+  color: var(--text-primary);
   box-shadow: none;
 }
 </style>

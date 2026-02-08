@@ -1,4 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { getAccessToken } from '../api'
+import { useAuthStore } from '../stores/auth'
+import { setActivePinia, createPinia } from 'pinia'
+
+// Ensure Pinia is available for router guards
+let pinia: ReturnType<typeof createPinia> | null = null
 
 const router = createRouter({
   history: createWebHistory(),
@@ -50,6 +56,31 @@ const router = createRouter({
           name: 'dev',
           component: () => import('../pages/menu/DevCard.vue'),
         },
+        {
+          path: 'history',
+          name: 'match-history',
+          component: () => import('../pages/menu/MatchHistoryCard.vue'),
+        },
+        {
+          path: 'brackets',
+          name: 'tournament-brackets',
+          component: () => import('../pages/menu/TournamentBracketsCard.vue'),
+        },
+        {
+          path: 'tournaments',
+          name: 'tournaments',
+          component: () => import('../pages/menu/TournamentsCard.vue'),
+        },
+        {
+          path: 'tournaments/:id',
+          name: 'tournament-detail',
+          component: () => import('../pages/menu/TournamentDetailCard.vue'),
+        },
+        {
+          path: 'admin',
+          name: 'admin',
+          component: () => import('../pages/menu/AdminCard.vue'),
+        },
       ],
     },
 
@@ -62,15 +93,39 @@ const router = createRouter({
   ],
 })
 
-// Auth guard
-router.beforeEach((to) => {
+// Auth guard - validates tokens with server before allowing access
+router.beforeEach(async (to) => {
   const publicPaths = ['/', '/auth', '/auth/verify-email', '/auth/2fa', '/auth/callback']
   const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/')
-  const hasToken = !!localStorage.getItem('accessToken')
 
-  if (!isPublic && !hasToken) {
+  // Public routes don't need authentication
+  if (isPublic) {
+    return true
+  }
+
+  // Protected routes require valid token
+  const hasToken = !!getAccessToken()
+  if (!hasToken) {
     return '/auth'
   }
+
+  // Validate token with server via auth store
+  // Initialize Pinia if needed (happens once at app startup)
+  if (!pinia) {
+    pinia = createPinia()
+    setActivePinia(pinia)
+  }
+
+  const authStore = useAuthStore()
+  const isAuthenticated = await authStore.checkAuth()
+
+  // If authentication check failed, redirect to login
+  if (!isAuthenticated) {
+    return '/auth'
+  }
+
+  // Authentication valid, allow access
+  return true
 })
 
 export default router

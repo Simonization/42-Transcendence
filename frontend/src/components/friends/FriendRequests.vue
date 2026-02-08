@@ -3,6 +3,7 @@ import type { Friend } from '../../types'
 
 defineProps<{
   requests: Friend[]
+  isUpdating: boolean
 }>()
 
 const emit = defineEmits<{
@@ -29,11 +30,19 @@ const emit = defineEmits<{
       </div>
 
       <div class="request-actions">
-        <button class="btn btn-primary btn-sm" @click="emit('accept', request.id)">
-          ACCEPT
+        <button
+          class="btn btn-primary btn-sm"
+          :disabled="isUpdating"
+          @click="emit('accept', request.id)"
+        >
+          {{ isUpdating ? 'UPDATING...' : 'ACCEPT' }}
         </button>
-        <button class="btn btn-ghost btn-sm" @click="emit('decline', request.id)">
-          DECLINE
+        <button
+          class="btn btn-ghost btn-sm"
+          :disabled="isUpdating"
+          @click="emit('decline', request.id)"
+        >
+          {{ isUpdating ? 'UPDATING...' : 'DECLINE' }}
         </button>
       </div>
     </div>

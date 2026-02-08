@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { usersApi } from '../../api/users'
-import { useTheme } from '../../composables/useTheme'
-import { SUPPORTED_LANGUAGES, ApiError } from '../../types'
+import { useThemeStore } from '../../stores/theme'
+import { useErrorHandler } from '../../composables/useErrorHandler'
+import MessageAlert from '../common/MessageAlert.vue'
+import { SUPPORTED_LANGUAGES } from '../../types'
 import type { User, SupportedLanguage } from '../../types'
 
 const props = defineProps<{
@@ -13,11 +15,11 @@ const emit = defineEmits<{
   updated: []
 }>()
 
-const { toggleTheme, themeName } = useTheme()
+const themeStore = useThemeStore()
+const { toggleTheme, themeName } = themeStore
+const { message, messageType, handleError, handleSuccess, clearMessage } = useErrorHandler()
 
 const isSaving = ref(false)
-const message = ref('')
-const messageType = ref<'success' | 'error'>('success')
 
 const language = ref<SupportedLanguage>(props.user.settings?.language || 'en')
 const openMessage = ref(props.user.settings?.openMessage ?? true)
@@ -32,18 +34,16 @@ const languageLabels: Record<string, string> = {
 
 const saveSettings = async () => {
   isSaving.value = true
-  message.value = ''
+  clearMessage()
   try {
     await usersApi.updateSettings(props.user.id, {
       language: language.value,
       openMessage: openMessage.value,
     })
-    message.value = 'Settings saved'
-    messageType.value = 'success'
+    handleSuccess('Settings saved')
     emit('updated')
   } catch (error) {
-    messageType.value = 'error'
-    message.value = error instanceof ApiError ? error.message : 'Failed to save'
+    handleError(error, 'Failed to save')
   } finally {
     isSaving.value = false
   }
@@ -92,11 +92,7 @@ const saveSettings = async () => {
       </button>
     </div>
 
-    <Transition name="msg">
-      <p v-if="message" class="section-message" :class="messageType === 'error' ? 'alert-error' : 'alert-success'">
-        {{ message }}
-      </p>
-    </Transition>
+    <MessageAlert :message="message" :type="messageType" :show="!!message" />
   </section>
 </template>
 
@@ -184,15 +180,4 @@ const saveSettings = async () => {
   margin-top: var(--space-5);
 }
 
-.section-message {
-  margin-top: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
-  font-size: var(--text-xs);
-}
-
-.msg-enter-active { transition: all var(--duration-normal) var(--ease-out); }
-.msg-leave-active { transition: all var(--duration-fast) var(--ease-in); }
-.msg-enter-from,
-.msg-leave-to { opacity: 0; }
 </style>

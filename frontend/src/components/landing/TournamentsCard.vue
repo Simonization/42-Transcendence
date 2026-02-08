@@ -170,7 +170,7 @@ const tournaments = [
   align-self: flex-start;
   display: inline-block;
   padding: var(--space-2) var(--space-5);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   font-weight: var(--font-bold);
   letter-spacing: var(--tracking-widest);

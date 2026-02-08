@@ -4,7 +4,11 @@ import { useRouter } from 'vue-router'
 import { authApi } from '../../api/auth'
 import { usersApi } from '../../api/users'
 import { getAccessToken, clearTokens } from '../../api'
-import { requiresTwoFactor, ApiError } from '../../types'
+import { requiresTwoFactor } from '../../types'
+import { useFormValidation } from '../../composables/useFormValidation'
+import { useErrorHandler } from '../../composables/useErrorHandler'
+import MessageAlert from '../../components/common/MessageAlert.vue'
+import ShaderButton from '../../components/hud/ShaderButton.vue'
 
 const REDIRECT_DELAY = 800
 
@@ -14,9 +18,10 @@ const isLogin = ref(true)
 const username = ref('')
 const email = ref('')
 const password = ref('')
-const message = ref('')
-const messageType = ref<'success' | 'error'>('success')
 const isLoading = ref(false)
+
+const { validate, errors, isValid } = useFormValidation()
+const { message, messageType, handleError, handleSuccess, clearMessage } = useErrorHandler()
 
 onMounted(async () => {
   const token = getAccessToken()
@@ -31,7 +36,16 @@ onMounted(async () => {
 
 const login = async () => {
   isLoading.value = true
-  message.value = ''
+  clearMessage()
+
+  // Validate inputs
+  const usernameValid = validate(username.value, ['required'], 'username')
+  const passwordValid = validate(password.value, ['required'], 'password')
+
+  if (!usernameValid || !passwordValid) {
+    isLoading.value = false
+    return
+  }
 
   try {
     const response = await authApi.login({
@@ -40,23 +54,16 @@ const login = async () => {
     })
 
     if (requiresTwoFactor(response)) {
-      message.value = 'Credentials valid. Redirecting to 2FA...'
-      messageType.value = 'success'
+      handleSuccess('Credentials valid. Redirecting to 2FA...')
       setTimeout(() => {
         router.push(`/auth/2fa?userId=${response.userId}`)
       }, REDIRECT_DELAY)
     } else {
-      message.value = `Welcome, ${response.user.username}`
-      messageType.value = 'success'
+      handleSuccess(`Welcome, ${response.user.username}`)
       router.push('/menu')
     }
   } catch (error) {
-    messageType.value = 'error'
-    if (error instanceof ApiError) {
-      message.value = error.message
-    } else {
-      message.value = 'Network error'
-    }
+    handleError(error, 'Network error')
   } finally {
     isLoading.value = false
   }
@@ -64,7 +71,17 @@ const login = async () => {
 
 const register = async () => {
   isLoading.value = true
-  message.value = ''
+  clearMessage()
+
+  // Validate inputs
+  const usernameValid = validate(username.value, ['required', 'username', 'sanitize'], 'username')
+  const emailValid = validate(email.value, ['required', 'email', 'sanitize'], 'email')
+  const passwordValid = validate(password.value, ['required', 'password', 'sanitize'], 'password')
+
+  if (!usernameValid || !emailValid || !passwordValid) {
+    isLoading.value = false
+    return
+  }
 
   try {
     await authApi.register({
@@ -72,18 +89,12 @@ const register = async () => {
       mail: email.value,
       password: password.value,
     })
-    message.value = 'Registration successful! Check your email to verify.'
-    messageType.value = 'success'
+    handleSuccess('Registration successful! Check your email to verify.')
     username.value = ''
     email.value = ''
     password.value = ''
   } catch (error) {
-    messageType.value = 'error'
-    if (error instanceof ApiError) {
-      message.value = error.message
-    } else {
-      message.value = 'Network error'
-    }
+    handleError(error, 'Network error')
   } finally {
     isLoading.value = false
   }
@@ -118,10 +129,15 @@ const handleGoogleLogin = () => {
             v-model="username"
             type="text"
             class="field-input"
+            :class="{ 'field-input-error': errors.username }"
             placeholder="Enter username"
             required
             autocomplete="username"
+            @blur="validate(username, ['required'], 'username')"
+            :aria-invalid="!!errors.username"
+            :aria-describedby="errors.username ? 'username-error' : undefined"
           />
+          <span v-if="errors.username" id="username-error" class="field-error">{{ errors.username }}</span>
         </div>
 
         <div v-if="!isLogin" class="field">
@@ -131,10 +147,15 @@ const handleGoogleLogin = () => {
             v-model="email"
             type="email"
             class="field-input"
+            :class="{ 'field-input-error': errors.email }"
             placeholder="Enter email"
             required
             autocomplete="email"
+            @blur="validate(email, ['required', 'email', 'sanitize'], 'email')"
+            :aria-invalid="!!errors.email"
+            :aria-describedby="errors.email ? 'email-error' : undefined"
           />
+          <span v-if="errors.email" id="email-error" class="field-error">{{ errors.email }}</span>
         </div>
 
         <div class="field">
@@ -144,15 +165,26 @@ const handleGoogleLogin = () => {
             v-model="password"
             type="password"
             class="field-input"
+            :class="{ 'field-input-error': errors.password }"
             :placeholder="isLogin ? 'Enter password' : 'Min. 8 characters'"
             required
             autocomplete="current-password"
+            @blur="isLogin ? validate(password, ['required'], 'password') : validate(password, ['required', 'password', 'sanitize'], 'password')"
+            :aria-invalid="!!errors.password"
+            :aria-describedby="errors.password ? 'password-error' : undefined"
           />
+          <span v-if="errors.password" id="password-error" class="field-error">{{ errors.password }}</span>
         </div>
 
-        <button type="submit" class="auth-btn" :disabled="isLoading">
+        <ShaderButton
+          type="submit"
+          :shader="true"
+          size="lg"
+          :disabled="isLoading"
+          class="auth-shader-btn"
+        >
           {{ isLoading ? 'LOADING...' : (isLogin ? 'LOGIN' : 'REGISTER') }}
-        </button>
+        </ShaderButton>
       </form>
 
       <div class="auth-divider">
@@ -170,15 +202,7 @@ const handleGoogleLogin = () => {
         </a>
       </p>
 
-      <Transition name="msg">
-        <p
-          v-if="message"
-          class="auth-message"
-          :class="messageType === 'error' ? 'auth-message-error' : 'auth-message-success'"
-        >
-          {{ message }}
-        </p>
-      </Transition>
+      <MessageAlert :message="message" :type="messageType" :show="!!message" />
     </div>
   </div>
 </template>
@@ -197,14 +221,14 @@ const handleGoogleLogin = () => {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
   letter-spacing: var(--tracking-widest);
-  color: #e8e6e3;
+  color: var(--text-primary);
   margin: 0 0 var(--space-2) 0;
 }
 
 .auth-subtitle {
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-widest);
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
   margin: 0;
 }
@@ -225,7 +249,7 @@ const handleGoogleLogin = () => {
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
   letter-spacing: var(--tracking-widest);
-  color: #9ca3af;
+  color: var(--text-tertiary);
   text-transform: uppercase;
 }
 
@@ -234,7 +258,7 @@ const handleGoogleLogin = () => {
   padding: var(--space-3) var(--space-4);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
-  color: #e8e6e3;
+  color: var(--text-primary);
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.12);
   clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% 100%, 0 100%, 0 var(--chamfer-xs));
@@ -244,25 +268,38 @@ const handleGoogleLogin = () => {
 }
 
 .field-input::placeholder {
-  color: #4b5563;
+  color: var(--text-secondary);
 }
 
-.field-input:focus {
+.field-input:focus-visible {
   border-color: rgba(100, 120, 200, 0.5);
   box-shadow: 0 0 12px rgba(100, 120, 200, 0.1);
+}
+
+.field-input-error {
+  border-color: var(--color-error);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.1);
+}
+
+.field-error {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-error);
+  margin-top: var(--space-1);
+  padding: 0 var(--space-2);
 }
 
 .auth-btn {
   width: 100%;
   padding: var(--space-3) var(--space-4);
   margin-top: var(--space-2);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
-  color: #0a0e1a;
-  background: #e8e6e3;
+  color: var(--bg-primary);
+  background: var(--text-primary);
   border: 1px solid transparent;
   clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
@@ -270,7 +307,7 @@ const handleGoogleLogin = () => {
 }
 
 .auth-btn:hover:not(:disabled) {
-  background: #ffffff;
+  background: var(--bg-secondary);
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
@@ -279,16 +316,21 @@ const handleGoogleLogin = () => {
   cursor: not-allowed;
 }
 
+.auth-shader-btn {
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
 .auth-btn-google {
   background: transparent;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   border: 1px solid rgba(255, 255, 255, 0.12);
   margin-top: 0;
 }
 
 .auth-btn-google:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.04);
-  color: #e8e6e3;
+  color: var(--text-primary);
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: none;
 }
@@ -310,18 +352,18 @@ const handleGoogleLogin = () => {
   padding: 0 var(--space-4);
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-wider);
-  color: #4b5563;
+  color: var(--text-secondary);
 }
 
 .auth-toggle {
   text-align: center;
   margin-top: var(--space-6);
   font-size: var(--text-sm);
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .auth-toggle-link {
-  color: #e8e6e3;
+  color: var(--text-primary);
   cursor: pointer;
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-wider);
@@ -333,30 +375,4 @@ const handleGoogleLogin = () => {
 .auth-toggle-link:hover {
   opacity: 0.7;
 }
-
-.auth-message {
-  margin-top: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
-  font-size: var(--text-sm);
-  text-align: center;
-}
-
-.auth-message-success {
-  background: rgba(52, 211, 153, 0.1);
-  color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.2);
-}
-
-.auth-message-error {
-  background: rgba(248, 113, 113, 0.1);
-  color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.2);
-}
-
-/* Message transition */
-.msg-enter-active { transition: all var(--duration-normal) var(--ease-out); }
-.msg-leave-active { transition: all var(--duration-fast) var(--ease-in); }
-.msg-enter-from,
-.msg-leave-to { opacity: 0; transform: translateY(-8px); }
 </style>

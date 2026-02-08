@@ -1,6 +1,6 @@
 import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 
-interface ShaderParams {
+export interface ShaderParams {
   u_repetition?: number
   u_softness?: number
   u_shiftRed?: number
@@ -35,6 +35,23 @@ const DEFAULT_PARAMS: ShaderParams = {
   u_offsetY: -0.1,
 }
 
+// Global shader instance counter
+let activeShaderCount = 0
+const MAX_SHADERS = 3
+
+// WebGL detection (cached)
+let _webglSupported: boolean | null = null
+function hasWebGL(): boolean {
+  if (_webglSupported !== null) return _webglSupported
+  try {
+    const canvas = document.createElement('canvas')
+    _webglSupported = !!(canvas.getContext('webgl2') || canvas.getContext('webgl'))
+  } catch {
+    _webglSupported = false
+  }
+  return _webglSupported!
+}
+
 // Inject global style for shader canvas once
 let styleInjected = false
 function injectShaderStyle() {
@@ -59,21 +76,56 @@ export function useShader(options: UseShaderOptions) {
   const { container, params = {}, speed: initialSpeed = 0.6, enabled = true } = options
   const isLoaded = ref(false)
   const error = ref<string | null>(null)
+  const webglSupported = ref(hasWebGL())
   let shaderMount: any = null
+  let currentSpeed = initialSpeed
 
   const setSpeed = (speed: number) => {
+    currentSpeed = speed
     shaderMount?.setSpeed?.(speed)
+  }
+
+  const pause = () => {
+    shaderMount?.setSpeed?.(0)
+  }
+
+  const resume = () => {
+    shaderMount?.setSpeed?.(currentSpeed)
   }
 
   const destroy = () => {
     if (shaderMount?.destroy) {
       shaderMount.destroy()
       shaderMount = null
+      activeShaderCount--
+    }
+  }
+
+  const handleVisibility = () => {
+    if (document.hidden) {
+      pause()
+    } else {
+      resume()
     }
   }
 
   onMounted(async () => {
     if (!enabled) return
+
+    // Skip if reduced motion preferred
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    // Skip if no WebGL
+    if (!hasWebGL()) return
+
+    // Skip if too many shaders already active
+    if (activeShaderCount >= MAX_SHADERS) {
+      if (import.meta.env.DEV) {
+        console.warn(`[HUD] Shader limit reached (${MAX_SHADERS}), skipping`)
+      }
+      return
+    }
+
     injectShaderStyle()
 
     try {
@@ -88,7 +140,11 @@ export function useShader(options: UseShaderOptions) {
         undefined,
         initialSpeed,
       )
+      activeShaderCount++
       isLoaded.value = true
+
+      // Pause shader when tab is hidden
+      document.addEventListener('visibilitychange', handleVisibility)
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Shader load failed'
       if (import.meta.env.DEV) {
@@ -98,13 +154,17 @@ export function useShader(options: UseShaderOptions) {
   })
 
   onUnmounted(() => {
+    document.removeEventListener('visibilitychange', handleVisibility)
     destroy()
   })
 
   return {
     isLoaded,
     error,
+    webglSupported,
     setSpeed,
+    pause,
+    resume,
     destroy,
   }
 }

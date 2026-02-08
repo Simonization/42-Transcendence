@@ -3,6 +3,7 @@ import type { Block } from '../../types'
 
 defineProps<{
   blocks: Block[]
+  isUpdating: boolean
 }>()
 
 const emit = defineEmits<{
@@ -22,8 +23,12 @@ const emit = defineEmits<{
         <p v-if="block.reason" class="block-reason">{{ block.reason }}</p>
       </div>
 
-      <button class="btn btn-ghost btn-sm" @click="emit('unblock', block.blocked.id)">
-        UNBLOCK
+      <button
+        class="btn btn-ghost btn-sm"
+        :disabled="isUpdating"
+        @click="emit('unblock', block.blocked.id)"
+      >
+        {{ isUpdating ? 'UPDATING...' : 'UNBLOCK' }}
       </button>
     </div>
   </div>

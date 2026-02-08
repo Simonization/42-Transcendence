@@ -82,7 +82,7 @@ describe('useTwoFactor', () => {
     })
 
     it('should handle errors when fetching status', async () => {
-      mockGetMe.mockRejectedValueOnce(new Error('Network error'))
+      mockGetMe.mockRejectedValueOnce(new Error('Network error!'))
 
       const { fetchStatus, enabled, isFetching } = useTwoFactor()
 
@@ -115,18 +115,18 @@ describe('useTwoFactor', () => {
 
       await enable()
 
-      expect(message.value).toBe('Error: Invalid request')
+      expect(message.value).toBe('Invalid request')
       expect(showForm.value).toBe(false)
     })
 
     it('should handle network errors', async () => {
-      mockEnable2FA.mockRejectedValueOnce(new Error('Network error'))
+      mockEnable2FA.mockRejectedValueOnce(new Error('Network error!'))
 
       const { enable, message } = useTwoFactor()
 
       await enable()
 
-      expect(message.value).toBe('Error: Network error!')
+      expect(message.value).toBe('Network error!')
     })
 
     it('should set loading state during enable', async () => {
@@ -172,18 +172,18 @@ describe('useTwoFactor', () => {
       code.value = '000000'
       await confirm()
 
-      expect(message.value).toBe('Error: Invalid code')
+      expect(message.value).toBe('Invalid code')
     })
 
     it('should handle network errors during confirm', async () => {
-      mockConfirm2FA.mockRejectedValueOnce(new Error('Network error'))
+      mockConfirm2FA.mockRejectedValueOnce(new Error('Network error!'))
 
       const { confirm, code, message } = useTwoFactor()
 
       code.value = '123456'
       await confirm()
 
-      expect(message.value).toBe('Error: Network error!')
+      expect(message.value).toBe('Network error!')
     })
   })
 
@@ -213,17 +213,17 @@ describe('useTwoFactor', () => {
 
       await disable()
 
-      expect(message.value).toBe('Error: Not allowed')
+      expect(message.value).toBe('Not allowed')
     })
 
     it('should handle network errors during disable', async () => {
-      mockDisable2FA.mockRejectedValueOnce(new Error('Network error'))
+      mockDisable2FA.mockRejectedValueOnce(new Error('Network error!'))
 
       const { disable, message } = useTwoFactor()
 
       await disable()
 
-      expect(message.value).toBe('Error: Network error!')
+      expect(message.value).toBe('Network error!')
     })
 
     it('should set loading state during disable', async () => {

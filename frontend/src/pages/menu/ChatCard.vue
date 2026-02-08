@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useAuth } from '../../composables/useAuth'
-import { useChat } from '../../composables/useChat'
+import { useAuthStore } from '../../stores/auth'
+import { useChatStore } from '../../stores/chat'
 import ChatRoomList from '../../components/chat/ChatRoomList.vue'
 import ChatConversation from '../../components/chat/ChatConversation.vue'
 import MessageInput from '../../components/chat/MessageInput.vue'
 
-const { user } = useAuth()
+const { user } = useAuthStore()
+const chatStore = useChatStore()
 const {
   rooms,
   activeRoomId,
@@ -24,7 +25,7 @@ const {
   deleteMessage,
   connectSocket,
   disconnectSocket,
-} = useChat()
+} = chatStore
 
 const newChatUserId = ref('')
 const showNewChat = ref(false)
@@ -59,7 +60,7 @@ const handleNewChat = async () => {
 </script>
 
 <template>
-  <div class="card card-page chat-layout">
+  <div class="card card-page chat-layout glass-panel">
     <!-- Sidebar: Room list -->
     <aside class="chat-sidebar">
       <div class="sidebar-header">

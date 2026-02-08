@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useAuth } from '../../composables/useAuth'
-import { useTheme } from '../../composables/useTheme'
+import { useAuthStore } from '../../stores/auth'
+import { useThemeStore } from '../../stores/theme'
 import { getAccessToken, getRefreshToken } from '../../api'
 
 const WS_TEST_TIMEOUT = 3000
 
-const { user } = useAuth()
-const { theme, setTheme, themeName } = useTheme()
+const { user } = useAuthStore()
+const themeStore = useThemeStore()
+const { theme, setTheme, themeName } = themeStore
 
 // Backend ping
 const pingMessage = ref('')
@@ -93,7 +94,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="card card-page">
+  <div class="card card-page glass-panel">
     <!-- Backend Ping -->
     <section class="section">
       <h3 class="section-title">BACKEND PING</h3>
@@ -268,7 +269,7 @@ onUnmounted(() => {
 
 .theme-btn {
   padding: var(--space-2) var(--space-4);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-widest);

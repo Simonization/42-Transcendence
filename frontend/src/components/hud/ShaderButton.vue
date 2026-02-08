@@ -103,7 +103,7 @@ const sizeClass = computed(() => `shader-btn-${props.size}`)
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-weight: var(--font-semibold);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wider);

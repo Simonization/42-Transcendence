@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '../../api/auth'
-import { ApiError } from '../../types'
+import { useErrorHandler } from '../../composables/useErrorHandler'
 
 const REDIRECT_DELAY = 800
 
@@ -13,8 +13,9 @@ const code = ref('')
 const isLoading = ref(false)
 const isSuccess = ref(false)
 const isError = ref(false)
-const errorMessage = ref('')
 const userId = ref<number | null>(null)
+
+const { message: errorMessage } = useErrorHandler()
 
 onMounted(() => {
   const queryUserId = route.query.userId as string | undefined
@@ -41,11 +42,7 @@ const handleSubmit = async () => {
     setTimeout(() => router.push('/menu'), REDIRECT_DELAY)
   } catch (error) {
     isError.value = true
-    if (error instanceof ApiError) {
-      errorMessage.value = error.message
-    } else {
-      errorMessage.value = 'An error occurred. Please try again.'
-    }
+    errorMessage.value = error instanceof Error ? error.message : 'An error occurred. Please try again.'
   } finally {
     isLoading.value = false
   }
@@ -131,13 +128,13 @@ const goBackToLogin = () => {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
   letter-spacing: var(--tracking-widest);
-  color: #e8e6e3;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .state-text {
   font-size: var(--text-sm);
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -154,13 +151,13 @@ const goBackToLogin = () => {
 
 .state-icon-success {
   background: rgba(52, 211, 153, 0.1);
-  color: #34d399;
+  color: var(--color-success);
   border: 1px solid rgba(52, 211, 153, 0.3);
 }
 
 .state-icon-error {
   background: rgba(248, 113, 113, 0.1);
-  color: #f87171;
+  color: var(--color-error);
   border: 1px solid rgba(248, 113, 113, 0.3);
 }
 
@@ -179,7 +176,7 @@ const goBackToLogin = () => {
   font-weight: var(--font-bold);
   text-align: center;
   letter-spacing: 0.5em;
-  color: #e8e6e3;
+  color: var(--text-primary);
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.12);
   clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% 100%, 0 100%, 0 var(--chamfer-xs));
@@ -196,13 +193,13 @@ const goBackToLogin = () => {
 .auth-btn {
   width: 100%;
   padding: var(--space-3) var(--space-4);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
-  color: #0a0e1a;
-  background: #e8e6e3;
+  color: var(--bg-primary);
+  background: var(--text-primary);
   border: 1px solid transparent;
   clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
@@ -210,7 +207,7 @@ const goBackToLogin = () => {
 }
 
 .auth-btn:hover:not(:disabled) {
-  background: #ffffff;
+  background: var(--bg-secondary);
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
@@ -221,13 +218,13 @@ const goBackToLogin = () => {
 
 .auth-btn-secondary {
   background: transparent;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .auth-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.04);
-  color: #e8e6e3;
+  color: var(--text-primary);
   box-shadow: none;
 }
 
@@ -240,14 +237,14 @@ const goBackToLogin = () => {
 
 .auth-message-error {
   background: rgba(248, 113, 113, 0.1);
-  color: #f87171;
+  color: var(--color-error);
   border: 1px solid rgba(248, 113, 113, 0.2);
 }
 
 .retry-link {
   display: inline;
   margin-left: var(--space-2);
-  color: #e8e6e3;
+  color: var(--text-primary);
   cursor: pointer;
   text-decoration: underline;
 }
@@ -256,7 +253,7 @@ const goBackToLogin = () => {
   margin-top: var(--space-2);
   background: none;
   border: none;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-wider);
@@ -265,7 +262,7 @@ const goBackToLogin = () => {
 }
 
 .back-link:hover {
-  color: #e8e6e3;
+  color: var(--text-primary);
 }
 
 .msg-enter-active { transition: all var(--duration-normal) var(--ease-out); }

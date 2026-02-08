@@ -26,8 +26,9 @@
   --space-24: 6rem;     /* 96px */
 
   /* ===== TYPOGRAPHY ===== */
-  /* Font families - Inter as Gotham alternative */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Font families - Orbitron display, Exo 2 body, JetBrains Mono code */
+  --font-display: 'Orbitron Variable', 'Orbitron', sans-serif;
+  --font-sans: 'Exo 2 Variable', 'Exo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
   /* Font sizes */
@@ -109,6 +110,10 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -121,12 +126,14 @@ body {
 
 /* ===== TYPOGRAPHY UTILITIES ===== */
 .text-caps {
+  font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: var(--tracking-widest);
   font-weight: var(--font-bold);
 }
 
 .text-label {
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wider);
@@ -265,4 +272,39 @@ body {
 /* Toggle track: parallelogram */
 .clip-toggle-track {
   clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+
+/* ===== GLASS MORPHISM EFFECTS ===== */
+/* Backdrop filters and glass backgrounds */
+:root {
+  /* Glass backgrounds */
+  --glass-bg-light: rgba(255, 255, 255, 0.1);
+  --glass-bg-medium: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.2);
+
+  /* Backdrop blur layers */
+  --backdrop-blur-light: blur(8px);
+  --backdrop-blur-medium: blur(12px);
+  --backdrop-blur-heavy: blur(20px);
+
+  /* Overlay effects */
+  --overlay-backdrop: rgba(0, 0, 0, 0.5);
+  --overlay-blur: blur(4px);
+
+  /* Enhanced glow effects */
+  --glow-subtle: 0 0 20px var(--accent-primary-glow, var(--accent-primary));
+  --glow-strong: 0 0 40px var(--accent-primary-glow, var(--accent-primary));
+  --glow-pulse: 0 0 30px var(--accent-primary-glow, var(--accent-primary));
+}
+
+[data-theme="stellar"] {
+  --glass-bg: rgba(248, 249, 250, 0.7);
+  --glass-bg-elevated: rgba(255, 255, 255, 0.8);
+  --accent-primary-glow: rgba(255, 140, 0, 0.6);
+}
+
+[data-theme="dragon"] {
+  --glass-bg: rgba(10, 22, 40, 0.75);
+  --glass-bg-elevated: rgba(15, 31, 56, 0.85);
+  --accent-primary-glow: rgba(218, 165, 32, 0.6);
 }

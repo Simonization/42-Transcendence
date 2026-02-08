@@ -5,9 +5,10 @@
  * Quantum Break inspired minimal design
  */
 
-import { useTheme } from '../composables/useTheme'
+import { useThemeStore } from '../stores/theme'
 
-const { theme, toggleTheme, themeName } = useTheme()
+const themeStore = useThemeStore()
+const { theme, toggleTheme, themeName } = themeStore
 </script>
 
 <template>

@@ -66,7 +66,7 @@ describe('useTheme', () => {
 
   describe('setTheme', () => {
     it('should update theme to dragon', () => {
-      const { theme, setTheme } = useTheme()
+      const { setTheme, theme } = useTheme()
 
       setTheme('dragon')
 
@@ -75,7 +75,7 @@ describe('useTheme', () => {
     })
 
     it('should update theme to stellar', () => {
-      const { theme, setTheme } = useTheme()
+      const { setTheme, theme } = useTheme()
 
       setTheme('stellar')
 
@@ -86,7 +86,7 @@ describe('useTheme', () => {
 
   describe('toggleTheme', () => {
     it('should toggle from stellar to dragon', () => {
-      const { theme, setTheme, toggleTheme } = useTheme()
+      const { setTheme, toggleTheme, theme } = useTheme()
 
       setTheme('stellar')
       toggleTheme()
@@ -95,7 +95,7 @@ describe('useTheme', () => {
     })
 
     it('should toggle from dragon to stellar', () => {
-      const { theme, setTheme, toggleTheme } = useTheme()
+      const { setTheme, toggleTheme, theme } = useTheme()
 
       setTheme('dragon')
       toggleTheme()

@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '../../composables/useAuth'
+import { useAuthStore } from '../../stores/auth'
 import { usersApi } from '../../api/users'
-import { ApiError } from '../../types'
+import { useErrorHandler } from '../../composables/useErrorHandler'
 import ProfileSection from '../../components/user/ProfileSection.vue'
 import SettingsSection from '../../components/user/SettingsSection.vue'
 import SecuritySection from '../../components/user/SecuritySection.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
 const router = useRouter()
-const { user, checkAuth, logout } = useAuth()
+const authStore = useAuthStore()
+const { user, checkAuth, logout } = authStore
 
 const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
-const deleteError = ref('')
+const { message: deleteError, handleError } = useErrorHandler()
 
 const refreshUser = () => {
   checkAuth()
@@ -23,13 +24,12 @@ const refreshUser = () => {
 const handleDeleteAccount = async () => {
   if (!user.value) return
   isDeleting.value = true
-  deleteError.value = ''
   try {
     await usersApi.deleteAccount(user.value.id)
     await logout()
     router.push('/auth')
   } catch (error) {
-    deleteError.value = error instanceof ApiError ? error.message : 'Failed to delete account'
+    handleError(error, 'Failed to delete account')
     showDeleteDialog.value = false
   } finally {
     isDeleting.value = false
@@ -38,7 +38,7 @@ const handleDeleteAccount = async () => {
 </script>
 
 <template>
-  <div class="card card-page">
+  <div class="card card-page glass-panel">
     <div v-if="!user" class="card-loading">
       <p class="text-secondary">Loading user data...</p>
     </div>

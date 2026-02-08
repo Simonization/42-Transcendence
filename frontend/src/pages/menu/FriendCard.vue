@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useAuth } from '../../composables/useAuth'
-import { useFriends } from '../../composables/useFriends'
+import { useAuthStore } from '../../stores/auth'
+import { useFriendsStore } from '../../stores/friends'
+import MessageAlert from '../../components/common/MessageAlert.vue'
 import AddFriendInput from '../../components/friends/AddFriendInput.vue'
 import FriendList from '../../components/friends/FriendList.vue'
 import FriendRequests from '../../components/friends/FriendRequests.vue'
 import BlockedUsers from '../../components/friends/BlockedUsers.vue'
 
-const { user } = useAuth()
+const authStore = useAuthStore()
+const friendsStore = useFriendsStore()
+
+const { user } = authStore
 const {
   acceptedFriends,
   pendingFriends,
@@ -20,11 +24,13 @@ const {
   removeFriend,
   blockUser,
   unblockUser,
-} = useFriends()
+} = friendsStore
 
 type Tab = 'friends' | 'requests' | 'blocked'
 const activeTab = ref<Tab>('friends')
 const message = ref('')
+const messageType = ref<'success' | 'error'>('success')
+const isUpdating = ref(false)
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'friends', label: 'FRIENDS' },
@@ -40,50 +46,89 @@ onMounted(() => {
 })
 
 const handleAdd = async (friendId: number) => {
-  message.value = ''
-  const ok = await addFriend(friendId)
-  if (ok && user.value) {
-    message.value = 'Friend request sent'
-    fetchFriends(user.value.id)
+  isUpdating.value = true
+  try {
+    message.value = ''
+    const ok = await addFriend(friendId)
+    if (ok && user.value) {
+      message.value = 'Friend request sent'
+      messageType.value = 'success'
+      fetchFriends(user.value.id)
+    }
+  } finally {
+    isUpdating.value = false
   }
 }
 
 const handleRemove = async (friendId: number) => {
-  await removeFriend(friendId)
+  isUpdating.value = true
+  try {
+    await removeFriend(friendId)
+    if (user.value) {
+      fetchFriends(user.value.id)
+    }
+  } finally {
+    isUpdating.value = false
+  }
 }
 
 const handleBlock = async (targetId: number) => {
-  await blockUser(targetId)
+  isUpdating.value = true
+  try {
+    await blockUser(targetId)
+    if (user.value) {
+      fetchBlocks(user.value.id)
+    }
+  } finally {
+    isUpdating.value = false
+  }
 }
 
 const handleUnblock = async (targetId: number) => {
-  await unblockUser(targetId)
+  isUpdating.value = true
+  try {
+    await unblockUser(targetId)
+    if (user.value) {
+      fetchBlocks(user.value.id)
+    }
+  } finally {
+    isUpdating.value = false
+  }
 }
 
 const handleAccept = async (friendId: number) => {
-  // Accept is the same as addFriend on the backend (creates reciprocal)
-  const ok = await addFriend(friendId)
-  if (ok && user.value) {
-    fetchFriends(user.value.id)
+  isUpdating.value = true
+  try {
+    // Accept is the same as addFriend on the backend (creates reciprocal)
+    const ok = await addFriend(friendId)
+    if (ok && user.value) {
+      fetchFriends(user.value.id)
+    }
+  } finally {
+    isUpdating.value = false
   }
 }
 
 const handleDecline = async (friendId: number) => {
-  await removeFriend(friendId)
+  isUpdating.value = true
+  try {
+    await removeFriend(friendId)
+    if (user.value) {
+      fetchFriends(user.value.id)
+    }
+  } finally {
+    isUpdating.value = false
+  }
 }
 </script>
 
 <template>
-  <div class="card card-page">
+  <div class="card card-page glass-panel">
     <div class="card-header-section">
       <AddFriendInput @add="handleAdd" />
 
-      <Transition name="msg">
-        <p v-if="message" class="alert alert-success msg-inline">{{ message }}</p>
-      </Transition>
-      <Transition name="msg">
-        <p v-if="error" class="alert alert-error msg-inline">{{ error }}</p>
-      </Transition>
+      <MessageAlert :message="message" :type="messageType" :show="!!message" />
+      <MessageAlert :message="error" type="error" :show="!!error" />
     </div>
 
     <!-- Tabs -->
@@ -110,6 +155,7 @@ const handleDecline = async (friendId: number) => {
         <FriendList
           v-if="activeTab === 'friends'"
           :friends="acceptedFriends"
+          :is-updating="isUpdating"
           @remove="handleRemove"
           @block="handleBlock"
         />
@@ -117,6 +163,7 @@ const handleDecline = async (friendId: number) => {
         <FriendRequests
           v-if="activeTab === 'requests'"
           :requests="pendingFriends"
+          :is-updating="isUpdating"
           @accept="handleAccept"
           @decline="handleDecline"
         />
@@ -124,6 +171,7 @@ const handleDecline = async (friendId: number) => {
         <BlockedUsers
           v-if="activeTab === 'blocked'"
           :blocks="blocks"
+          :is-updating="isUpdating"
           @unblock="handleUnblock"
         />
       </template>
@@ -155,7 +203,7 @@ const handleDecline = async (friendId: number) => {
 .tab-btn {
   flex: 1;
   padding: var(--space-3) var(--space-4);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-widest);

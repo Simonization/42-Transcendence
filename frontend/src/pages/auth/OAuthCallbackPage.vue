@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuth } from '../../composables/useAuth'
+import { useAuthStore } from '../../stores/auth'
 import { setTokens, clearTokens } from '../../api'
 
 const router = useRouter()
 const route = useRoute()
-const { checkAuth } = useAuth()
+const authStore = useAuthStore()
+const { checkAuth } = authStore
 
 onMounted(async () => {
   const { accessToken, refreshToken } = route.query
@@ -48,13 +49,13 @@ onMounted(async () => {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
   letter-spacing: var(--tracking-widest);
-  color: #e8e6e3;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .state-text {
   font-size: var(--text-sm);
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0;
 }
 </style>

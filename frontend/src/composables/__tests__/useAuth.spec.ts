@@ -35,6 +35,11 @@ const mockGetAccessToken = vi.mocked(apiIndexModule.getAccessToken)
 
 describe('useAuth', () => {
   let useAuth: typeof import('../useAuth').useAuth
+  let checkAuth: any
+  let logout: any
+  let isAuthenticated: any
+  let user: any
+  let isLoading: any
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -42,6 +47,12 @@ describe('useAuth', () => {
     vi.resetModules()
     const mod = await import('../useAuth')
     useAuth = mod.useAuth
+    const { checkAuth: ca, logout: lo } = useAuth()
+    checkAuth = ca
+    logout = lo
+    isAuthenticated = (useAuth() as any).isAuthenticated
+    user = (useAuth() as any).user
+    isLoading = (useAuth() as any).isLoading
   })
 
   afterEach(() => {
@@ -52,7 +63,6 @@ describe('useAuth', () => {
     it('should return false when no token is present', async () => {
       mockGetAccessToken.mockReturnValueOnce(null)
 
-      const { checkAuth, isAuthenticated, user } = useAuth()
       const result = await checkAuth()
 
       expect(result).toBe(false)
@@ -87,8 +97,6 @@ describe('useAuth', () => {
       mockGetAccessToken.mockReturnValueOnce('valid-token')
       mockGetMe.mockResolvedValueOnce(mockUser)
 
-      const { checkAuth, isAuthenticated, user, isLoading } = useAuth()
-
       expect(isLoading.value).toBe(false)
 
       const result = await checkAuth()
@@ -109,8 +117,6 @@ describe('useAuth', () => {
           })
       )
 
-      const { checkAuth, isLoading } = useAuth()
-
       expect(isLoading.value).toBe(false)
 
       const promise = checkAuth()
@@ -124,7 +130,6 @@ describe('useAuth', () => {
       mockGetAccessToken.mockReturnValueOnce('invalid-token')
       mockGetMe.mockRejectedValueOnce(new Error('Unauthorized'))
 
-      const { checkAuth, isAuthenticated, user } = useAuth()
       const result = await checkAuth()
 
       expect(result).toBe(false)
@@ -141,7 +146,6 @@ describe('useAuth', () => {
       mockGetAccessToken.mockReturnValueOnce('token')
       mockGetMe.mockResolvedValueOnce({ id: 1 } as any)
 
-      const { checkAuth, logout, isAuthenticated, user } = useAuth()
       await checkAuth()
 
       expect(isAuthenticated.value).toBe(true)
@@ -160,7 +164,6 @@ describe('useAuth', () => {
       mockGetAccessToken.mockReturnValueOnce('token')
       mockGetMe.mockResolvedValueOnce({ id: 1 } as any)
 
-      const { checkAuth, logout, isAuthenticated, user } = useAuth()
       await checkAuth()
 
       await logout()
@@ -176,8 +179,6 @@ describe('useAuth', () => {
             setTimeout(() => resolve({ message: 'Logged out' }), 100)
           })
       )
-
-      const { logout, isLoading } = useAuth()
 
       expect(isLoading.value).toBe(false)
 
@@ -203,6 +204,158 @@ describe('useAuth', () => {
       // Both instances should see the same state
       expect(auth2.isAuthenticated.value).toBe(true)
       expect(auth2.user.value).toEqual(mockUser)
+    })
+  })
+
+  describe('Edge Cases', () => {
+    it('should handle API error with invalid user object', async () => {
+      const invalidUser = { id: 1, username: 'test' } // Missing required fields
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce(invalidUser as any)
+
+      const result = await checkAuth()
+
+      // Should still set user even with incomplete data (API contract responsibility)
+      expect(result).toBe(true)
+      expect(user.value).toEqual(invalidUser)
+    })
+
+    it('should handle getMe API error without crashing', async () => {
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockRejectedValueOnce({
+        status: 500,
+        message: 'Internal Server Error',
+      })
+
+      const result = await checkAuth()
+
+      expect(result).toBe(false)
+      expect(isAuthenticated.value).toBe(false)
+      expect(user.value).toBeNull()
+    })
+
+    it('should handle concurrent checkAuth calls', async () => {
+      const mockUser = { id: 1, username: 'test' } as any
+      mockGetAccessToken.mockReturnValue('token')
+      mockGetMe.mockResolvedValue(mockUser)
+
+      // Make multiple concurrent calls
+      const [result1, result2, result3] = await Promise.all([
+        checkAuth(),
+        checkAuth(),
+        checkAuth(),
+      ])
+
+      expect(result1).toBe(true)
+      expect(result2).toBe(true)
+      expect(result3).toBe(true)
+      expect(isAuthenticated.value).toBe(true)
+      expect(user.value).toEqual(mockUser)
+      // All should call getMe (no deduplication)
+      expect(mockGetMe).toHaveBeenCalledTimes(3)
+    })
+
+    it('should clear state when checkAuth called multiple times with token then without', async () => {
+      const mockUser = { id: 1, username: 'test' } as any
+
+      // First call with token
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce(mockUser)
+      await checkAuth()
+      expect(isAuthenticated.value).toBe(true)
+
+      // Second call without token
+      mockGetAccessToken.mockReturnValueOnce(null)
+      const result = await checkAuth()
+
+      expect(result).toBe(false)
+      expect(isAuthenticated.value).toBe(false)
+      expect(user.value).toBeNull()
+    })
+
+    it('should reset isLoading on error', async () => {
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockRejectedValueOnce(new Error('Request failed'))
+
+      expect(isLoading.value).toBe(false)
+      const promise = checkAuth()
+      expect(isLoading.value).toBe(true)
+
+      await promise
+
+      expect(isLoading.value).toBe(false)
+    })
+
+    it('should handle logout when not authenticated', async () => {
+      mockLogout.mockResolvedValueOnce({ message: 'Logged out' })
+
+      // Don't authenticate first
+      expect(isAuthenticated.value).toBe(false)
+
+      await logout()
+
+      expect(mockLogout).toHaveBeenCalled()
+      expect(isAuthenticated.value).toBe(false)
+      expect(user.value).toBeNull()
+    })
+
+    it('should handle logout API error without throwing', async () => {
+      mockLogout.mockRejectedValueOnce(new Error('Network timeout'))
+
+      const result = await logout()
+
+      // Should not throw
+      expect(isAuthenticated.value).toBe(false)
+      expect(user.value).toBeNull()
+    })
+
+    it('should handle logout with API error object', async () => {
+      mockLogout.mockRejectedValueOnce({
+        status: 401,
+        code: 'SESSION_EXPIRED',
+        message: 'Session expired',
+      })
+
+      await logout()
+
+      expect(isAuthenticated.value).toBe(false)
+      expect(user.value).toBeNull()
+    })
+
+    it('should preserve state across multiple logouts', async () => {
+      const mockUser = { id: 1, username: 'test' } as any
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce(mockUser)
+      mockLogout.mockResolvedValue({ message: 'Logged out' })
+
+      await checkAuth()
+      expect(isAuthenticated.value).toBe(true)
+
+      await logout()
+      expect(isAuthenticated.value).toBe(false)
+
+      // Second logout should still work
+      await logout()
+      expect(isAuthenticated.value).toBe(false)
+    })
+
+    it('should handle immediate error after success', async () => {
+      const mockUser = { id: 1, username: 'test' } as any
+
+      // First successful auth
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce(mockUser)
+      await checkAuth()
+      expect(isAuthenticated.value).toBe(true)
+
+      // Second call with error
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockRejectedValueOnce(new Error('Session expired'))
+      const result = await checkAuth()
+
+      expect(result).toBe(false)
+      expect(isAuthenticated.value).toBe(false)
+      expect(user.value).toBeNull()
     })
   })
 })

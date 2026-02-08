@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useTwoFactor } from '../../composables/useTwoFactor'
+import MessageAlert from '../common/MessageAlert.vue'
 
 const {
   enabled,
@@ -78,15 +79,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <Transition name="msg">
-        <p
-          v-if="message"
-          class="section-message"
-          :class="message.startsWith('Error') ? 'alert-error' : 'alert-success'"
-        >
-          {{ message }}
-        </p>
-      </Transition>
+      <MessageAlert :message="message" :type="message.startsWith('Error') ? 'error' : 'success'" :show="!!message" />
     </template>
   </section>
 </template>
@@ -134,15 +127,4 @@ onMounted(() => {
   letter-spacing: 0.3em;
 }
 
-.section-message {
-  margin-top: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
-  font-size: var(--text-xs);
-}
-
-.msg-enter-active { transition: all var(--duration-normal) var(--ease-out); }
-.msg-leave-active { transition: all var(--duration-fast) var(--ease-in); }
-.msg-enter-from,
-.msg-leave-to { opacity: 0; }
 </style>

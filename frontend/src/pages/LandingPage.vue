@@ -1,54 +1,79 @@
 <script setup lang="ts">
 /**
  * Public Landing Page
- * Accessible without authentication - shows esports links and tournaments
+ * Accessible without authentication - shows esports links, hero, featured tournaments
  */
 
 import { computed } from 'vue'
-import { useTheme } from '../composables/useTheme'
+import { useRouter } from 'vue-router'
+import { getAccessToken } from '../api'
+import { useThemeStore } from '../stores/theme'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import ShaderButton from '../components/hud/ShaderButton.vue'
+import HeroSection from '../components/landing/HeroSection.vue'
+import FeaturedTournamentsSection from '../components/landing/FeaturedTournamentsSection.vue'
 import EsportsLinksCard from '../components/landing/EsportsLinksCard.vue'
-import TournamentsCard from '../components/landing/TournamentsCard.vue'
+import BrowseTournamentsLink from '../components/landing/BrowseTournamentsLink.vue'
 
-const { theme } = useTheme()
+const router = useRouter()
 
-const hasToken = computed(() => !!localStorage.getItem('accessToken'))
+const themeStore = useThemeStore()
+const { theme } = themeStore
+
+const hasToken = computed(() => !!getAccessToken())
 </script>
 
 <template>
   <div class="landing" :data-theme="theme">
-    <header class="landing-header">
+    <!-- Animated background layer -->
+    <div class="landing-background">
+      <div class="bg-pattern"></div>
+      <div class="bg-gradient"></div>
+    </div>
+
+    <!-- Glass header -->
+    <header class="landing-header glass-header">
       <div class="landing-header-left">
         <h1 class="landing-title">ESPORTENDENCE</h1>
         <span class="hud-serial">SYS::PUBLIC</span>
       </div>
       <div class="landing-header-actions">
         <ThemeToggle />
-        <RouterLink
+        <ShaderButton
           v-if="hasToken"
-          to="/menu"
-          class="landing-action-btn clip-btn"
+          :shader="true"
+          size="md"
+          @click="router.push('/menu')"
         >
           GO TO MENU
-        </RouterLink>
-        <RouterLink
+        </ShaderButton>
+        <ShaderButton
           v-else
-          to="/auth"
-          class="landing-action-btn clip-btn"
+          :shader="true"
+          size="md"
+          @click="router.push('/auth')"
         >
           SIGN IN
-        </RouterLink>
+        </ShaderButton>
       </div>
     </header>
 
     <main class="landing-main">
+      <!-- Hero Section -->
+      <HeroSection />
+
+      <!-- Featured Tournaments Carousel -->
+      <FeaturedTournamentsSection />
+
+      <!-- Browse Grid -->
       <div class="landing-grid">
-        <EsportsLinksCard />
-        <TournamentsCard />
+        <EsportsLinksCard class="glass-card" />
+        <BrowseTournamentsLink class="glass-card" />
       </div>
     </main>
 
-    <footer class="landing-footer">
+    <!-- Glass footer -->
+    <footer class="landing-footer glass-footer">
       <span class="hud-serial">ESP-2026 // TOURNAMENT PLATFORM v3.0</span>
     </footer>
   </div>
@@ -61,6 +86,46 @@ const hasToken = computed(() => !!localStorage.getItem('accessToken'))
   min-height: 100vh;
   background: var(--bg-primary);
   color: var(--text-primary);
+  position: relative;
+}
+
+/* Background layer - fixed, behind everything */
+.landing-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bg-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%23ffffff' fill-opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 60px 60px;
+  opacity: 0.15;
+  animation: pattern-drift 60s linear infinite;
+}
+
+@keyframes pattern-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(60px, 60px); }
+}
+
+.bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 20% 30%,
+    var(--accent-primary-glow) 0%,
+    transparent 50%
+  );
+  opacity: 0.2;
+  animation: gradient-pulse 8s ease-in-out infinite;
+}
+
+@keyframes gradient-pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.3; }
 }
 
 .landing-header {
@@ -68,8 +133,8 @@ const hasToken = computed(() => !!localStorage.getItem('accessToken'))
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4) var(--space-8);
-  border-bottom: var(--hud-border) solid var(--border-subtle);
   position: relative;
+  z-index: 10;
 }
 
 .landing-header::after {
@@ -105,7 +170,7 @@ const hasToken = computed(() => !!localStorage.getItem('accessToken'))
 
 .landing-action-btn {
   padding: var(--space-2) var(--space-4);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-widest);
@@ -130,8 +195,18 @@ const hasToken = computed(() => !!localStorage.getItem('accessToken'))
 .landing-main {
   flex: 1;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
   padding: var(--space-8);
+  position: relative;
+  z-index: 1;
+  gap: var(--space-8);
+}
+
+.landing-main > * {
+  width: 100%;
+  max-width: var(--container-max);
 }
 
 .landing-grid {
@@ -148,10 +223,20 @@ const hasToken = computed(() => !!localStorage.getItem('accessToken'))
   }
 }
 
+.glass-card {
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--backdrop-blur-heavy);
+  border: var(--hud-border) solid var(--glass-border);
+  box-shadow:
+    var(--shadow-xl),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
 .landing-footer {
   padding: var(--space-2) var(--space-8);
-  border-top: var(--hud-border) solid var(--border-subtle);
   text-align: right;
+  position: relative;
+  z-index: 10;
 }
 
 .hud-serial {

@@ -1,39 +1,56 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '../composables/useAuth'
-import { useTheme } from '../composables/useTheme'
+import { useAuthStore } from '../stores/auth'
+import { useThemeStore } from '../stores/theme'
 import ThemeToggle from '../components/ThemeToggle.vue'
 
 const router = useRouter()
-const { checkAuth, logout } = useAuth()
-const { theme } = useTheme()
-
-onMounted(async () => {
-  const isValid = await checkAuth()
-  if (!isValid) {
-    router.push('/auth')
-  }
-})
+const authStore = useAuthStore()
+const { logout, user } = authStore
+const themeStore = useThemeStore()
+const { theme } = themeStore
 
 const handleLogout = async () => {
   await logout()
-  router.push('/auth')
+  router.push('/')
 }
 
-const navItems = [
-  { to: '/menu/user', label: 'USER' },
-  { to: '/menu/friend', label: 'FRIEND' },
-  { to: '/menu/chat', label: 'CHAT' },
-  { to: '/menu/dev', label: 'DEV' },
-]
+const navItems = computed(() => {
+  const baseItems = [
+    { to: '/', label: 'HOME', icon: '⚡︎' },
+    { to: '/menu/user', label: 'USER', icon: '👤', badge: null },
+    { to: '/menu/friend', label: 'FRIEND', icon: '👥', badge: null },
+    { to: '/menu/chat', label: 'CHAT', icon: '💬', badge: null },
+    { to: '/menu/tournaments', label: 'TOURN', icon: '🏆' },
+    { to: '/menu/history', label: 'HISTORY', icon: '📊' },
+    { to: '/menu/brackets', label: 'BRACKETS', icon: '🏅' },
+    { to: '/menu/dev', label: 'DEV', icon: '🛠' },
+  ]
+
+  // Add admin module if user has admin role (placeholder - check actual role field)
+  if (user.value && (user.value as any).role === 'admin') {
+    baseItems.push({ to: '/menu/admin', label: 'ADMIN', icon: '⚙️' })
+  }
+
+  return baseItems
+})
 </script>
 
 <template>
   <div class="menu-layout" :data-theme="theme">
-    <header class="menu-header">
+    <!-- Animated background layer -->
+    <div class="menu-background">
+      <div class="bg-pattern"></div>
+      <div class="bg-gradient"></div>
+    </div>
+
+    <!-- Glass header -->
+    <header class="menu-header glass-header">
       <div class="menu-header-left">
-        <h1 class="menu-title">ESPORTENDENCE</h1>
+        <RouterLink to="/" class="menu-title-link">
+          <h1 class="menu-title">ESPORTENDENCE</h1>
+        </RouterLink>
         <span class="hud-serial">SYS::ONLINE</span>
       </div>
       <div class="menu-header-actions">
@@ -42,28 +59,32 @@ const navItems = [
       </div>
     </header>
 
-    <nav class="menu-nav">
+    <!-- Vertical module selector -->
+    <nav class="menu-modules">
       <RouterLink
         v-for="item in navItems"
         :key="item.to"
         :to="item.to"
-        class="menu-nav-btn"
-        active-class="menu-nav-btn-active"
+        class="module-btn"
+        active-class="module-btn-active"
       >
-        {{ item.label }}
+        <span class="module-icon">{{ item.icon }}</span>
+        <span class="module-label">{{ item.label }}</span>
+        <span v-if="item.badge" class="module-badge">{{ item.badge }}</span>
       </RouterLink>
     </nav>
 
+    <!-- Content area -->
     <main class="menu-content">
       <RouterView v-slot="{ Component }">
-        <Transition name="card-slide" mode="out-in">
-          <component :is="Component" />
+        <Transition name="glass-fade" mode="out-in">
+          <component :is="Component" class="glass-content" />
         </Transition>
       </RouterView>
     </main>
 
-    <!-- HUD footer decoration -->
-    <div class="menu-hud-footer">
+    <!-- Glass footer -->
+    <div class="menu-hud-footer glass-footer">
       <span class="hud-serial">ESP-2026 // TOURNAMENT PLATFORM v3.0</span>
     </div>
   </div>
@@ -76,6 +97,46 @@ const navItems = [
   min-height: 100vh;
   background: var(--bg-primary);
   color: var(--text-primary);
+  position: relative;
+}
+
+/* Background layer - fixed, behind everything */
+.menu-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bg-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%23ffffff' fill-opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 60px 60px;
+  opacity: 0.15;
+  animation: pattern-drift 60s linear infinite;
+}
+
+@keyframes pattern-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(60px, 60px); }
+}
+
+.bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 20% 30%,
+    var(--accent-primary-glow) 0%,
+    transparent 50%
+  );
+  opacity: 0.2;
+  animation: gradient-pulse 8s ease-in-out infinite;
+}
+
+@keyframes gradient-pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.3; }
 }
 
 .menu-header {
@@ -83,8 +144,8 @@ const navItems = [
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4) var(--space-8);
-  border-bottom: var(--hud-border) solid var(--border-subtle);
   position: relative;
+  z-index: 10;
 }
 
 /* HUD accent line under header */
@@ -105,6 +166,16 @@ const navItems = [
   gap: var(--space-4);
 }
 
+.menu-title-link {
+  text-decoration: none;
+  color: inherit;
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.menu-title-link:hover {
+  opacity: 0.7;
+}
+
 .menu-title {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
@@ -121,7 +192,7 @@ const navItems = [
 
 .menu-quit-btn {
   padding: var(--space-2) var(--space-4);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-widest);
@@ -147,26 +218,37 @@ const navItems = [
   box-shadow: 0 0 10px var(--color-error-bg);
 }
 
-.menu-nav {
+/* Vertical module selector on left */
+.menu-modules {
+  position: fixed;
+  left: 0;
+  top: var(--space-20);
+  width: 100px;
+  height: calc(100vh - var(--space-20) - var(--space-12));
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-6) var(--space-8);
+  padding: var(--space-4) var(--space-3);
+  background: var(--glass-bg);
+  backdrop-filter: var(--backdrop-blur-medium);
+  border-right: 1px solid var(--glass-border);
+  z-index: 9;
+  overflow-y: auto;
 }
 
-.menu-nav-btn {
+.module-btn {
   position: relative;
-  padding: var(--space-3) var(--space-6);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  color: var(--text-tertiary);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-widest);
-  text-transform: uppercase;
-  text-decoration: none;
-  color: var(--text-secondary);
-  background: transparent;
-  border: var(--hud-border) solid transparent;
-  cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
   clip-path: polygon(
     var(--chamfer-sm) 0,
@@ -176,60 +258,117 @@ const navItems = [
     0 100%,
     0 var(--chamfer-sm)
   );
+  border: 1px solid transparent;
 }
 
-.menu-nav-btn:hover {
-  color: var(--text-primary);
-  border-color: var(--border-default);
-  background: var(--bg-hover);
+.module-icon {
+  font-size: var(--text-lg);
 }
 
-.menu-nav-btn-active {
-  color: var(--accent-primary);
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 15px var(--accent-primary-subtle);
-  background: var(--bg-selected);
+.module-label {
+  text-align: center;
+  white-space: nowrap;
+  font-size: 9px;
 }
 
-.menu-nav-btn-active::before {
-  content: var(--selection-indicator);
+.module-badge {
   position: absolute;
-  left: var(--space-2);
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: var(--font-bold);
+  background: var(--color-error);
+  color: white;
+  border-radius: 9px;
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.module-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
+.module-btn-active {
+  color: var(--accent-primary);
+  background: var(--bg-selected);
+  border-color: var(--accent-primary);
+  box-shadow: var(--glow-subtle);
+}
+
+.module-btn-active::before {
+  content: '';
+  position: absolute;
+  left: -1px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: var(--text-xs);
-  color: var(--accent-primary);
+  width: 3px;
+  height: 40%;
+  background: var(--accent-primary);
+  box-shadow: var(--glow-strong);
 }
 
+/* Content area */
 .menu-content {
   flex: 1;
   display: flex;
   justify-content: center;
-  padding: 0 var(--space-8) var(--space-8);
+  padding: var(--space-8) var(--space-8) var(--space-8) calc(100px + var(--space-8));
+  position: relative;
+  z-index: 1;
+}
+
+.glass-content {
+  width: 100%;
+  max-width: 860px;
 }
 
 .menu-hud-footer {
   padding: var(--space-2) var(--space-8);
-  border-top: var(--hud-border) solid var(--border-subtle);
   text-align: right;
+  position: relative;
+  z-index: 10;
 }
 
-/* Card slide transition */
-.card-slide-enter-active {
-  transition: all var(--duration-normal) var(--ease-out);
-}
+/* Mobile responsive - bottom tab bar */
+@media (max-width: 768px) {
+  .menu-modules {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: var(--space-2);
+    border-right: none;
+    border-top: 1px solid var(--glass-border);
+  }
 
-.card-slide-leave-active {
-  transition: all var(--duration-fast) var(--ease-in);
-}
+  .module-btn {
+    flex: 1;
+    min-width: 0;
+  }
 
-.card-slide-enter-from {
-  opacity: 0;
-  transform: translateX(30px);
-}
+  .module-label {
+    font-size: 8px;
+  }
 
-.card-slide-leave-to {
-  opacity: 0;
-  transform: translateX(-30px);
+  .menu-content {
+    padding: var(--space-4);
+    padding-bottom: calc(80px + var(--space-4));
+  }
 }
 </style>

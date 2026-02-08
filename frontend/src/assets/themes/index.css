@@ -28,7 +28,7 @@
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   text-transform: uppercase;
@@ -175,6 +175,7 @@
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   color: var(--nav-item-color);
+  font-family: var(--font-display);
   font-weight: var(--font-medium);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wider);
@@ -555,6 +556,24 @@
   animation: hud-pulse 2s ease-in-out infinite;
 }
 
+/* ---------- SHADER FALLBACKS ---------- */
+.shader-fallback-metallic {
+  background: linear-gradient(135deg, #2a2a2e, #4a4a50, #2a2a2e, #4a4a50, #2a2a2e);
+  background-size: 200% 200%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shader-container canvas { display: none; }
+  .shader-fallback-metallic { animation: none; }
+}
+
 /* ---------- USER SECTION SHARED STYLES ---------- */
 .section {
   padding: var(--space-6);
@@ -568,4 +587,80 @@
   color: var(--text-secondary);
   text-transform: uppercase;
   margin: 0 0 var(--space-4) 0;
+}
+
+/* ---------- GLASS MORPHISM PANELS ---------- */
+.glass-panel {
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--backdrop-blur-heavy);
+  border: var(--hud-border) solid var(--glass-border);
+  box-shadow:
+    var(--shadow-xl),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-lg)) 0,
+    100% var(--chamfer-lg),
+    100% 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
+  position: relative;
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  top: var(--chamfer-lg);
+  left: 0;
+  width: var(--hud-border-thick);
+  height: 60px;
+  background: var(--accent-primary);
+  box-shadow: var(--glow-subtle);
+  opacity: 0.8;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.glass-panel:hover::before {
+  opacity: 1;
+  height: 80px;
+  box-shadow: var(--glow-strong);
+}
+
+/* ---------- GLASS HEADER/FOOTER ---------- */
+.glass-header {
+  background: var(--glass-bg);
+  backdrop-filter: var(--backdrop-blur-medium);
+  border-bottom: var(--hud-border) solid var(--glass-border);
+  position: relative;
+  z-index: 10;
+}
+
+.glass-footer {
+  background: var(--glass-bg);
+  backdrop-filter: var(--backdrop-blur-light);
+  border-top: var(--hud-border) solid var(--glass-border);
+  position: relative;
+  z-index: 10;
+}
+
+/* ---------- GLASS FADE TRANSITION ---------- */
+.glass-fade-enter-active {
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.glass-fade-leave-active {
+  transition: all calc(var(--duration-fast) * 0.7) var(--ease-in);
+}
+
+.glass-fade-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  filter: blur(4px);
+}
+
+.glass-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(1.02);
+  filter: blur(2px);
 }

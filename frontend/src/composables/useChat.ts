@@ -11,6 +11,9 @@ import { getAccessToken } from '../api'
 import { getErrorMessage } from '../utils/error'
 import type { ChatRoom, Message } from '../types'
 
+const MAX_MESSAGES = 500
+const messageCache = new Map<number, Message[]>()
+
 export function useChat() {
   const rooms = ref<ChatRoom[]>([])
   const activeRoomId = ref<number | null>(null)
@@ -52,6 +55,20 @@ export function useChat() {
    */
   const selectRoom = async (roomId: number) => {
     activeRoomId.value = roomId
+
+    // Check cache first
+    if (messageCache.has(roomId)) {
+      messages.value = messageCache.get(roomId)!
+      // Still mark as read, but don't refetch
+      await chatApi.markAsRead(roomId).catch(() => {})
+      // Update local unread state
+      rooms.value = rooms.value.map(r =>
+        r.id === roomId ? { ...r, isUnread: false } : r
+      )
+      return
+    }
+
+    // If not cached, fetch from API
     messages.value = []
     isLoadingMessages.value = true
     error.value = ''
@@ -60,7 +77,12 @@ export function useChat() {
       // Guard against stale response
       if (activeRoomId.value !== roomId) return
       // API returns newest first, reverse for display (oldest at top)
-      messages.value = msgs.reverse()
+      const reversedMsgs = msgs.reverse()
+      messages.value = reversedMsgs
+
+      // Cache the result
+      messageCache.set(roomId, reversedMsgs)
+
       // Mark as read
       await chatApi.markAsRead(roomId).catch(() => {})
       // Update local unread state
@@ -88,6 +110,14 @@ export function useChat() {
         content: content.trim(),
       })
       messages.value.push(msg)
+      // Sliding window: keep only last 500 messages
+      if (messages.value.length > MAX_MESSAGES) {
+        messages.value = messages.value.slice(-MAX_MESSAGES)
+      }
+      // Update cache with new message
+      if (messageCache.has(activeRoomId.value)) {
+        messageCache.set(activeRoomId.value, messages.value)
+      }
       // Update room's last message
       rooms.value = rooms.value.map(r =>
         r.id === activeRoomId.value ? { ...r, lastMessage: msg } : r
@@ -162,6 +192,14 @@ export function useChat() {
                 const exists = messages.value.some(m => m.id === msg.id)
                 if (!exists) {
                   messages.value.push(msg)
+                  // Sliding window: keep only last 500 messages
+                  if (messages.value.length > MAX_MESSAGES) {
+                    messages.value = messages.value.slice(-MAX_MESSAGES)
+                  }
+                  // Update cache with new message
+                  if (messageCache.has(activeRoomId.value)) {
+                    messageCache.set(activeRoomId.value, messages.value)
+                  }
                 }
               }
               // Update room list
