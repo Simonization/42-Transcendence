@@ -382,5 +382,138 @@ describe('useFriends', () => {
       expect(blocks.value).toHaveLength(1)
       expect(blocks.value[0]).toEqual(mockBlock)
     })
+
+    it('should handle concurrent fetchFriends calls', async () => {
+      const mockFriends = [
+        { id: 2, username: 'alice', status: 1, since: '2024-01-01', profile: {} },
+      ]
+      mockGetFriends.mockResolvedValue(mockFriends as any)
+
+      const [r1, r2, r3] = await Promise.all([
+        fetchFriends(1),
+        fetchFriends(1),
+        fetchFriends(1),
+      ])
+
+      expect(mockGetFriends).toHaveBeenCalledTimes(3)
+      expect(friends.value).toHaveLength(1)
+    })
+
+    it('should handle API error with specific code', async () => {
+      mockGetFriends.mockRejectedValueOnce({
+        status: 404,
+        code: 'USER_NOT_FOUND',
+        message: 'User not found',
+      })
+
+      await fetchFriends(999)
+
+      expect(error.value).toBe('Failed to load friends')
+      expect(friends.value).toHaveLength(0)
+    })
+
+    it('should handle rapid add and remove operations', async () => {
+      const mockFriends = [
+        { id: 2, username: 'alice', status: 1, since: '2024-01-01', profile: {} },
+      ]
+      mockGetFriends.mockResolvedValueOnce(mockFriends as any)
+      mockAddFriend.mockResolvedValue({} as any)
+      mockRemoveFriend.mockResolvedValue(undefined)
+
+      await fetchFriends(1)
+      expect(friends.value).toHaveLength(1)
+
+      // Rapid add and remove
+      await addFriend(3)
+      await removeFriend(2)
+
+      expect(mockAddFriend).toHaveBeenCalledWith({ friendId: 3 })
+      expect(mockRemoveFriend).toHaveBeenCalled()
+    })
+
+    it('should handle block with same ID twice', async () => {
+      const mockBlock = {
+        id: 1,
+        blocker: { id: 1 },
+        blocked: { id: 2, username: 'alice' },
+        reason: null,
+      }
+      mockBlockUser.mockResolvedValue(mockBlock as any)
+
+      const r1 = await blockUser(2)
+      const r2 = await blockUser(2)
+
+      expect(r1).toBe(true)
+      expect(r2).toBe(true)
+      expect(mockBlockUser).toHaveBeenCalledTimes(2)
+    })
+
+    it('should clear error state after successful fetch', async () => {
+      // First call fails
+      mockGetFriends.mockRejectedValueOnce(new Error('Network error'))
+      await fetchFriends(1)
+      expect(error.value).not.toBe('')
+
+      // Second call succeeds
+      mockGetFriends.mockResolvedValueOnce([] as any)
+      await fetchFriends(1)
+      expect(error.value).toBe('')
+    })
+
+    it('should handle missing profile in friend object', async () => {
+      mockGetFriends.mockResolvedValueOnce([
+        {
+          id: 2,
+          username: 'alice',
+          status: 1,
+          since: '2024-01-01',
+          // profile missing
+        },
+      ] as any)
+
+      await fetchFriends(1)
+
+      expect(friends.value).toHaveLength(1)
+      expect(friends.value[0].username).toBe('alice')
+    })
+
+    it('should handle simultaneous block and unblock', async () => {
+      mockBlockUser.mockResolvedValue({ id: 1, blocked: { id: 2 } } as any)
+      mockUnblockUser.mockResolvedValue(undefined)
+
+      const [blockResult, unblockResult] = await Promise.all([
+        blockUser(2),
+        unblockUser(2),
+      ])
+
+      expect(blockResult).toBe(true)
+      expect(unblockResult).toBe(true)
+      expect(mockBlockUser).toHaveBeenCalledTimes(1)
+      expect(mockUnblockUser).toHaveBeenCalledTimes(1)
+    })
+
+    it('should handle fetching blocks with empty result', async () => {
+      mockGetBlocked.mockResolvedValueOnce([] as any)
+
+      await fetchBlocks(1)
+
+      expect(blocks.value).toHaveLength(0)
+      expect(error.value).toBe('')
+    })
+
+    it('should compute pending friends correctly with mixed statuses', async () => {
+      mockGetFriends.mockResolvedValueOnce([
+        { id: 1, username: 'user1', status: 0, since: '2024-01-01', profile: {} },
+        { id: 2, username: 'user2', status: 1, since: '2024-01-01', profile: {} },
+        { id: 3, username: 'user3', status: 0, since: '2024-01-01', profile: {} },
+        { id: 4, username: 'user4', status: 1, since: '2024-01-01', profile: {} },
+      ] as any)
+
+      await fetchFriends(1)
+
+      expect(acceptedFriends.value).toHaveLength(2)
+      expect(pendingFriends.value).toHaveLength(2)
+      expect(friends.value).toHaveLength(4)
+    })
   })
 })
