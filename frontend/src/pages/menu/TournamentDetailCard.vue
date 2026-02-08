@@ -196,7 +196,7 @@ const tabs: Array<{ id: TabType; label: string; icon: string }> = [
         id="panel-bracket"
         role="tabpanel"
         aria-labelledby="tab-bracket"
-        class="tab-pane glass-panel"
+        class="tab-pane"
       >
         <BracketVisualization
           :bracket="bracketData"

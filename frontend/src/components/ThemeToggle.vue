@@ -5,10 +5,26 @@
  * Quantum Break inspired minimal design
  */
 
+import { computed } from 'vue'
 import { useThemeStore } from '../stores/theme'
 
 const themeStore = useThemeStore()
-const { theme, toggleTheme, themeName } = themeStore
+const theme = computed(() => themeStore.theme)
+const themeName = computed(() => themeStore.themeName)
+
+const toggleTheme = () => {
+  const newTheme = theme.value === 'stellar' ? 'dragon' : 'stellar'
+
+  // Update store
+  themeStore.setTheme(newTheme)
+
+  // Ensure DOM is updated immediately
+  document.documentElement.setAttribute('data-theme', newTheme)
+  document.documentElement.style.colorScheme = newTheme === 'dragon' ? 'dark' : 'light'
+
+  // Persist to localStorage
+  localStorage.setItem('theme', newTheme)
+}
 </script>
 
 <template>
