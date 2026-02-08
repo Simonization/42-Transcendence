@@ -575,7 +575,301 @@ AppModule
 
 ---
 
-## 6. DATA MODELS / ENTITIES
+## 6. NOTIFICATIONS SYSTEM
+
+**Purpose:** Deliver real-time user notifications (friend requests, messages, tournament updates, system alerts) via WebSocket connection. Frontend displays notifications as auto-dismissing toast messages.
+
+**Frontend Integration:** Notifications are rendered through Pinia store at `frontend/src/stores/notifications.ts`. The frontend listens for `notification:new` WebSocket events and displays them immediately.
+
+### Notification Types
+```typescript
+type NotificationType = 'success' | 'error' | 'warning' | 'info'
+
+interface Notification {
+  type: NotificationType
+  message: string
+  duration?: number  // milliseconds (0 = no auto-dismiss)
+}
+```
+
+### WebSocket Event: notification:new
+**Emitted by:** Backend server
+**Listened by:** Frontend client
+**Payload:**
+```json
+{
+  "type": "success|error|warning|info",
+  "message": "string (required)",
+  "duration": 3000
+}
+```
+
+### Notification Scenarios
+
+#### Friend System
+- **Friend Request Received**: `type: 'info'`, message: "New friend request from @username"
+- **Friend Request Accepted**: `type: 'success'`, message: "@username accepted your friend request"
+- **Friend Removed**: `type: 'warning'`, message: "You were removed by @username"
+- **User Blocked**: `type: 'error'`, message: "You have been blocked by @username"
+
+#### Tournament System
+- **Tournament Registration Confirmed**: `type: 'success'`, message: "Registration confirmed for Tournament Name"
+- **Tournament Starting Soon**: `type: 'warning'`, message: "Tournament starts in 15 minutes"
+- **Match History Updated**: `type: 'info'`, message: "New match recorded: Win vs @opponent"
+
+#### Chat
+- **New Message**: `type: 'info'`, message: "@username sent you a message"
+- **Group Chat Created**: `type: 'success'`, message: "Added to group chat: Group Name"
+
+#### System
+- **Session Alert**: `type: 'warning'`, message: "Your session will expire in 5 minutes"
+- **Account Alert**: `type: 'error'`, message: "Suspicious login detected from new location"
+
+### Implementation Notes
+- Notifications are sent through the existing Socket.io WebSocket connection
+- No new HTTP endpoint is needed
+- Server should emit to specific user or broadcast to all connected clients
+- Frontend automatically dismisses `success` and `info` notifications after 3 seconds
+- `warning` and `error` persist longer or until user closes them
+- Maximum 3 concurrent notifications on screen (oldest dismissed when limit reached)
+
+---
+
+## 7. MATCH HISTORY MODULE
+
+**Purpose:** Track and display match history for users, integrating with external gaming APIs (chess.com, Dota 2, etc.) to fetch historical match data. Provides statistics, ELO tracking, and match details to users.
+
+**Frontend Integration:** Match history is displayed at `/menu/match-history` with filters, pagination, and statistics. Frontend stores are located at `frontend/src/stores/` and components at `frontend/src/pages/menu/MatchHistoryCard.vue`.
+
+### Data Structure
+
+**Frontend expects Match object:**
+```typescript
+interface Match {
+  id: string | number
+  gameType: string  // 'Chess', 'Dota2', 'Counter-Strike', 'League-of-Legends', etc.
+  opponent: {
+    id: number
+    username: string
+    rating: number
+  }
+  result: 'win' | 'loss'
+  score: {
+    userScore: number
+    opponentScore: number
+  }
+  duration: string  // e.g., "42 min"
+  date: string  // ISO-8601 datetime
+  eloChange: number  // e.g., +15, -8
+  gameLink?: string  // Optional: URL to match on external platform
+}
+```
+
+### REST Endpoints
+
+#### Get Match History
+**Endpoint:** `GET /api/match-history`
+
+**Guard:** JwtAuthGuard (required)
+
+**Query Parameters:**
+- `userId`: number (optional, defaults to current authenticated user)
+- `gameType`: string (optional, filter by game type)
+- `limit`: number (optional, default 10, max 100)
+- `offset`: number (optional, default 0 for pagination)
+
+**Response:**
+```json
+{
+  "matches": [
+    {
+      "id": "match-12345",
+      "gameType": "Chess",
+      "opponent": {
+        "id": 42,
+        "username": "player_alpha",
+        "rating": 1650
+      },
+      "result": "win",
+      "score": {
+        "userScore": 1,
+        "opponentScore": 0
+      },
+      "duration": "42 min",
+      "date": "2026-02-05T14:30:00Z",
+      "eloChange": 15,
+      "gameLink": "https://chess.com/live/game/12345"
+    }
+  ],
+  "total": 47,
+  "page": 0,
+  "limit": 10,
+  "gameTypes": ["Chess", "Dota2", "Counter-Strike"]
+}
+```
+
+**Process:**
+1. Get current user if userId not specified
+2. Fetch matches from database or external API
+3. Sort by date (newest first)
+4. Apply filters (gameType if specified)
+5. Apply pagination (offset and limit)
+6. Return matches with total count
+
+#### Record New Match
+**Endpoint:** `POST /api/match-history`
+
+**Guard:** JwtAuthGuard (required)
+
+**Request Body:**
+```json
+{
+  "gameType": "Chess",
+  "opponentId": 42,
+  "result": "win",
+  "score": {
+    "userScore": 1,
+    "opponentScore": 0
+  },
+  "gameLink": "https://chess.com/live/game/12345",
+  "duration": 2520
+}
+```
+
+**Response:**
+```json
+{
+  "id": "match-789",
+  "userId": 1,
+  "message": "Match history recorded successfully",
+  "eloChange": 15,
+  "newRating": 1665
+}
+```
+
+**Process:**
+1. Validate opponent exists (if opponentId provided)
+2. Validate game type is supported
+3. Calculate ELO change based on result and rating difference
+4. Store match in database
+5. Update user's rating
+6. Optionally send notification to user
+7. Return confirmation with ELO change
+
+### External API Integration (Optional)
+
+#### Chess.com API Integration
+**Endpoint:** `https://api.chess.com/pub/player/{username}/games/{year}/{month}`
+
+**Purpose:** Import historical chess.com matches into match history
+
+**Implementation:**
+1. User provides chess.com username
+2. Backend fetches games from Chess.com API
+3. Transform Chess.com game format to internal Match format
+4. Store in match_history table
+5. Calculate ELO deltas from Chess.com ratings
+
+**Example Transform:**
+```typescript
+// Chess.com game object
+{
+  url: "https://chess.com/live/game/12345",
+  pgn: "...",
+  time_control: "rapid",
+  end_time: 1707036600,
+  rated: true,
+  accuracies: { white: 87.5, black: 92.1 },
+  tcn: "RNBQKBNR... → ...",
+  white: { rating: 1634, result: "win", username: "player_alpha" },
+  black: { rating: 1650, result: "resigned", username: "opponent_name" }
+}
+
+// Transformed to Match
+{
+  id: "chess_12345",
+  gameType: "Chess",
+  opponent: { username: "opponent_name", rating: 1650 },
+  result: "win",
+  score: { userScore: 1, opponentScore: 0 },
+  duration: "15 min",
+  date: "2026-02-05T14:30:00Z",
+  eloChange: 16,
+  gameLink: "https://chess.com/live/game/12345"
+}
+```
+
+#### Dota 2 API Integration (Optional)
+**Endpoint:** `https://api.opendota.com/api/players/{steamId}/matches`
+
+**Purpose:** Import Dota 2 matches from OpenDota API
+
+**Data Fields:**
+- Match ID from Dota 2
+- Hero played
+- Result (win/loss)
+- Duration
+- Rating/MMR change
+- Opponent details
+
+### Database Entity: MatchHistory
+```typescript
+{
+  id: number (PK)
+  userId: number (FK to User)
+  gameType: string  // 'Chess', 'Dota2', 'Counter-Strike', etc.
+  opponentId: number (FK to User, nullable if opponent not in system)
+  opponentUsername: string  // Cache opponent name
+  opponentRating: number  // Cache opponent rating at time of match
+  result: 'win' | 'loss'  // Result from current user's perspective
+  userScore: number
+  opponentScore: number
+  duration: number  // seconds
+  eloChange: number  // signed integer
+  userRatingBefore: number  // Rating before match
+  userRatingAfter: number  // Rating after match
+  externalGameLink: string (nullable)  // Link to external platform
+  externalGameId: string (nullable)  // ID on external platform
+  importedAt: Date (nullable)  // When imported from external API
+  createdAt: Date
+
+  // Relations
+  user: User (N:1)
+  opponent?: User (N:1, optional)
+}
+```
+
+### Statistics Calculation
+
+**Frontend expects aggregate stats:**
+```typescript
+interface MatchStatistics {
+  totalMatches: number
+  wins: number
+  losses: number
+  winRate: number  // percentage
+  averageElo: number
+  eloTrend: 'up' | 'down' | 'stable'
+  gameTypeBreakdown: {
+    [gameType: string]: {
+      matches: number
+      wins: number
+      winRate: number
+    }
+  }
+}
+```
+
+**Backend should calculate:**
+- Total matches per user
+- Win/loss counts by game type
+- Average ELO across all matches
+- Win rate percentage
+- Recent ELO trend
+
+---
+
+## 8. DATA MODELS / ENTITIES
 
 ### User Entity
 ```typescript
@@ -725,7 +1019,7 @@ AppModule
 
 ---
 
-## 7. AUTHENTICATION GUARDS & STRATEGIES
+## 9. AUTHENTICATION GUARDS & STRATEGIES
 
 ### JwtAuthGuard
 - Extends Passport's AuthGuard('jwt')
@@ -766,7 +1060,7 @@ AppModule
 
 ---
 
-## 8. KEY IMPLEMENTATION DETAILS
+## 10. KEY IMPLEMENTATION DETAILS
 
 ### JWT Configuration
 - **Secret:** Read from JWT_SECRET environment variable
@@ -809,7 +1103,7 @@ AppModule
 
 ---
 
-## 9. MISSING IMPLEMENTATIONS / NOTES
+## 11. MISSING IMPLEMENTATIONS / NOTES
 
 1. **FriendsModule & ChatModule not imported** in app.module.ts
    - Endpoints exist but are not accessible
@@ -835,7 +1129,7 @@ AppModule
 
 ---
 
-## 10. ALL ENDPOINTS SUMMARY TABLE
+## 12. ALL ENDPOINTS SUMMARY TABLE
 
 | Method | Endpoint | Guard | Status | Module |
 |--------|----------|-------|--------|--------|
