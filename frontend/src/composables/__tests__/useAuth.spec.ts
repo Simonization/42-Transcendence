@@ -357,5 +357,134 @@ describe('useAuth', () => {
       expect(isAuthenticated.value).toBe(false)
       expect(user.value).toBeNull()
     })
+
+    it('should handle API error with specific error code', async () => {
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockRejectedValueOnce({
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Access denied',
+      })
+
+      const result = await checkAuth()
+
+      expect(result).toBe(false)
+      expect(isAuthenticated.value).toBe(false)
+    })
+
+    it('should handle timeout during checkAuth', async () => {
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockImplementationOnce(() =>
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout')), 10)
+        )
+      )
+
+      const result = await checkAuth()
+
+      expect(result).toBe(false)
+      expect(isAuthenticated.value).toBe(false)
+    })
+
+    it('should preserve user state if checkAuth partially fails', async () => {
+      const mockUser = { id: 1, username: 'test' } as any
+
+      // First successful auth
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce(mockUser)
+      await checkAuth()
+      expect(user.value.id).toBe(1)
+
+      // Second call returns error - state should clear
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockRejectedValueOnce(new Error('Network error'))
+      await checkAuth()
+
+      expect(user.value).toBeNull()
+      expect(isAuthenticated.value).toBe(false)
+    })
+  })
+
+  describe('Token Refresh Scenarios', () => {
+    it('should handle logout immediately clearing state', async () => {
+      const mockUser = { id: 1, username: 'test' } as any
+
+      // First auth
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce(mockUser)
+      await checkAuth()
+      expect(isAuthenticated.value).toBe(true)
+
+      // Logout
+      mockLogout.mockResolvedValueOnce({ message: 'Logged out' })
+      await logout()
+
+      expect(isAuthenticated.value).toBe(false)
+      expect(user.value).toBeNull()
+      expect(mockLogout).toHaveBeenCalled()
+    })
+
+    it('should handle rapid checkAuth calls', async () => {
+      const mockUser = { id: 1, username: 'test' } as any
+      mockGetAccessToken.mockReturnValue('token')
+      mockGetMe.mockResolvedValue(mockUser)
+
+      // Three rapid calls
+      const [r1, r2, r3] = await Promise.all([
+        checkAuth(),
+        checkAuth(),
+        checkAuth(),
+      ])
+
+      expect(r1).toBe(true)
+      expect(r2).toBe(true)
+      expect(r3).toBe(true)
+      expect(mockGetMe).toHaveBeenCalledTimes(3)
+    })
+
+  })
+
+  describe('Error Recovery', () => {
+    it('should recover from temporary auth failure', async () => {
+      const mockUser = { id: 1, username: 'test' } as any
+
+      // First call fails
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockRejectedValueOnce(new Error('Temporary error'))
+      const result1 = await checkAuth()
+      expect(result1).toBe(false)
+
+      // Second call succeeds
+      mockGetAccessToken.mockReturnValueOnce('token')
+      mockGetMe.mockResolvedValueOnce(mockUser)
+      const result2 = await checkAuth()
+      expect(result2).toBe(true)
+      expect(isAuthenticated.value).toBe(true)
+    })
+
+    it('should handle logout error gracefully', async () => {
+      mockLogout.mockRejectedValueOnce(new Error('Network error during logout'))
+
+      const result = await logout()
+
+      // Should not throw and should clear state anyway
+      expect(isAuthenticated.value).toBe(false)
+      expect(user.value).toBeNull()
+    })
+
+    it('should handle malformed user object from API', async () => {
+      mockGetAccessToken.mockReturnValueOnce('token')
+      // Return object missing critical fields
+      mockGetMe.mockResolvedValueOnce({
+        // No id, no username
+        mail: 'test@test.com',
+      } as any)
+
+      const result = await checkAuth()
+
+      // Should still work, API contract is backend's responsibility
+      expect(result).toBe(true)
+      expect(isAuthenticated.value).toBe(true)
+    })
   })
 })

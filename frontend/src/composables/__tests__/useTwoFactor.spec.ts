@@ -243,4 +243,136 @@ describe('useTwoFactor', () => {
       expect(loading.value).toBe(false)
     })
   })
+
+  describe('Edge Cases', () => {
+    it('should handle confirm with empty code', async () => {
+      const { confirm, code, message } = useTwoFactor()
+      code.value = ''
+
+      mockConfirm2FA.mockRejectedValueOnce(
+        new ApiError(400, 'INVALID_CODE', 'Code required')
+      )
+
+      await confirm()
+
+      expect(message.value).toBe('Code required')
+    })
+
+    it('should handle confirm with invalid code format', async () => {
+      const { confirm, code, message } = useTwoFactor()
+      code.value = 'invalid'
+
+      mockConfirm2FA.mockRejectedValueOnce(
+        new ApiError(400, 'INVALID_FORMAT', 'Code must be 6 digits')
+      )
+
+      await confirm()
+
+      expect(message.value).toBe('Code must be 6 digits')
+    })
+
+    it('should handle rapid enable calls', async () => {
+      mockEnable2FA.mockResolvedValue({ message: 'Code sent' })
+
+      const { enable } = useTwoFactor()
+
+      const [r1, r2, r3] = await Promise.all([
+        enable(),
+        enable(),
+        enable(),
+      ])
+
+      expect(mockEnable2FA).toHaveBeenCalledTimes(3)
+    })
+
+    it('should handle confirm after failed attempt', async () => {
+      const { confirm, code, message } = useTwoFactor()
+
+      // First attempt fails
+      code.value = '000000'
+      mockConfirm2FA.mockRejectedValueOnce(
+        new ApiError(400, 'INVALID_CODE', 'Invalid code')
+      )
+      await confirm()
+      expect(message.value).toBe('Invalid code')
+
+      // Second attempt succeeds
+      code.value = '123456'
+      mockConfirm2FA.mockResolvedValueOnce({ message: '2FA enabled' })
+      await confirm()
+      expect(message.value).toBe('2FA Enabled!')
+    })
+
+    it('should handle fetchStatus error gracefully', async () => {
+      mockGetMe.mockRejectedValueOnce(new Error('Connection failed'))
+
+      const { fetchStatus, enabled, isFetching } = useTwoFactor()
+
+      await fetchStatus()
+
+      expect(enabled.value).toBe(false)
+      expect(isFetching.value).toBe(false)
+    })
+
+    it('should handle enable with network error', async () => {
+      mockEnable2FA.mockRejectedValueOnce(new Error('Network error'))
+
+      const { enable, message, loading } = useTwoFactor()
+
+      await enable()
+
+      expect(message.value).toBe('Network error!')
+      expect(loading.value).toBe(false)
+    })
+
+    it('should clear code after successful confirm', async () => {
+      mockConfirm2FA.mockResolvedValueOnce({ message: '2FA enabled' })
+
+      const { confirm, code } = useTwoFactor()
+
+      code.value = '123456'
+      expect(code.value).toBe('123456')
+
+      await confirm()
+
+      expect(code.value).toBe('')
+    })
+
+    it('should handle disable error without throwing', async () => {
+      mockDisable2FA.mockRejectedValueOnce(
+        new ApiError(403, 'FORBIDDEN', 'Cannot disable 2FA')
+      )
+
+      const { disable, message } = useTwoFactor()
+
+      await disable()
+
+      expect(message.value).toBe('Cannot disable 2FA')
+    })
+
+    it('should handle fetchStatus with partial user object', async () => {
+      mockGetMe.mockResolvedValueOnce({
+        twoFactorEnabled: true,
+        // Missing other required fields
+      } as any)
+
+      const { fetchStatus, enabled } = useTwoFactor()
+
+      await fetchStatus()
+
+      expect(enabled.value).toBe(true)
+    })
+
+    it('should handle multiple enable calls racing', async () => {
+      mockEnable2FA.mockResolvedValue({ message: 'Code sent' })
+
+      const { enable, message, showForm } = useTwoFactor()
+
+      await Promise.all([enable(), enable()])
+
+      expect(message.value).toBe('Code sent to email.')
+      expect(showForm.value).toBe(true)
+      expect(mockEnable2FA).toHaveBeenCalledTimes(2)
+    })
+  })
 })

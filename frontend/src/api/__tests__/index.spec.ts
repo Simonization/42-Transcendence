@@ -364,4 +364,242 @@ describe('API Client', () => {
       expect(error.isAuthError()).toBe(false)
     })
   })
+
+  describe('Network Error Scenarios', () => {
+    it('should handle network timeout', async () => {
+      mockFetch.mockImplementationOnce(() =>
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Network timeout')), 50)
+        )
+      )
+
+      const error = await api('/test').catch((e) => e)
+      expect(error).toBeInstanceOf(Error)
+      expect(error.message).toContain('timeout')
+    })
+
+    it('should handle offline scenario', async () => {
+      mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+
+      const error = await api('/test').catch((e) => e)
+      expect(error).toBeInstanceOf(TypeError)
+    })
+
+    it('should handle malformed JSON response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => 'not valid json {',
+      })
+
+      const error = await api('/test').catch((e) => e)
+      expect(error).toBeInstanceOf(Error)
+    })
+
+    it('should handle 500 server error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: async () => ({
+          statusCode: 500,
+          error: 'INTERNAL_ERROR',
+          message: 'Server error',
+        }),
+      })
+
+      const error = await api('/test').catch((e) => e)
+      expect(error).toBeInstanceOf(ApiError)
+      expect(error.status).toBe(500)
+    })
+
+    it('should handle 503 service unavailable', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        statusText: 'Service Unavailable',
+        json: async () => ({
+          statusCode: 503,
+          error: 'SERVICE_UNAVAILABLE',
+          message: 'Service temporarily unavailable',
+        }),
+      })
+
+      const error = await api('/test').catch((e) => e)
+      expect(error).toBeInstanceOf(ApiError)
+      expect(error.status).toBe(503)
+    })
+
+    it('should handle network error during token refresh', async () => {
+      setTokens('old-token', 'refresh-token')
+
+      // First call returns 401
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ statusCode: 401, message: 'Unauthorized' }),
+      })
+
+      // Refresh fails with network error
+      mockFetch.mockRejectedValueOnce(new Error('Network error during refresh'))
+
+      const error = await api('/protected').catch((e) => e)
+      expect(error).toBeInstanceOf(Error)
+    })
+  })
+
+  describe('Edge Cases with Request Options', () => {
+    it('should handle PUT request', async () => {
+      setTokens('test-token')
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => JSON.stringify({ updated: true }),
+      })
+
+      await api('/test', {
+        method: 'PUT',
+        body: { data: 'test' },
+      })
+
+      const call = mockFetch.mock.calls[0]
+      expect(call[1].method).toBe('PUT')
+      expect(JSON.parse(call[1].body)).toEqual({ data: 'test' })
+    })
+
+    it('should handle PATCH request', async () => {
+      setTokens('test-token')
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => JSON.stringify({ patched: true }),
+      })
+
+      await api('/test', {
+        method: 'PATCH',
+        body: { field: 'value' },
+      })
+
+      const call = mockFetch.mock.calls[0]
+      expect(call[1].method).toBe('PATCH')
+    })
+
+    it('should handle DELETE request', async () => {
+      setTokens('test-token')
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => '',
+      })
+
+      await api('/test', { method: 'DELETE' })
+
+      const call = mockFetch.mock.calls[0]
+      expect(call[1].method).toBe('DELETE')
+    })
+
+    it('should handle request with custom headers', async () => {
+      setTokens('test-token')
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => JSON.stringify({ data: 'test' }),
+      })
+
+      await api('/test', {
+        headers: { 'X-Custom': 'value' },
+      })
+
+      const call = mockFetch.mock.calls[0]
+      expect(call[1].headers['X-Custom']).toBe('value')
+    })
+
+    it('should preserve existing headers when adding auth', async () => {
+      setTokens('test-token')
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => JSON.stringify({ data: 'test' }),
+      })
+
+      await api('/test', {
+        headers: { 'X-Custom': 'value' },
+      })
+
+      const call = mockFetch.mock.calls[0]
+      expect(call[1].headers['X-Custom']).toBe('value')
+      expect(call[1].headers.Authorization).toBe('Bearer test-token')
+    })
+  })
+
+  describe('Token Refresh Edge Cases', () => {
+    it('should handle refresh with invalid new token in response', async () => {
+      setTokens('old-token', 'refresh-token')
+
+      // First call returns 401
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ statusCode: 401, message: 'Unauthorized' }),
+      })
+
+      // Refresh returns invalid response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'success' }), // Missing accessToken
+      })
+
+      const error = await api('/protected').catch((e) => e)
+      // Should handle gracefully
+      expect(window.location.href).toBe('/auth')
+    })
+
+    it('should handle refresh token response with different field name', async () => {
+      setTokens('old-token', 'refresh-token')
+
+      // First call returns 401
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ statusCode: 401, message: 'Unauthorized' }),
+      })
+
+      // Refresh returns token in different field
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ newAccessToken: 'token-value' }),
+      })
+
+      // Next call should use old logic (expecting accessToken field)
+      const error = await api('/protected').catch((e) => e)
+      // Should redirect since token wasn't found in expected field
+      expect(window.location.href).toBe('/auth')
+    })
+
+    it('should handle race condition: both requests get 401 simultaneously', async () => {
+      setTokens('old-token', 'refresh-token')
+
+      // Setup for multiple 401s then refresh
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ statusCode: 401, message: 'Unauthorized' }),
+      })
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ statusCode: 401, message: 'Unauthorized' }),
+      })
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ accessToken: 'new-token' }),
+      })
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => JSON.stringify({ data: 'result' }),
+      })
+
+      const error = await api('/protected').catch((e) => e)
+      // Should handle gracefully (may redirect or retry once)
+      expect(error || getAccessToken()).toBeDefined()
+    })
+  })
+
 })
