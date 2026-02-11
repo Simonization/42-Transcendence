@@ -18,6 +18,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { MailModule } from './modules/mail/mail.module';
 import { FriendsModule } from './modules/friends/friends.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { MatchesModule } from './modules/matches/matches.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ChatModule } from './modules/chat/chat.module';
     MailModule,
     FriendsModule,
     ChatModule,
+    MatchesModule,
   ],
   controllers: [AppController],
   providers: [AppService, ChatGateway],
