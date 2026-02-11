@@ -1,30 +1,40 @@
+import { Type } from 'class-transformer';
+import { 
+    IsInt, 
+    IsEnum, 
+    IsOptional, 
+    IsArray, 
+    ValidateNested, 
+    IsObject, 
+    IsString 
+} from 'class-validator';
 import { GameType } from "../entities/match.entity";
-import { IsInt, IsEnum, IsOptional, IsArray, ValidateNested, Type, IsObject, IsString } from 'class-validator';
+
+export class ParticipantDto {
+    @IsInt()
+    userId: number;
+
+    @IsOptional()
+    @IsInt()
+    teamId?: number; 
+
+    @IsString()
+    result: 'WIN' | 'LOSS' | 'DRAW' | 'PENDING';
+}
 
 export class CreateMatchDto {
     @IsEnum(GameType)
     game_type: GameType;
 
     @IsOptional()
+    @IsInt() // Added missing validation for the ID itself
     tournament_id?: number;
 
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => ParticipantDto)
+    @Type(() => ParticipantDto) // Now ParticipantDto is defined and accessible
     participants: ParticipantDto[];
 
     @IsObject()
-    game_data: any; // PGN for Chess or JSON for League
-}
-
-class ParticipantDto {
-    @IsInt()
-    userId: number;
-
-    @IsOptional()
-    @IsInt()
-    teamId?: number; // Blue=1, Red=2 for League
-
-    @IsString()
-    result: 'WIN' | 'LOSS' | 'DRAW' | 'PENDING';
+    game_data: any; 
 }
