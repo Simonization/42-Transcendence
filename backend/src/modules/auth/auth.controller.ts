@@ -10,7 +10,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 
 export class RefreshDto {
     refreshToken: string;
@@ -93,13 +93,13 @@ export class AuthController {
     /***       OAUTH 2.0        ***/
     
     @Get('google')
-    @UseGuards(AuthGuard('google'))
+    @UseGuards(GoogleAuthGuard)
     async googleAuth(@Request() req) {
 
     }
 
     @Get('google/callback')
-    @UseGuards(AuthGuard('google'))
+    @UseGuards(GoogleAuthGuard)
     async googleAuthRedirect(@Request() req, @Res() res) {
         const frontendUrl = this.configService.get<string>('FRONTEND_URL');
         const result = await this.authService.googleLogin(req.user);
