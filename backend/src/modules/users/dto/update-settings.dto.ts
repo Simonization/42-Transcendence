@@ -2,7 +2,8 @@ import {
     IsString,
     IsOptional,
     IsNumber,
-    IsIn
+    IsIn,
+    IsBoolean,
 } from 'class-validator';
 
 export class UpdateSettingsDto {
@@ -23,4 +24,8 @@ export class UpdateSettingsDto {
         message: 'Theme must be 0 (System), 1 (Light), or 2 (Dark)',
     })
     theme?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    openMessage?: boolean;
 }
