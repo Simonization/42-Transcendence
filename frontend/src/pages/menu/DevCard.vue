@@ -3,12 +3,14 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useThemeStore } from '../../stores/theme'
 import { getAccessToken, getRefreshToken } from '../../api'
+import { useChat } from '@/composables/useChat'
 
 const WS_TEST_TIMEOUT = 3000
 
 const { user } = useAuthStore()
 const themeStore = useThemeStore()
 const { theme, setTheme, themeName } = themeStore
+const { uptime } = useChat()
 
 // Backend ping
 const pingMessage = ref('')
@@ -76,21 +78,6 @@ const tokenInfo = computed(() => {
   }
 })
 
-// Timer
-const uptime = ref('0.0')
-let startTime = 0
-let timerInterval: ReturnType<typeof setInterval> | null = null
-
-onMounted(() => {
-  startTime = Date.now()
-  timerInterval = setInterval(() => {
-    uptime.value = ((Date.now() - startTime) / 1000).toFixed(1)
-  }, 100)
-})
-
-onUnmounted(() => {
-  if (timerInterval) clearInterval(timerInterval)
-})
 </script>
 
 <template>

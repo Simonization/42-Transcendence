@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import { useChat } from '@/composables/useChat'
 import NotificationContainer from './components/notifications/NotificationContainer.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const isAuthLoading = ref(false)
+const { connectSocket } = useChat()
 
 // Monitor router navigation to show loading during auth check
 watch(() => router.currentRoute.value, () => {
@@ -18,6 +20,12 @@ watch(() => router.currentRoute.value, () => {
 watch(() => authStore.isLoading, (loading) => {
   isAuthLoading.value = loading
 })
+
+onMounted(() => {
+  console.log("App mounted, connecting socket...")
+  connectSocket()
+})
+
 </script>
 
 <template>

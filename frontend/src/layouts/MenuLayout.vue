@@ -4,14 +4,21 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import { useChat } from '@/composables/useChat'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const { logout, user } = authStore
 const themeStore = useThemeStore()
 const { theme } = themeStore
+const { connectSocket, disconnectSocket } = useChat()
+
+onMounted(async () => {
+    connectSocket()
+})
 
 const handleLogout = async () => {
+  disconnectSocket()
   await logout()
   router.push('/')
 }

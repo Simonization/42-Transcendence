@@ -39,11 +39,10 @@ const activeRoomTitle = computed(() => {
 
 onMounted(() => {
   fetchRooms()
-  connectSocket()
 })
 
 onUnmounted(() => {
-  disconnectSocket()
+
 })
 
 const handleSend = (content: string) => {
