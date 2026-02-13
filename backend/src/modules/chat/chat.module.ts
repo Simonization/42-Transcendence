@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { ChatGateway } from './chat.gateway';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Chat } from './entities/chat.entity';
 import { Message } from './entities/message.entity';
@@ -20,6 +22,7 @@ import { MarkReadCommand } from './commands/mark-read.command';
 import { CreateSystemChatCommand } from './commands/create-system-chat.command';
 import { GetConversationsQuery } from './queries/get-conversations.query';
 import { GetChatHistoryQuery } from './queries/get-chat-history.query';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -29,11 +32,13 @@ import { GetChatHistoryQuery } from './queries/get-chat-history.query';
       ChatParticipant, 
       User, 
       Friend, 
-      UserSettings
-    ])
+      UserSettings,
+    ]),
+    JwtModule.register({ secret: process.env.JWT_SECRET, }),
   ],
-  controllers: [ChatController],
+  controllers: [],
   providers: [
+    ChatGateway,
     ChatPrivacyService,
     StartConversationCommand,
     SendMessageCommand,

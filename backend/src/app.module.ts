@@ -10,7 +10,6 @@ import { UserProfile } from './modules/users/entities/user-profile.entity';
 import { UserSettings } from './modules/users/entities/user-settings.entity';
 import { UserGameAccount } from './modules/users/entities/user-game-account.entity';
 
-import { ChatGateway } from './modules/chat/chat.gateway';
 
 // Feature Modules
 import { UsersModule } from './modules/users/users.module';
@@ -41,9 +40,10 @@ import { MatchesModule } from './modules/matches/matches.module';
     FriendsModule,
     ChatModule,
     MatchesModule,
+    ChatModule,
   ],
   controllers: [AppController],
-  providers: [AppService, ChatGateway],
+  providers: [AppService],
 })
 
 export class AppModule {}
