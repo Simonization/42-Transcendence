@@ -5,22 +5,22 @@ export type NotificationType = 'info' | 'bot_message' | 'system' | 'friend_reque
 @Entity({ name: 'notifications' })
 export class Notification {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number | undefined;
 
   @Column({ name: 'user_id', type: 'int' })
-  userId: number;
+  userId: number | undefined;
 
   @Column({ name: 'actor_id', type: 'int', nullable: true })
   actorId?: number | null;
 
   @Column({ type: 'varchar', length: 50 })
-  type: NotificationType;
+  type: NotificationType | undefined;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   title?: string | null;
 
   @Column({ type: 'text' })
-  body: string;
+  body: string | undefined;
 
   @Column({ type: 'json', nullable: true })
   data?: any;
@@ -33,7 +33,7 @@ export class Notification {
 
   // need attemps to avoid infinite loop on errors ?
   @Column({ type: 'int', default: 0 })
-  attempts: number;
+  attempts: number = 0;
 
   @Column({ name: 'next_attempt_at', type: 'timestamp', nullable: true })
   nextAttemptAt?: Date | null;
@@ -42,8 +42,8 @@ export class Notification {
   lastError?: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt: Date | undefined;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt: Date | undefined;
 }
