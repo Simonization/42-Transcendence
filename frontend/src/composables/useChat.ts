@@ -190,6 +190,7 @@ export function useChat() {
 		wsConnected,
 		uptime,
 		announcements,
+		socket,
 		fetchRooms,
 		selectRoom,
 		sendMessage,

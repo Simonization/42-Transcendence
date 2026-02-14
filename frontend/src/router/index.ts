@@ -77,6 +77,11 @@ const router = createRouter({
           component: () => import('../pages/menu/TournamentDetailCard.vue'),
         },
         {
+          path: 'notification-tester',
+          name: 'notification-tester',
+          component: () => import('../pages/menu/NotificationTester.vue'),
+        },
+        {
           path: 'admin',
           name: 'admin',
           component: () => import('../pages/menu/AdminCard.vue'),

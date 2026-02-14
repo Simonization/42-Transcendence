@@ -26,7 +26,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             }
             const payload = this.jwtService.verify(token);
             client.data.user = payload; 
-            console.log(`Client connected: ${client.id} | User ID: ${payload.sub} | Username: ${payload.username}`);
+            
+            // Join user-specific room for notifications
+            const userRoom = `user-${payload.sub}`;
+            client.join(userRoom);
+            
+            console.log(`Client connected: ${client.id} | User ID: ${payload.sub} | Username: ${payload.username} | Room: ${userRoom}`);
             client.emit('message', `Welcome ${payload.username}!`);
             this.startPulse(client); 
 

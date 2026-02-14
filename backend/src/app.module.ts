@@ -18,6 +18,7 @@ import { MailModule } from './modules/mail/mail.module';
 import { FriendsModule } from './modules/friends/friends.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { MatchesModule } from './modules/matches/matches.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import { MatchesModule } from './modules/matches/matches.module';
     FriendsModule,
     ChatModule,
     MatchesModule,
-    ChatModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

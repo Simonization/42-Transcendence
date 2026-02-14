@@ -31,7 +31,6 @@ export class Notification {
   @Column({ name: 'delivered_at', type: 'timestamp', nullable: true })
   deliveredAt?: Date | null;
 
-  // need attemps to avoid infinite loop on errors ?
   @Column({ type: 'int', default: 0 })
   attempts: number = 0;
 
