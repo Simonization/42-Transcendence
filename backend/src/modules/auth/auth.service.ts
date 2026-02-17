@@ -303,7 +303,7 @@ export class AuthService {
 
     async googleLogin(googleUser: any) {
         let user = await this.userRepository.findOne({ 
-            where: { mail: googleUser.email } 
+            where: { mail: googleUser.mail } 
         });
 
         if (!user) {

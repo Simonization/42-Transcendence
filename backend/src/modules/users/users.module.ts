@@ -36,6 +36,6 @@ import { UsersController } from './users.controller';
         DeleteUserCommand,
     ],
     controllers: [UsersController],
-    exports: [UsersService],
+    exports: [UsersService, CreateUserCommand],
 })
 export class UsersModule {}

@@ -15,37 +15,54 @@ export class CreateUserCommand {
         private readonly userRepository: Repository<User>,
     ) {}
 
-    async execute(dto: CreateUserDto): Promise<User> {
+    async execute(dto: CreateUserDto, isAuth2User = false): Promise<User> {
         const { username, mail, password } = dto;
 
-        // 1. Check unique
         const existing = await this.userRepository.findOne({
-            where: [{ username }, { mail }],
+            where: { mail },
+            relations: ['profile', 'settings']
         });
-        
-        if (existing) {
-            throw new ConflictException('User already exists');
+
+        // 1. Logic for Auth2 Users (Find or Create)
+        if (isAuth2User && existing) {
+            return existing; 
         }
 
-        // 2.1 Hash password
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
+        // 2. Logic for Classic Users (Strict Unique Check)
+        if (!isAuth2User && existing) {
+            throw new ConflictException('User with this email already exists');
+        }
 
-        // 2.2 Generate verification token
+        // 3. Check for unique username uniqueness
+        const existingUsername = await this.userRepository.findOne({ where: { username } });
+        if (existingUsername) {
+            throw new ConflictException('Username is already taken');
+        }
+        // Handle password only if not a Auth2 user
+        let hashedPassword = '';
+        if (!isAuth2User && password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        } else {
+            // For Auth2 users, generate a random long string so they can't 
+            // "guess" an empty password to log in manually.
+            hashedPassword = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
+        }
+
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
-        // 2.3 Setup object
         const user = this.userRepository.create({
             username,
             mail,
             passwordHash: hashedPassword,
             verificationToken,
-            isEmailVerified: false,
-            profile: { displayName: username },
+            isEmailVerified: isAuth2User,
+            profile: { 
+                displayName: username,
+                avatarUrl: (dto as any).picture 
+            },
             settings: { language: 'en', theme: 0 },
         });
 
-        // 3. Save to MySQL
         return await this.userRepository.save(user);
     }
 }

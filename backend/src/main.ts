@@ -29,7 +29,8 @@ async function bootstrap() {
     console.error('Failed to create bot user:', error.message);
   }
 
+  const port = Number(process.env.PORT);
   console.log('Backend server is running on port 3000');
-  await app.listen(3000);
+  await app.listen(port);
 }
 bootstrap();
