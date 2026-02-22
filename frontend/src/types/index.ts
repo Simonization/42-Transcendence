@@ -46,6 +46,16 @@ export {
   ChatType,
 } from './chat';
 
+// Match types
+export {
+  type BackendMatch,
+  type BackendUserMatch,
+  type GameType,
+  type MatchResult,
+  type Match,
+  type MatchStats,
+} from './match';
+
 // Auth types
 export {
   type LoginRequest,

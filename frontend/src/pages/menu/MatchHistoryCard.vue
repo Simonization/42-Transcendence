@@ -1,14 +1,18 @@
 <script setup lang="ts">
 /**
  * Match History Card - Player Match History & Statistics
- * Displays historical matches, win/loss records, and rating progression
+ * Displays historical matches, win/loss records from the backend
  */
 
-import { ref, computed } from 'vue'
-import { getAllMatches, getMatchStats, getMatchesByGame, getMatchesByResult, getPaginatedMatches } from '../../data/mockMatchHistory'
-import type { GameType, MatchResult } from '../../data/mockMatchHistory'
+import { ref, computed, onMounted } from 'vue'
+import { useMatches } from '../../composables/useMatches'
+import { useAuthStore } from '../../stores/auth'
+import type { GameType, MatchResult } from '../../types'
 
-type SortBy = 'date' | 'result' | 'rating'
+type SortBy = 'date' | 'result'
+
+const authStore = useAuthStore()
+const { matches, isLoading, error, stats, uniqueGames, fetchMyHistory } = useMatches(authStore.user!.id)
 
 const currentPage = ref(1)
 const sortBy = ref<SortBy>('date')
@@ -17,31 +21,33 @@ const filterResult = ref<MatchResult | 'all'>('all')
 
 const pageSize = 10
 
+onMounted(() => {
+  fetchMyHistory()
+})
+
 // Get filtered and sorted matches
 const filteredMatches = computed(() => {
-  let matches = getAllMatches()
+  let result = [...matches.value]
 
   // Filter by game
   if (filterGame.value !== 'all') {
-    matches = matches.filter(m => m.game === filterGame.value)
+    result = result.filter(m => m.game === filterGame.value)
   }
 
   // Filter by result
   if (filterResult.value !== 'all') {
-    matches = matches.filter(m => m.result === filterResult.value)
+    result = result.filter(m => m.result === filterResult.value)
   }
 
   // Sort
   if (sortBy.value === 'date') {
-    matches = matches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    result = result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   } else if (sortBy.value === 'result') {
-    const resultOrder = { win: 0, draw: 1, loss: 2 }
-    matches = matches.sort((a, b) => resultOrder[a.result] - resultOrder[b.result])
-  } else if (sortBy.value === 'rating') {
-    matches = matches.sort((a, b) => b.yourRating - a.yourRating)
+    const resultOrder: Record<MatchResult, number> = { win: 0, draw: 1, loss: 2 }
+    result = result.sort((a, b) => resultOrder[a.result] - resultOrder[b.result])
   }
 
-  return matches
+  return result
 })
 
 // Pagination
@@ -51,15 +57,6 @@ const paginatedMatches = computed(() => {
   const start = (currentPage.value - 1) * pageSize
   const end = start + pageSize
   return filteredMatches.value.slice(start, end)
-})
-
-// Stats
-const stats = computed(() => getMatchStats())
-
-// Unique games from match history
-const uniqueGames = computed(() => {
-  const games = new Set(getAllMatches().map(m => m.game))
-  return Array.from(games) as GameType[]
 })
 
 const getResultClass = (result: MatchResult) => {
@@ -98,121 +95,121 @@ const formatDate = (date: string) => {
       <span class="match-count">{{ filteredMatches.length }} MATCHES</span>
     </header>
 
-    <!-- Stats Cards -->
-    <div class="stats-grid glass-panel">
-      <div class="stat-item">
-        <span class="stat-label">Win Rate</span>
-        <span class="stat-value">{{ stats.winRate }}%</span>
-        <span class="stat-secondary">{{ stats.wins }}W - {{ stats.losses }}L - {{ stats.draws }}D</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Current Rating</span>
-        <span class="stat-value">{{ stats.currentRating }}</span>
-        <span class="stat-secondary">Peak: {{ stats.highestRating }}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Total Matches</span>
-        <span class="stat-value">{{ stats.totalMatches }}</span>
-        <span class="stat-secondary">Avg Opponent: {{ stats.averageOpponentRating }}</span>
-      </div>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="loading-state glass-panel">
+      <span class="loading-spinner"></span>
+      <p class="loading-text">Loading match history...</p>
     </div>
 
-    <!-- Filters & Controls -->
-    <div class="filters-bar glass-panel">
-      <div class="filter-group">
-        <label for="filter-game" class="filter-label">Game</label>
-        <select id="filter-game" v-model="filterGame" class="filter-select">
-          <option value="all">All Games</option>
-          <option v-for="game in uniqueGames" :key="game" :value="game">
-            {{ game }}
-          </option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label for="filter-result" class="filter-label">Result</label>
-        <select id="filter-result" v-model="filterResult" class="filter-select">
-          <option value="all">All Results</option>
-          <option value="win">Wins Only</option>
-          <option value="loss">Losses Only</option>
-          <option value="draw">Draws Only</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label for="sort-by" class="filter-label">Sort By</label>
-        <select id="sort-by" v-model="sortBy" class="filter-select">
-          <option value="date">Date (Newest)</option>
-          <option value="result">Result</option>
-          <option value="rating">Rating</option>
-        </select>
-      </div>
+    <!-- Error State -->
+    <div v-else-if="error" class="error-state glass-panel">
+      <p class="error-text">{{ error }}</p>
+      <button class="retry-btn" @click="fetchMyHistory()">Retry</button>
     </div>
 
-    <!-- Matches Table -->
-    <div class="matches-container glass-panel">
-      <table class="matches-table">
-        <caption class="visually-hidden">Match history results table showing date, opponent, game, result, rating, change, and duration</caption>
-        <thead>
-          <tr>
-            <th>DATE</th>
-            <th>OPPONENT</th>
-            <th>GAME</th>
-            <th>RESULT</th>
-            <th>RATING</th>
-            <th>CHANGE</th>
-            <th>DURATION</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="match in paginatedMatches" :key="match.id" class="match-row">
-            <td class="cell-date">{{ formatDate(match.date) }}</td>
-            <td class="cell-opponent">{{ match.opponent }}</td>
-            <td class="cell-game">{{ match.game }}</td>
-            <td class="cell-result" :class="getResultClass(match.result)">
-              <span class="result-icon">{{ getResultIcon(match.result) }}</span>
-              {{ match.result }}
-            </td>
-            <td class="cell-rating">{{ match.yourRating }}</td>
-            <td class="cell-change" :class="{ 'change-positive': match.ratingChange > 0, 'change-negative': match.ratingChange < 0 }">
-              {{ match.ratingChange > 0 ? '+' : '' }}{{ match.ratingChange }}
-            </td>
-            <td class="cell-duration">{{ match.duration }}m</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- No Results -->
-      <div v-if="filteredMatches.length === 0" class="no-results">
-        <span class="no-results-icon">🔍</span>
-        <p class="no-results-text">No matches found</p>
-      </div>
-    </div>
-
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="pagination glass-panel">
-      <button
-        class="pagination-btn"
-        :disabled="currentPage === 1"
-        aria-label="Go to previous page of match history"
-        @click="goToPage(currentPage - 1)"
-      >
-        ← PREVIOUS
-      </button>
-
-      <div class="pagination-info">
-        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+    <template v-else>
+      <!-- Stats Cards -->
+      <div class="stats-grid glass-panel">
+        <div class="stat-item">
+          <span class="stat-label">Win Rate</span>
+          <span class="stat-value">{{ stats.winRate }}%</span>
+          <span class="stat-secondary">{{ stats.wins }}W - {{ stats.losses }}L - {{ stats.draws }}D</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Total Matches</span>
+          <span class="stat-value">{{ stats.totalMatches }}</span>
+          <span class="stat-secondary">{{ stats.wins }}W / {{ stats.losses }}L / {{ stats.draws }}D</span>
+        </div>
       </div>
 
-      <button
-        class="pagination-btn"
-        :disabled="currentPage === totalPages"
-        aria-label="Go to next page of match history"
-        @click="goToPage(currentPage + 1)"
-      >
-        NEXT →
-      </button>
-    </div>
+      <!-- Filters & Controls -->
+      <div class="filters-bar glass-panel">
+        <div class="filter-group">
+          <label for="filter-game" class="filter-label">Game</label>
+          <select id="filter-game" v-model="filterGame" class="filter-select">
+            <option value="all">All Games</option>
+            <option v-for="game in uniqueGames" :key="game" :value="game">
+              {{ game }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-result" class="filter-label">Result</label>
+          <select id="filter-result" v-model="filterResult" class="filter-select">
+            <option value="all">All Results</option>
+            <option value="win">Wins Only</option>
+            <option value="loss">Losses Only</option>
+            <option value="draw">Draws Only</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="sort-by" class="filter-label">Sort By</label>
+          <select id="sort-by" v-model="sortBy" class="filter-select">
+            <option value="date">Date (Newest)</option>
+            <option value="result">Result</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Matches Table -->
+      <div class="matches-container glass-panel">
+        <table class="matches-table">
+          <caption class="visually-hidden">Match history results table showing date, opponent, game, and result</caption>
+          <thead>
+            <tr>
+              <th>DATE</th>
+              <th>OPPONENT</th>
+              <th>GAME</th>
+              <th>RESULT</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="match in paginatedMatches" :key="match.id" class="match-row">
+              <td class="cell-date">{{ formatDate(match.date) }}</td>
+              <td class="cell-opponent">{{ match.opponent }}</td>
+              <td class="cell-game">{{ match.game }}</td>
+              <td class="cell-result" :class="getResultClass(match.result)">
+                <span class="result-icon">{{ getResultIcon(match.result) }}</span>
+                {{ match.result }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- No Results -->
+        <div v-if="filteredMatches.length === 0" class="no-results">
+          <span class="no-results-icon">🔍</span>
+          <p class="no-results-text">No matches found</p>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="pagination glass-panel">
+        <button
+          class="pagination-btn"
+          :disabled="currentPage === 1"
+          aria-label="Go to previous page of match history"
+          @click="goToPage(currentPage - 1)"
+        >
+          ← PREVIOUS
+        </button>
+
+        <div class="pagination-info">
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        </div>
+
+        <button
+          class="pagination-btn"
+          :disabled="currentPage === totalPages"
+          aria-label="Go to next page of match history"
+          @click="goToPage(currentPage + 1)"
+        >
+          NEXT →
+        </button>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -253,6 +250,70 @@ const formatDate = (date: string) => {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   letter-spacing: var(--tracking-wider);
+}
+
+/* Loading & Error States */
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--backdrop-blur-heavy);
+  border: var(--hud-border) solid var(--glass-border);
+  box-shadow:
+    var(--shadow-xl),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  text-align: center;
+  gap: var(--space-4);
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.error-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-error);
+}
+
+.retry-btn {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: transparent;
+  border: var(--hud-border) solid var(--border-default);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.retry-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 /* Stats Grid */
@@ -412,17 +473,6 @@ const formatDate = (date: string) => {
 .result-icon {
   font-weight: var(--font-bold);
   font-size: var(--text-lg);
-}
-
-/* Rating Change */
-.change-positive {
-  color: var(--color-success);
-  font-weight: var(--font-semibold);
-}
-
-.change-negative {
-  color: var(--color-error);
-  font-weight: var(--font-semibold);
 }
 
 /* No Results */
