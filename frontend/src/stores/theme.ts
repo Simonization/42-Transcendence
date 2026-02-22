@@ -4,7 +4,7 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 
 export type ThemeMode = 'stellar' | 'dragon'
 
@@ -40,6 +40,11 @@ export function initThemeBeforeMount(): void {
 
 export const useThemeStore = defineStore('theme', () => {
   const theme = ref<ThemeMode>(getStoredTheme())
+
+  // Auto-apply theme changes to DOM reactively whenever theme state updates
+  watchEffect(() => {
+    applyThemeToDocument(theme.value)
+  })
 
   /**
    * Set theme and persist to localStorage

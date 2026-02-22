@@ -13,17 +13,7 @@ const theme = computed(() => themeStore.theme)
 const themeName = computed(() => themeStore.themeName)
 
 const toggleTheme = () => {
-  const newTheme = theme.value === 'stellar' ? 'dragon' : 'stellar'
-
-  // Update store
-  themeStore.setTheme(newTheme)
-
-  // Ensure DOM is updated immediately
-  document.documentElement.setAttribute('data-theme', newTheme)
-  document.documentElement.style.colorScheme = newTheme === 'dragon' ? 'dark' : 'light'
-
-  // Persist to localStorage
-  localStorage.setItem('theme', newTheme)
+  themeStore.toggleTheme()
 }
 </script>
 
