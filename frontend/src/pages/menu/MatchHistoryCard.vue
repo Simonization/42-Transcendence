@@ -12,7 +12,8 @@ import type { GameType, MatchResult } from '../../types'
 type SortBy = 'date' | 'result'
 
 const authStore = useAuthStore()
-const { matches, isLoading, error, stats, uniqueGames, fetchMyHistory } = useMatches(authStore.user!.id)
+const { user } = authStore
+const { matches, isLoading, error, stats, uniqueGames, fetchMyHistory } = useMatches(user?.id ?? 0)
 
 const currentPage = ref(1)
 const sortBy = ref<SortBy>('date')
@@ -22,7 +23,9 @@ const filterResult = ref<MatchResult | 'all'>('all')
 const pageSize = 10
 
 onMounted(() => {
-  fetchMyHistory()
+  if (user) {
+    fetchMyHistory()
+  }
 })
 
 // Get filtered and sorted matches
@@ -89,6 +92,13 @@ const formatDate = (date: string) => {
 
 <template>
   <div class="match-history">
+    <!-- No user guard -->
+    <div v-if="!user" class="loading-state glass-panel">
+      <span class="loading-spinner"></span>
+      <p class="loading-text">Loading...</p>
+    </div>
+
+    <template v-else>
     <!-- Header -->
     <header class="match-header glass-header">
       <h1 class="match-title">MATCH HISTORY</h1>
@@ -209,6 +219,7 @@ const formatDate = (date: string) => {
           NEXT →
         </button>
       </div>
+    </template>
     </template>
   </div>
 </template>
