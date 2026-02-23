@@ -6,19 +6,37 @@ import { LeagueMatch } from "../entities/league-match.entity";
 
 @Injectable()
 export class GetPlayerHistoryQuery {
-    constructor(private dataSource: DataSource) {}
+  constructor(private dataSource: DataSource) {}
 
-    async execute(userId: number) {
-        const matches = await this.dataSource.getRepository(Match).createQueryBuilder('match')
-            .innerJoinAndSelect('match.userMatches', 'um')
-            .where('um.user_id = :userId', { userId })
-            .orderBy('match.created_at', 'DESC')
-            .getMany();
+  async execute(userId: number) {
+    const matches = await this.dataSource
+      .getRepository(Match)
+      .createQueryBuilder("match")
+      .innerJoinAndSelect("match.userMatches", "um")
+      .innerJoinAndSelect("um.user", "user")          // ← load user on every participant
+      .where(                                          // ← filter matches by user, but keep all participants
+        "match.id IN " +
+          this.dataSource
+            .getRepository(Match)
+            .createQueryBuilder("m")
+            .select("m.id")
+            .innerJoin("m.userMatches", "um2")
+            .where("um2.user_id = :userId")
+            .getQuery()
+      )
+      .setParameter("userId", userId)
+      .orderBy("match.created_at", "DESC")
+      .getMany();
 
-        return Promise.all(matches.map(async (match) => {
-            const repo = match.game_type === GameType.CHESS ? ChessMatch : LeagueMatch;
-            const details = await this.dataSource.getRepository(repo).findOneBy({ id: match.game_match_id });
-            return { ...match, details };
-        }));
-    }
+    return Promise.all(
+      matches.map(async (match) => {
+        const repo =
+          match.game_type === GameType.CHESS ? ChessMatch : LeagueMatch;
+        const details = await this.dataSource
+          .getRepository(repo)
+          .findOneBy({ id: match.game_match_id });
+        return { ...match, details };
+      })
+    );
+  }
 }
