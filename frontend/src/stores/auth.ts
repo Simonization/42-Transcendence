@@ -9,6 +9,7 @@ import { usersApi } from '../api/users'
 import { authApi } from '../api/auth'
 import { getAccessToken } from '../api'
 import { i18n } from '../i18n'
+import { UserRole } from '../types'
 import type { User } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -66,10 +67,15 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const isAdmin = computed(() => (user.value?.role ?? UserRole.USER) === UserRole.ADMIN)
+  const hasRole = (role: number): boolean => (user.value?.role ?? UserRole.USER) === role
+
   return {
     user,
     isAuthenticated,
     isLoading,
+    isAdmin,
+    hasRole,
     checkAuth,
     logout,
   }

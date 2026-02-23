@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createRouter, createMemoryHistory, Router } from 'vue-router'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../../stores/auth'
+import { UserRole } from '../../types'
 
 // Mock API token functions
 vi.mock('../../api/index', () => ({
@@ -36,6 +37,7 @@ describe('Router Auth Guard', () => {
         { path: '/menu/chat', component: { template: '<div>Chat</div>' } },
         { path: '/menu/friend', component: { template: '<div>Friends</div>' } },
         { path: '/menu/tournaments', component: { template: '<div>Tournaments</div>' } },
+        { path: '/menu/admin', meta: { requiredRole: UserRole.ADMIN }, component: { template: '<div>Admin</div>' } },
       ],
     })
 
@@ -58,6 +60,12 @@ describe('Router Auth Guard', () => {
 
       if (!isAuthenticated) {
         return '/auth'
+      }
+
+      const requiredRole = to.meta.requiredRole as number | undefined
+      if (requiredRole !== undefined) {
+        const userRole = authStore.user?.role ?? UserRole.USER
+        if (userRole !== requiredRole) return '/menu/user'
       }
 
       return true
@@ -367,6 +375,71 @@ describe('Router Auth Guard', () => {
       checkAuthSpy.mockClear()
       await router.push('/menu/friend')
       expect(checkAuthSpy).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('Role Guard', () => {
+    it('should redirect non-admin (role=0) to /menu/user when accessing /menu/admin', async () => {
+      mockGetAccessToken.mockReturnValue('valid-token')
+
+      const authStore = useAuthStore()
+      vi.spyOn(authStore, 'checkAuth').mockResolvedValue(true)
+      authStore.user = {
+        id: 1, username: 'user', mail: 'u@t.com', twoFactorEnabled: false,
+        role: UserRole.USER,
+        profile: { userId: 1, displayName: null, avatarUrl: null, bio: null, createdAt: '' },
+        settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
+      }
+
+      await router.push('/menu/admin')
+      expect(router.currentRoute.value.path).toBe('/menu/user')
+    })
+
+    it('should allow admin (role=1) to access /menu/admin', async () => {
+      mockGetAccessToken.mockReturnValue('valid-token')
+
+      const authStore = useAuthStore()
+      vi.spyOn(authStore, 'checkAuth').mockResolvedValue(true)
+      authStore.user = {
+        id: 1, username: 'admin', mail: 'a@t.com', twoFactorEnabled: false,
+        role: UserRole.ADMIN,
+        profile: { userId: 1, displayName: null, avatarUrl: null, bio: null, createdAt: '' },
+        settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
+      }
+
+      await router.push('/menu/admin')
+      expect(router.currentRoute.value.path).toBe('/menu/admin')
+    })
+
+    it('should allow any role to access routes without requiredRole meta', async () => {
+      mockGetAccessToken.mockReturnValue('valid-token')
+
+      const authStore = useAuthStore()
+      vi.spyOn(authStore, 'checkAuth').mockResolvedValue(true)
+      authStore.user = {
+        id: 1, username: 'user', mail: 'u@t.com', twoFactorEnabled: false,
+        role: UserRole.USER,
+        profile: { userId: 1, displayName: null, avatarUrl: null, bio: null, createdAt: '' },
+        settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
+      }
+
+      await router.push('/menu/chat')
+      expect(router.currentRoute.value.path).toBe('/menu/chat')
+    })
+
+    it('should default to role=0 when user.role is undefined', async () => {
+      mockGetAccessToken.mockReturnValue('valid-token')
+
+      const authStore = useAuthStore()
+      vi.spyOn(authStore, 'checkAuth').mockResolvedValue(true)
+      authStore.user = {
+        id: 1, username: 'norole', mail: 'n@t.com', twoFactorEnabled: false,
+        profile: { userId: 1, displayName: null, avatarUrl: null, bio: null, createdAt: '' },
+        settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
+      }
+
+      await router.push('/menu/admin')
+      expect(router.currentRoute.value.path).toBe('/menu/user')
     })
   })
 })

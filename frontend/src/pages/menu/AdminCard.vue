@@ -4,8 +4,9 @@
  * Displays tournament management dashboard with V2.0 indicators for future features
  */
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '../../stores/auth'
 import DashboardTab from '../../components/admin/DashboardTab.vue'
 import CreateTournamentTab from '../../components/admin/CreateTournamentTab.vue'
 import MyTournamentsTab from '../../components/admin/MyTournamentsTab.vue'
@@ -14,6 +15,8 @@ import ParticipantsTab from '../../components/admin/ParticipantsTab.vue'
 type AdminTab = 'dashboard' | 'create' | 'tournaments' | 'participants'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
+const isAuthorized = computed(() => authStore.isAdmin)
 
 const activeTab = ref<AdminTab>('dashboard')
 
@@ -26,7 +29,7 @@ const tabs: Array<{ id: AdminTab; label: string; icon: string }> = [
 </script>
 
 <template>
-  <div class="admin-panel">
+  <div v-if="isAuthorized" class="admin-panel">
     <!-- Admin Header -->
     <header class="admin-header glass-header">
       <div class="admin-header-content">
@@ -58,9 +61,39 @@ const tabs: Array<{ id: AdminTab; label: string; icon: string }> = [
       <ParticipantsTab v-show="activeTab === 'participants'" class="tab-pane glass-panel" />
     </main>
   </div>
+  <div v-else class="access-denied glass-panel">
+    <h1 class="access-denied-title">{{ $t('admin.accessDenied') }}</h1>
+    <p class="access-denied-msg">{{ $t('admin.accessDeniedMsg') }}</p>
+  </div>
 </template>
 
 <style scoped>
+.access-denied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
+  text-align: center;
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--backdrop-blur-heavy);
+  border: var(--hud-border) solid var(--color-error);
+}
+
+.access-denied-title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-error);
+}
+
+.access-denied-msg {
+  margin: var(--space-4) 0 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
 /* Visually Hidden */
 .visually-hidden {
   position: absolute;

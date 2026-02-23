@@ -286,7 +286,9 @@
     "comingSoonBanner": "Coming Soon - V2.0",
     "comingSoonDesc": "Advanced tournament creation wizard",
     "comingSoonWizardDesc": "Full tournament creation wizard will be available in V2.0",
-    "comingSoonParticipantsDesc": "Advanced participant management features coming in V2.0"
+    "comingSoonParticipantsDesc": "Advanced participant management features coming in V2.0",
+    "accessDenied": "ACCESS DENIED",
+    "accessDeniedMsg": "You do not have permission to view this page."
   },
   "twoFactor": {
     "verifyingCode": "VERIFYING CODE",

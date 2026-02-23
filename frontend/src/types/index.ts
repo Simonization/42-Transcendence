@@ -20,6 +20,8 @@ export {
   type UpdateProfileDto,
   type UpdateSettingsDto,
   Theme,
+  UserRole,
+  type UserRoleValue,
   SUPPORTED_LANGUAGES,
   type SupportedLanguage,
 } from './user';

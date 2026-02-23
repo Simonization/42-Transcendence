@@ -286,7 +286,9 @@
     "comingSoonBanner": "Bientôt disponible - V2.0",
     "comingSoonDesc": "Assistant avancé de création de tournoi",
     "comingSoonWizardDesc": "L'assistant complet de création de tournoi sera disponible en V2.0",
-    "comingSoonParticipantsDesc": "Les fonctionnalités avancées de gestion des participants arrivent en V2.0"
+    "comingSoonParticipantsDesc": "Les fonctionnalités avancées de gestion des participants arrivent en V2.0",
+    "accessDenied": "ACCÈS REFUSÉ",
+    "accessDeniedMsg": "Vous n'avez pas la permission de voir cette page."
   },
   "twoFactor": {
     "verifyingCode": "VÉRIFICATION DU CODE",

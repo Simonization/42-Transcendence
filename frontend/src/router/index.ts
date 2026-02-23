@@ -2,6 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { getAccessToken } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { setActivePinia, createPinia } from 'pinia'
+import { UserRole } from '../types'
+
+declare module 'vue-router' {
+  interface RouteMeta { requiredRole?: number }
+}
 
 // Ensure Pinia is available for router guards
 let pinia: ReturnType<typeof createPinia> | null = null
@@ -84,6 +89,7 @@ const router = createRouter({
         {
           path: 'admin',
           name: 'admin',
+          meta: { requiredRole: UserRole.ADMIN },
           component: () => import('../pages/menu/AdminCard.vue'),
         },
       ],
@@ -127,6 +133,13 @@ router.beforeEach(async (to) => {
   // If authentication check failed, redirect to login
   if (!isAuthenticated) {
     return '/auth'
+  }
+
+  // Role-based access control
+  const requiredRole = to.meta.requiredRole
+  if (requiredRole !== undefined) {
+    const userRole = authStore.user?.role ?? UserRole.USER
+    if (userRole !== requiredRole) return '/menu/user'
   }
 
   // Authentication valid, allow access

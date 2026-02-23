@@ -32,7 +32,7 @@ export interface User {
   mail: string;
   twoFactorEnabled: boolean;
   /** User role (0 = regular user) */
-  role?: number;
+  role?: UserRoleValue;
   /** User status (0 = active) */
   status?: number;
   /** OAuth fields */
@@ -66,6 +66,10 @@ export enum Theme {
   Light = 1,
   Dark = 2,
 }
+
+/** User role constants */
+export const UserRole = { USER: 0, ADMIN: 1, MODERATOR: 2, BOT: 999 } as const
+export type UserRoleValue = typeof UserRole[keyof typeof UserRole]
 
 /** Language options */
 export const SUPPORTED_LANGUAGES = ['en', 'fr', 'tr', 'nl', 'ko'] as const;

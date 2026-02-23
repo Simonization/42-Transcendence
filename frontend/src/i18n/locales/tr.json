@@ -286,7 +286,9 @@
     "comingSoonBanner": "Yakında - V2.0",
     "comingSoonDesc": "Gelişmiş turnuva oluşturma sihirbazı",
     "comingSoonWizardDesc": "Tam turnuva oluşturma sihirbazı V2.0'da kullanılabilir olacak",
-    "comingSoonParticipantsDesc": "Gelişmiş katılımcı yönetimi özellikleri V2.0'da geliyor"
+    "comingSoonParticipantsDesc": "Gelişmiş katılımcı yönetimi özellikleri V2.0'da geliyor",
+    "accessDenied": "ERİŞİM REDDEDİLDİ",
+    "accessDeniedMsg": "Bu sayfayı görüntüleme izniniz yok."
   },
   "twoFactor": {
     "verifyingCode": "KOD DOĞRULANIYOR",

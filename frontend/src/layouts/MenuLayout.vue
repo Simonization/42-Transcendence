@@ -10,7 +10,7 @@ import { useChat } from '@/composables/useChat'
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
-const { logout, user } = authStore
+const { logout } = authStore
 const themeStore = useThemeStore()
 const { theme } = themeStore
 const { connectSocket, disconnectSocket } = useChat()
@@ -37,8 +37,7 @@ const navItems = computed(() => {
     { to: '/menu/dev', label: t('nav.dev'), icon: '🛠' },
   ]
 
-  // Add admin module if user has admin role (placeholder - check actual role field)
-  if (user.value && (user.value as any).role === 'admin') {
+  if (authStore.isAdmin) {
     baseItems.push({ to: '/menu/admin', label: t('nav.admin'), icon: '⚙️' })
   }
 
