@@ -31,12 +31,12 @@ export class MatchesController {
     }
 
     /**
-     * QUERY: Get specific match details by ID
-     * GET /matches/:id
+     * QUERY: Get history for the currently logged-in user
+     * GET /matches/my-history
      */
-    @Get(':id')
-    async getMatchDetails(@Param('id', ParseIntPipe) id: number) {
-        return await this.matchesService.getMatch(id);
+    @Get('my-history')
+    async getMyHistory(@Req() req) {
+        return await this.matchesService.getHistory(req.user.id);
     }
 
     /**
@@ -49,13 +49,12 @@ export class MatchesController {
     }
 
     /**
-     * QUERY: Get history for the currently logged-in user
-     * GET /matches/my-history
+     * QUERY: Get specific match details by ID
+     * GET /matches/:id
      */
-    @Get('my-history')
-    async getMyHistory(@Req() req) {
-        // req.user is populated by the JwtAuthGuard
-        return await this.matchesService.getHistory(req.user.id);
+    @Get(':id')
+    async getMatchDetails(@Param('id', ParseIntPipe) id: number) {
+        return await this.matchesService.getMatch(id);
     }
 
     /**
