@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usersApi } from '../../api/users'
 import { useThemeStore } from '../../stores/theme'
 import { useErrorHandler } from '../../composables/useErrorHandler'
@@ -15,6 +16,8 @@ const emit = defineEmits<{
   updated: []
 }>()
 
+const { t, locale } = useI18n()
+
 const themeStore = useThemeStore()
 const { toggleTheme, themeName } = themeStore
 const { message, messageType, handleError, handleSuccess, clearMessage } = useErrorHandler()
@@ -23,6 +26,11 @@ const isSaving = ref(false)
 
 const language = ref<SupportedLanguage>(props.user.settings?.language || 'en')
 const openMessage = ref(props.user.settings?.openMessage ?? true)
+
+watch(language, (newLang) => {
+  locale.value = newLang
+  localStorage.setItem('locale', newLang)
+})
 
 const languageLabels: Record<string, string> = {
   en: 'English',
@@ -40,10 +48,10 @@ const saveSettings = async () => {
       language: language.value,
       openMessage: openMessage.value,
     })
-    handleSuccess('Settings saved')
+    handleSuccess(t('settings.settingsSaved'))
     emit('updated')
   } catch (error) {
-    handleError(error, 'Failed to save')
+    handleError(error, t('settings.failedToSave'))
   } finally {
     isSaving.value = false
   }
@@ -52,12 +60,12 @@ const saveSettings = async () => {
 
 <template>
   <section class="section">
-    <h3 class="section-title">SETTINGS</h3>
+    <h3 class="section-title">{{ $t('settings.title') }}</h3>
 
     <div class="settings-grid">
       <div class="setting-row">
         <div class="setting-label">
-          <label for="language-select" class="label-caps">LANGUAGE</label>
+          <label for="language-select" class="label-caps">{{ $t('settings.language') }}</label>
         </div>
         <select id="language-select" v-model="language" class="input setting-select">
           <option v-for="lang in SUPPORTED_LANGUAGES" :key="lang" :value="lang">
@@ -68,16 +76,16 @@ const saveSettings = async () => {
 
       <div class="setting-row">
         <div class="setting-label">
-          <span class="label-caps">THEME</span>
+          <span class="label-caps">{{ $t('settings.theme') }}</span>
           <span class="setting-hint">{{ themeName }}</span>
         </div>
-        <button class="btn btn-secondary btn-sm" @click="toggleTheme">TOGGLE</button>
+        <button class="btn btn-secondary btn-sm" @click="toggleTheme">{{ $t('common.toggle') }}</button>
       </div>
 
       <div class="setting-row">
         <div class="setting-label">
-          <span class="label-caps">OPEN MESSAGES</span>
-          <span class="setting-hint">Allow messages from non-friends</span>
+          <span class="label-caps">{{ $t('settings.openMessages') }}</span>
+          <span class="setting-hint">{{ $t('settings.openMessagesHint') }}</span>
         </div>
         <label class="toggle-switch">
           <input type="checkbox" v-model="openMessage" />
@@ -88,7 +96,7 @@ const saveSettings = async () => {
 
     <div class="section-actions">
       <button class="btn btn-primary btn-sm" @click="saveSettings" :disabled="isSaving">
-        {{ isSaving ? 'SAVING...' : 'SAVE SETTINGS' }}
+        {{ isSaving ? $t('common.saving') : $t('settings.saveSettings') }}
       </button>
     </div>
 

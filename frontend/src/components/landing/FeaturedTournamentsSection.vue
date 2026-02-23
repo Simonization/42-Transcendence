@@ -47,8 +47,8 @@ const getStatusLabel = (status: string) => {
   <section class="featured-section">
     <header class="featured-header">
       <div class="featured-header-content">
-        <h2 class="featured-title">FEATURED TOURNAMENTS</h2>
-        <span class="featured-subtitle">{{ featuredTournaments.length }} TOURNAMENTS</span>
+        <h2 class="featured-title">{{ $t('landing.featuredTournaments') }}</h2>
+        <span class="featured-subtitle">{{ $t('landing.tournamentsCount', { count: featuredTournaments.length }) }}</span>
       </div>
       <div class="featured-nav-buttons">
         <button
@@ -95,11 +95,11 @@ const getStatusLabel = (status: string) => {
           <!-- Card Stats -->
           <div class="featured-stats">
             <div class="featured-stat">
-              <span class="featured-stat-label">Date</span>
+              <span class="featured-stat-label">{{ $t('landing.date') }}</span>
               <span class="featured-stat-value">{{ tournament.date }}</span>
             </div>
             <div class="featured-stat">
-              <span class="featured-stat-label">Players</span>
+              <span class="featured-stat-label">{{ $t('landing.players') }}</span>
               <span class="featured-stat-value">
                 {{ tournament.currentParticipants }}/{{ tournament.maxParticipants }}
               </span>
@@ -108,7 +108,7 @@ const getStatusLabel = (status: string) => {
 
           <!-- Prize -->
           <div class="featured-prize">
-            <span class="featured-prize-label">Prize Pool:</span>
+            <span class="featured-prize-label">{{ $t('landing.prizePool') }}</span>
             <span class="featured-prize-value">{{ tournament.prize }}</span>
           </div>
 
@@ -118,7 +118,7 @@ const getStatusLabel = (status: string) => {
             :aria-label="`View details for ${tournament.name}`"
             @click="handleViewDetails(tournament.id)"
           >
-            VIEW DETAILS
+            {{ $t('landing.viewDetails') }}
           </button>
         </div>
       </div>

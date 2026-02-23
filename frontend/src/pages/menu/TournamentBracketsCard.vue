@@ -14,7 +14,7 @@ const bracket = getMockBracket('1')
 <template>
   <div class="card card-page glass-panel">
     <div class="card-header">
-      <h2 class="card-title">TOURNAMENT BRACKETS</h2>
+      <h2 class="card-title">{{ $t('tournament.brackets') }}</h2>
       <span class="hud-serial">MODULE::ACTIVE</span>
     </div>
 

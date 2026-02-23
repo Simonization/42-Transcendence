@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useThemeStore } from '../../stores/theme'
 import { getAccessToken, getRefreshToken } from '../../api'
@@ -7,6 +8,7 @@ import { useChat } from '@/composables/useChat'
 
 const WS_TEST_TIMEOUT = 3000
 
+const { t } = useI18n()
 const { user } = useAuthStore()
 const themeStore = useThemeStore()
 const { theme, setTheme, themeName } = themeStore
@@ -28,7 +30,7 @@ const pingBackend = async () => {
     pingMessage.value = text
   } catch {
     pingTime.value = null
-    pingMessage.value = 'Connection failed'
+    pingMessage.value = t('dev.connectionFailed')
   } finally {
     isPinging.value = false
   }
@@ -84,22 +86,22 @@ const tokenInfo = computed(() => {
   <div class="card card-page glass-panel">
     <!-- Backend Ping -->
     <section class="section">
-      <h3 class="section-title">BACKEND PING</h3>
+      <h3 class="section-title">{{ $t('dev.backendPing') }}</h3>
       <div class="ping-row">
         <button class="btn btn-secondary btn-sm" @click="pingBackend" :disabled="isPinging">
-          {{ isPinging ? 'PINGING...' : 'PING' }}
+          {{ isPinging ? $t('dev.pinging') : $t('dev.ping') }}
         </button>
         <span v-if="pingTime !== null" class="ping-time badge badge-success">
           {{ pingTime }}ms
         </span>
       </div>
       <p v-if="pingMessage" class="mono-text">{{ pingMessage }}</p>
-      <p class="timer-text">Session: {{ uptime }}s</p>
+      <p class="timer-text">{{ $t('dev.session', { time: uptime }) }}</p>
     </section>
 
     <!-- Theme Switcher -->
     <section class="section">
-      <h3 class="section-title">THEME</h3>
+      <h3 class="section-title">{{ $t('dev.theme') }}</h3>
       <div class="theme-row">
         <button
           class="theme-btn"
@@ -116,12 +118,12 @@ const tokenInfo = computed(() => {
           DRAGON
         </button>
       </div>
-      <p class="hint-text">Active: {{ themeName }}</p>
+      <p class="hint-text">{{ $t('dev.active', { name: themeName }) }}</p>
     </section>
 
     <!-- Auth Debug -->
     <section class="section">
-      <h3 class="section-title">AUTH DEBUG</h3>
+      <h3 class="section-title">{{ $t('dev.authDebug') }}</h3>
       <div class="debug-grid">
         <div class="debug-row">
           <span class="label-caps">USER</span>
@@ -151,17 +153,17 @@ const tokenInfo = computed(() => {
         </div>
       </div>
       <details class="debug-details">
-        <summary class="debug-summary">Raw user JSON</summary>
+        <summary class="debug-summary">{{ $t('dev.rawUserJson') }}</summary>
         <pre class="debug-json">{{ JSON.stringify(user, null, 2) }}</pre>
       </details>
     </section>
 
     <!-- WebSocket Status -->
     <section class="section">
-      <h3 class="section-title">WEBSOCKET</h3>
+      <h3 class="section-title">{{ $t('dev.websocket') }}</h3>
       <div class="ping-row">
         <button class="btn btn-secondary btn-sm" @click="checkWebSocket" :disabled="wsStatus === 'connecting'">
-          {{ wsStatus === 'connecting' ? 'TESTING...' : 'TEST CONNECTION' }}
+          {{ wsStatus === 'connecting' ? $t('dev.testing') : $t('dev.testConnection') }}
         </button>
         <span class="badge" :class="{
           'badge-success': wsStatus === 'connected',
@@ -175,7 +177,7 @@ const tokenInfo = computed(() => {
 
     <!-- Environment -->
     <section class="section section-last">
-      <h3 class="section-title">ENVIRONMENT</h3>
+      <h3 class="section-title">{{ $t('dev.environment') }}</h3>
       <div class="debug-grid">
         <div class="debug-row">
           <span class="label-caps">BUILD MODE</span>

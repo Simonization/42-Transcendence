@@ -8,6 +8,7 @@ import { ref, computed } from 'vue'
 import { usersApi } from '../api/users'
 import { authApi } from '../api/auth'
 import { getAccessToken } from '../api'
+import { i18n } from '../i18n'
 import type { User } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -31,6 +32,13 @@ export const useAuthStore = defineStore('auth', () => {
       const userData = await usersApi.getMe()
       user.value = userData
       isAuthenticated.value = true
+
+      // Sync i18n locale with user's saved language preference
+      if (userData.settings?.language) {
+        i18n.global.locale.value = userData.settings.language
+        localStorage.setItem('locale', userData.settings.language)
+      }
+
       return true
     } catch {
       isAuthenticated.value = false

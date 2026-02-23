@@ -33,7 +33,7 @@ onMounted(() => {
   <Transition name="fade">
     <div v-if="isAuthLoading" class="auth-loading">
       <div class="loading-spinner"></div>
-      <p>VALIDATING CREDENTIALS...</p>
+      <p>{{ $t('auth.validatingCredentials') }}</p>
     </div>
   </Transition>
 

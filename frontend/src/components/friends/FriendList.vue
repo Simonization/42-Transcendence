@@ -15,7 +15,7 @@ const emit = defineEmits<{
 <template>
   <div class="friend-list">
     <div v-if="friends.length === 0" class="empty-state">
-      <p class="text-tertiary">No friends yet</p>
+      <p class="text-tertiary">{{ $t('friends.noFriends') }}</p>
     </div>
 
     <div v-for="friend in friends" :key="friend.id" class="friend-item">
@@ -41,17 +41,17 @@ const emit = defineEmits<{
           class="btn btn-ghost btn-sm"
           :disabled="isUpdating"
           @click="emit('remove', friend.id)"
-          title="Remove"
+          :title="$t('friends.remove')"
         >
-          {{ isUpdating ? 'UPDATING...' : 'REMOVE' }}
+          {{ isUpdating ? $t('friends.updating') : $t('friends.remove') }}
         </button>
         <button
           class="btn btn-ghost btn-sm text-error"
           :disabled="isUpdating"
           @click="emit('block', friend.id)"
-          title="Block"
+          :title="$t('friends.block')"
         >
-          {{ isUpdating ? 'UPDATING...' : 'BLOCK' }}
+          {{ isUpdating ? $t('friends.updating') : $t('friends.block') }}
         </button>
       </div>
     </div>

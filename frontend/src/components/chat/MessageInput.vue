@@ -31,9 +31,9 @@ const handleKeydown = (e: KeyboardEvent) => {
       v-model="content"
       type="text"
       class="input message-field"
-      placeholder="Type a message..."
+      :placeholder="$t('chat.typeMessage')"
       :disabled="disabled"
-      aria-label="Type a message"
+      :aria-label="$t('chat.typeMessage')"
       @keydown="handleKeydown"
       autocomplete="off"
     />
@@ -42,7 +42,7 @@ const handleKeydown = (e: KeyboardEvent) => {
       class="btn btn-primary btn-sm send-btn"
       :disabled="disabled || !content.trim()"
     >
-      SEND
+      {{ $t('common.send') }}
     </button>
   </form>
 </template>

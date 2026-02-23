@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   add: [friendId: number]
@@ -11,7 +14,7 @@ const inputError = ref('')
 const handleSubmit = () => {
   const id = parseInt(friendId.value, 10)
   if (isNaN(id) || id <= 0) {
-    inputError.value = 'Enter a valid user ID'
+    inputError.value = t('friends.invalidUserId')
     return
   }
   inputError.value = ''
@@ -27,11 +30,11 @@ const handleSubmit = () => {
         v-model="friendId"
         type="text"
         class="input add-friend-input"
-        placeholder="User ID"
+        :placeholder="$t('friends.addFriendPlaceholder')"
         inputmode="numeric"
-        aria-label="User ID to add as friend"
+        :aria-label="$t('friends.addFriendPlaceholder')"
       />
-      <button type="submit" class="btn btn-primary btn-sm">ADD</button>
+      <button type="submit" class="btn btn-primary btn-sm">{{ $t('friends.add') }}</button>
     </form>
     <p v-if="inputError" class="input-error-text">{{ inputError }}</p>
   </div>

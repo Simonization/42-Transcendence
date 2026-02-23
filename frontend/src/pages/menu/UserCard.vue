@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { usersApi } from '../../api/users'
 import { useErrorHandler } from '../../composables/useErrorHandler'
@@ -9,6 +10,7 @@ import SettingsSection from '../../components/user/SettingsSection.vue'
 import SecuritySection from '../../components/user/SecuritySection.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const { user, checkAuth, logout } = authStore
@@ -29,7 +31,7 @@ const handleDeleteAccount = async () => {
     await logout()
     router.push('/auth')
   } catch (error) {
-    handleError(error, 'Failed to delete account')
+    handleError(error, t('user.failedToDelete'))
     showDeleteDialog.value = false
   } finally {
     isDeleting.value = false
@@ -40,7 +42,7 @@ const handleDeleteAccount = async () => {
 <template>
   <div class="card card-page glass-panel">
     <div v-if="!user" class="card-loading">
-      <p class="text-secondary">Loading user data...</p>
+      <p class="text-secondary">{{ $t('user.loadingUserData') }}</p>
     </div>
 
     <template v-else>
@@ -50,14 +52,14 @@ const handleDeleteAccount = async () => {
 
       <!-- Danger zone -->
       <section class="section section-danger">
-        <h3 class="section-title">DANGER ZONE</h3>
+        <h3 class="section-title">{{ $t('user.dangerZone') }}</h3>
         <div class="danger-row">
           <div>
-            <p class="danger-label">Delete Account</p>
-            <p class="danger-hint">This action cannot be undone.</p>
+            <p class="danger-label">{{ $t('user.deleteAccount') }}</p>
+            <p class="danger-hint">{{ $t('user.deleteAccountWarning') }}</p>
           </div>
           <button class="btn btn-danger btn-sm" @click="showDeleteDialog = true">
-            DELETE
+            {{ $t('common.delete') }}
           </button>
         </div>
         <p v-if="deleteError" class="alert alert-error" style="margin-top: var(--space-3);">
@@ -68,9 +70,9 @@ const handleDeleteAccount = async () => {
 
     <ConfirmDialog
       v-if="showDeleteDialog"
-      title="Delete Account"
-      message="Are you sure you want to delete your account? All data will be permanently lost."
-      confirm-label="DELETE ACCOUNT"
+      :title="$t('user.deleteAccountConfirmTitle')"
+      :message="$t('user.deleteAccountConfirmMessage')"
+      :confirm-label="$t('user.deleteAccountConfirm')"
       :danger="true"
       @confirm="handleDeleteAccount"
       @cancel="showDeleteDialog = false"

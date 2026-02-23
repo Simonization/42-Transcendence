@@ -32,23 +32,23 @@ const handleBrowse = () => {
   <section class="browse-card glass-panel" @click="handleBrowse">
     <div class="browse-content">
       <div class="browse-icon">🏆</div>
-      <h2 class="browse-title">BROWSE ALL TOURNAMENTS</h2>
-      <p class="browse-subtitle">Discover tournaments and compete</p>
+      <h2 class="browse-title">{{ $t('landing.browseAll') }}</h2>
+      <p class="browse-subtitle">{{ $t('landing.browseSubtitle') }}</p>
 
       <div class="browse-stats">
         <div class="browse-stat">
           <span class="browse-stat-value">{{ totalTournaments }}</span>
-          <span class="browse-stat-label">Total</span>
+          <span class="browse-stat-label">{{ $t('landing.total') }}</span>
         </div>
         <div class="browse-stat-divider"></div>
         <div class="browse-stat">
           <span class="browse-stat-value">{{ upcomingTournaments.length }}</span>
-          <span class="browse-stat-label">Active</span>
+          <span class="browse-stat-label">{{ $t('landing.active') }}</span>
         </div>
       </div>
 
       <div class="browse-cta">
-        <span class="browse-cta-text">VIEW ALL TOURNAMENTS</span>
+        <span class="browse-cta-text">{{ $t('landing.viewAllTournaments') }}</span>
         <span class="browse-cta-arrow">→</span>
       </div>
     </div>

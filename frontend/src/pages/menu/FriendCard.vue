@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useFriendsStore } from '../../stores/friends'
 import MessageAlert from '../../components/common/MessageAlert.vue'
@@ -8,6 +9,7 @@ import FriendList from '../../components/friends/FriendList.vue'
 import FriendRequests from '../../components/friends/FriendRequests.vue'
 import BlockedUsers from '../../components/friends/BlockedUsers.vue'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const friendsStore = useFriendsStore()
 
@@ -33,9 +35,9 @@ const messageType = ref<'success' | 'error'>('success')
 const isUpdating = ref(false)
 
 const tabs: { key: Tab; label: string }[] = [
-  { key: 'friends', label: 'FRIENDS' },
-  { key: 'requests', label: 'REQUESTS' },
-  { key: 'blocked', label: 'BLOCKED' },
+  { key: 'friends', label: t('friends.title') },
+  { key: 'requests', label: t('friends.requests') },
+  { key: 'blocked', label: t('friends.blocked') },
 ]
 
 onMounted(() => {
@@ -51,7 +53,7 @@ const handleAdd = async (friendId: number) => {
     message.value = ''
     const ok = await addFriend(friendId)
     if (ok && user.value) {
-      message.value = 'Friend request sent'
+      message.value = t('friends.friendRequestSent')
       messageType.value = 'success'
       fetchFriends(user.value.id)
     }
@@ -149,7 +151,7 @@ const handleDecline = async (friendId: number) => {
 
     <!-- Content -->
     <div class="tab-content">
-      <div v-if="isLoading" class="loading-text">Loading...</div>
+      <div v-if="isLoading" class="loading-text">{{ $t('common.loading') }}</div>
 
       <template v-else>
         <FriendList

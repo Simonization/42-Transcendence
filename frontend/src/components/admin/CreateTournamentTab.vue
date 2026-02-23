@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const createTournamentSteps = [
   { number: 1, title: 'Basic Info', description: 'Tournament name, game, format' },
   { number: 2, title: 'Registration', description: 'Solo/team, max participants' },
@@ -10,13 +14,13 @@ const createTournamentSteps = [
 
 <template>
   <div class="create-tournament-content">
-    <h2 class="section-title">CREATE TOURNAMENT</h2>
+    <h2 class="section-title">{{ t('admin.createTournamentTitle') }}</h2>
 
     <div class="v2-overlay">
       <div class="v2-banner">
         <span class="v2-banner-icon">🚀</span>
-        <span class="v2-banner-text">Coming Soon - V2.0</span>
-        <span class="v2-banner-desc">Full tournament creation wizard will be available in V2.0</span>
+        <span class="v2-banner-text">{{ t('admin.comingSoonBanner') }}</span>
+        <span class="v2-banner-desc">{{ t('admin.comingSoonWizardDesc') }}</span>
       </div>
 
       <div class="wizard-preview">

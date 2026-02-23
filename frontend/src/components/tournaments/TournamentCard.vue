@@ -6,12 +6,14 @@
 
 import type { Tournament } from '../../data/mockTournaments'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 defineProps<{
   tournament: Tournament
 }>()
 
 const router = useRouter()
+const { t } = useI18n()
 
 const handleViewDetails = (tournamentId: string, event: Event) => {
   event.preventDefault()
@@ -28,7 +30,13 @@ const getStatusBadgeClass = (status: string) => {
 }
 
 const getStatusLabel = (status: string) => {
-  return status.charAt(0).toUpperCase() + status.slice(1)
+  const keyMap: Record<string, string> = {
+    open: 'tournament.open',
+    live: 'tournament.live',
+    finished: 'tournament.finished',
+  }
+  const key = keyMap[status]
+  return key ? t(key) : status.charAt(0).toUpperCase() + status.slice(1)
 }
 
 const getProgressPercentage = (current: number, max: number) => {
@@ -53,11 +61,11 @@ const getProgressPercentage = (current: number, max: number) => {
     <!-- Details -->
     <div class="tournament-card-details">
       <div class="detail-item">
-        <span class="detail-label">Date</span>
+        <span class="detail-label">{{ $t('tournament.date') }}</span>
         <span class="detail-value">{{ tournament.date }}</span>
       </div>
       <div class="detail-item">
-        <span class="detail-label">Format</span>
+        <span class="detail-label">{{ $t('tournament.format') }}</span>
         <span class="detail-value">{{ tournament.format }}</span>
       </div>
     </div>
@@ -65,7 +73,7 @@ const getProgressPercentage = (current: number, max: number) => {
     <!-- Participants Progress -->
     <div class="tournament-participants">
       <div class="participants-info">
-        <span class="participants-label">Participants</span>
+        <span class="participants-label">{{ $t('tournament.participants') }}</span>
         <span class="participants-value">
           {{ tournament.currentParticipants }}/{{ tournament.maxParticipants }}
         </span>
@@ -80,7 +88,7 @@ const getProgressPercentage = (current: number, max: number) => {
 
     <!-- Prize -->
     <div class="tournament-prize">
-      <span class="prize-label">Prize Pool:</span>
+      <span class="prize-label">{{ $t('tournament.prizePoolLabel') }}</span>
       <span class="prize-value">{{ tournament.prize }}</span>
     </div>
 
@@ -89,7 +97,7 @@ const getProgressPercentage = (current: number, max: number) => {
       class="tournament-card-cta"
       @click="handleViewDetails(tournament.id, $event)"
     >
-      VIEW DETAILS
+      {{ $t('tournament.viewDetails') }}
     </button>
   </div>
 </template>

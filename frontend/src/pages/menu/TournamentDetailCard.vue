@@ -6,6 +6,7 @@
 
 import { useRoute, useRouter } from 'vue-router'
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { mockTournaments } from '../../data/mockTournaments'
 import { useNotificationsStore } from '../../stores/notifications'
 import TournamentRegistrationModal from '../../components/tournaments/TournamentRegistrationModal.vue'
@@ -14,6 +15,7 @@ import { getMockBracket } from '../../data/mockBracket'
 
 type TabType = 'overview' | 'bracket' | 'participants' | 'chat'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const notificationsStore = useNotificationsStore()
@@ -61,19 +63,19 @@ const handleRegistrationSubmit = (data: any) => {
 
   // Show success notification
   showSuccess(
-    `✓ Registration successful! Check your email for confirmation.`,
+    t('tournament.registrationSuccess'),
     4000
   )
 
   // Could redirect or update UI here
 }
 
-const tabs: Array<{ id: TabType; label: string; icon: string }> = [
-  { id: 'overview', label: 'OVERVIEW', icon: '📋' },
-  { id: 'bracket', label: 'BRACKET', icon: '🏆' },
-  { id: 'participants', label: 'PARTICIPANTS', icon: '👥' },
-  { id: 'chat', label: 'CHAT', icon: '💬' },
-]
+const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() => [
+  { id: 'overview', label: t('tournament.overview'), icon: '📋' },
+  { id: 'bracket', label: t('tournament.bracket'), icon: '🏆' },
+  { id: 'participants', label: t('tournament.participants'), icon: '👥' },
+  { id: 'chat', label: t('tournament.chat'), icon: '💬' },
+])
 </script>
 
 <template>
@@ -92,7 +94,7 @@ const tabs: Array<{ id: TabType; label: string; icon: string }> = [
         :aria-label="`${isRegistered ? 'Already registered for' : 'Register for'} ${tournament.name}`"
         @click="handleRegister"
       >
-        {{ isRegistered ? 'YOU\'RE REGISTERED' : 'REGISTER NOW' }}
+        {{ isRegistered ? $t('tournament.youreRegistered') : $t('tournament.registerNow') }}
       </button>
     </header>
 
@@ -128,22 +130,22 @@ const tabs: Array<{ id: TabType; label: string; icon: string }> = [
         <div class="overview-grid">
           <!-- Tournament Info -->
           <div class="overview-section">
-            <h3 class="section-title">TOURNAMENT INFO</h3>
+            <h3 class="section-title">{{ $t('tournament.tournamentInfo') }}</h3>
             <div class="info-grid">
               <div class="info-item">
-                <span class="info-label">Format</span>
+                <span class="info-label">{{ $t('tournament.format') }}</span>
                 <span class="info-value">{{ tournament.format }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">Date</span>
+                <span class="info-label">{{ $t('tournament.date') }}</span>
                 <span class="info-value">{{ tournament.date }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">End Date</span>
+                <span class="info-label">{{ $t('tournament.endDate') }}</span>
                 <span class="info-value">{{ tournament.endDate }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">Max Players</span>
+                <span class="info-label">{{ $t('tournament.maxPlayers') }}</span>
                 <span class="info-value">{{ tournament.maxParticipants }}</span>
               </div>
             </div>
@@ -151,7 +153,7 @@ const tabs: Array<{ id: TabType; label: string; icon: string }> = [
 
           <!-- Prize Pool -->
           <div class="overview-section">
-            <h3 class="section-title">PRIZE POOL</h3>
+            <h3 class="section-title">{{ $t('tournament.prizePool') }}</h3>
             <div class="prize-display">
               <span class="prize-value">{{ tournament.prize }}</span>
             </div>
@@ -159,22 +161,22 @@ const tabs: Array<{ id: TabType; label: string; icon: string }> = [
 
           <!-- Description -->
           <div class="overview-section overview-section-full">
-            <h3 class="section-title">DESCRIPTION</h3>
+            <h3 class="section-title">{{ $t('tournament.description') }}</h3>
             <p class="description-text">{{ tournament.description }}</p>
           </div>
 
           <!-- Rules -->
           <div class="overview-section overview-section-full">
-            <h3 class="section-title">RULES & REQUIREMENTS</h3>
+            <h3 class="section-title">{{ $t('tournament.rules') }}</h3>
             <pre class="rules-text">{{ tournament.rules }}</pre>
           </div>
 
           <!-- Participants Progress -->
           <div class="overview-section overview-section-full">
-            <h3 class="section-title">REGISTRATION STATUS</h3>
+            <h3 class="section-title">{{ $t('tournament.registrationStatus') }}</h3>
             <div class="progress-container">
               <div class="progress-info">
-                <span class="progress-label">Registered</span>
+                <span class="progress-label">{{ $t('tournament.registered') }}</span>
                 <span class="progress-value">
                   {{ tournament.currentParticipants }}/{{ tournament.maxParticipants }}
                 </span>
@@ -221,7 +223,7 @@ const tabs: Array<{ id: TabType; label: string; icon: string }> = [
               v-model="searchParticipant"
               type="text"
               class="search-input"
-              placeholder="Search participants..."
+              :placeholder="$t('tournament.searchParticipants')"
             />
             <span class="search-icon" aria-hidden="true">🔍</span>
           </div>
@@ -244,12 +246,12 @@ const tabs: Array<{ id: TabType; label: string; icon: string }> = [
 
             <div v-if="filteredParticipants.length === 0" class="no-participants">
               <span class="no-participants-icon">🔍</span>
-              <p class="no-participants-text">No participants found</p>
+              <p class="no-participants-text">{{ $t('tournament.noParticipants') }}</p>
             </div>
           </div>
 
           <div class="participants-summary">
-            <span class="summary-label">Total Registered:</span>
+            <span class="summary-label">{{ $t('tournament.totalRegistered') }}</span>
             <span class="summary-value">{{ mockParticipants.length }} / {{ tournament.maxParticipants }}</span>
           </div>
         </div>
@@ -265,10 +267,10 @@ const tabs: Array<{ id: TabType; label: string; icon: string }> = [
       >
         <div class="chat-placeholder">
           <div class="chat-icon">💬</div>
-          <h3 class="chat-title">TOURNAMENT CHAT</h3>
-          <p class="chat-text">Real-time chat and discussion</p>
-          <p class="chat-subtext">Coming in Week 5 - V2.0</p>
-          <p class="chat-subtext">WebSocket integration for live messaging</p>
+          <h3 class="chat-title">{{ $t('tournament.tournamentChat') }}</h3>
+          <p class="chat-text">{{ $t('tournament.chatDescription') }}</p>
+          <p class="chat-subtext">{{ $t('tournament.chatComingSoon') }}</p>
+          <p class="chat-subtext">{{ $t('tournament.chatWebSocket') }}</p>
         </div>
       </section>
     </main>
@@ -276,7 +278,7 @@ const tabs: Array<{ id: TabType; label: string; icon: string }> = [
 
   <div v-else class="tournament-not-found glass-panel">
     <div class="not-found-icon">❌</div>
-    <h2 class="not-found-title">TOURNAMENT NOT FOUND</h2>
+    <h2 class="not-found-title">{{ $t('tournament.notFound') }}</h2>
   </div>
 
   <!-- Registration Modal -->

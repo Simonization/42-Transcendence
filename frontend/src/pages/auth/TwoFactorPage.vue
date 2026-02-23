@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { authApi } from '../../api/auth'
 import { useErrorHandler } from '../../composables/useErrorHandler'
 
@@ -15,13 +16,14 @@ const isSuccess = ref(false)
 const isError = ref(false)
 const userId = ref<number | null>(null)
 
+const { t } = useI18n()
 const { message: errorMessage } = useErrorHandler()
 
 onMounted(() => {
   const queryUserId = route.query.userId as string | undefined
   if (!queryUserId) {
     isError.value = true
-    errorMessage.value = 'Invalid session. Please login again.'
+    errorMessage.value = t('twoFactor.invalidSessionMsg')
   } else {
     userId.value = parseInt(queryUserId, 10)
   }
@@ -42,7 +44,7 @@ const handleSubmit = async () => {
     setTimeout(() => router.push('/menu'), REDIRECT_DELAY)
   } catch (error) {
     isError.value = true
-    errorMessage.value = error instanceof Error ? error.message : 'An error occurred. Please try again.'
+    errorMessage.value = error instanceof Error ? error.message : t('twoFactor.tryAgain')
   } finally {
     isLoading.value = false
   }
@@ -65,28 +67,28 @@ const goBackToLogin = () => {
       <!-- Loading -->
       <div v-if="isLoading" class="state-container">
         <div class="spinner"></div>
-        <h2 class="state-title">VERIFYING CODE</h2>
+        <h2 class="state-title">{{ $t('twoFactor.verifyingCode') }}</h2>
       </div>
 
       <!-- Success -->
       <div v-else-if="isSuccess" class="state-container">
         <div class="state-icon state-icon-success">&#x2713;</div>
-        <h2 class="state-title">VERIFIED</h2>
-        <p class="state-text">Redirecting...</p>
+        <h2 class="state-title">{{ $t('twoFactor.verified') }}</h2>
+        <p class="state-text">{{ $t('twoFactor.redirecting') }}</p>
       </div>
 
       <!-- Error -->
       <div v-else-if="isError && !userId" class="state-container">
         <div class="state-icon state-icon-error">&#x2715;</div>
-        <h2 class="state-title">INVALID SESSION</h2>
+        <h2 class="state-title">{{ $t('twoFactor.invalidSession') }}</h2>
         <p class="state-text">{{ errorMessage }}</p>
-        <button @click="goBackToLogin" class="auth-btn auth-btn-secondary">BACK TO LOGIN</button>
+        <button @click="goBackToLogin" class="auth-btn auth-btn-secondary">{{ $t('twoFactor.backToLogin') }}</button>
       </div>
 
       <!-- Form -->
       <div v-else class="state-container">
-        <h2 class="state-title">TWO-FACTOR AUTH</h2>
-        <p class="state-text">Enter the 6-digit code sent to your email</p>
+        <h2 class="state-title">{{ $t('twoFactor.title') }}</h2>
+        <p class="state-text">{{ $t('twoFactor.enterCode') }}</p>
 
         <form @submit.prevent="handleSubmit" class="tfa-form">
           <input
@@ -102,22 +104,22 @@ const goBackToLogin = () => {
           />
 
           <button type="submit" class="auth-btn" :disabled="code.length !== 6">
-            VERIFY CODE
+            {{ $t('twoFactor.verifyCode') }}
           </button>
         </form>
 
         <Transition name="msg">
           <p v-if="isError" class="auth-message auth-message-error">
             {{ errorMessage }}
-            <a @click="resetForm" class="retry-link">Try again</a>
+            <a @click="resetForm" class="retry-link">{{ $t('twoFactor.tryAgain') }}</a>
           </p>
         </Transition>
 
         <p class="state-text" style="margin-top: var(--space-4);">
-          Didn't receive a code? Check your spam folder.
+          {{ $t('twoFactor.didntReceive') }}
         </p>
 
-        <button @click="goBackToLogin" class="back-link">BACK TO LOGIN</button>
+        <button @click="goBackToLogin" class="back-link">{{ $t('twoFactor.backToLogin') }}</button>
       </div>
     </div>
   </div>

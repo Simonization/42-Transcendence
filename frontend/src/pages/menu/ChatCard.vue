@@ -63,7 +63,7 @@ const handleNewChat = async () => {
     <!-- Sidebar: Room list -->
     <aside class="chat-sidebar">
       <div class="sidebar-header">
-        <h3 class="sidebar-title">CHATS</h3>
+        <h3 class="sidebar-title">{{ $t('chat.title') }}</h3>
         <div class="sidebar-actions">
           <span v-if="wsConnected" class="ws-dot ws-dot-on" title="WebSocket connected"></span>
           <span v-else class="ws-dot ws-dot-off" title="WebSocket disconnected"></span>
@@ -79,15 +79,15 @@ const handleNewChat = async () => {
           v-model="newChatUserId"
           type="text"
           class="input"
-          placeholder="User ID"
+          :placeholder="$t('chat.userIdPlaceholder')"
           inputmode="numeric"
           aria-label="User ID to start chat with"
           @keydown.enter.prevent="handleNewChat"
         />
-        <button class="btn btn-primary btn-sm" @click="handleNewChat">START</button>
+        <button class="btn btn-primary btn-sm" @click="handleNewChat">{{ $t('common.start') }}</button>
       </div>
 
-      <div v-if="isLoadingRooms" class="loading-text">Loading...</div>
+      <div v-if="isLoadingRooms" class="loading-text">{{ $t('common.loading') }}</div>
       <ChatRoomList
         v-else
         :rooms="rooms"
@@ -104,7 +104,7 @@ const handleNewChat = async () => {
           <h3 class="chat-main-title">
             {{ activeRoomTitle }}
           </h3>
-          <span class="badge badge-primary" v-if="activeRoom.type === 1">GROUP</span>
+          <span class="badge badge-primary" v-if="activeRoom.type === 1">{{ $t('common.group') }}</span>
         </div>
 
         <ChatConversation
@@ -121,7 +121,7 @@ const handleNewChat = async () => {
       </template>
 
       <div v-else class="chat-empty">
-        <p class="text-tertiary">Select a conversation or start a new one</p>
+        <p class="text-tertiary">{{ $t('chat.selectConversation') }}</p>
       </div>
     </div>
 

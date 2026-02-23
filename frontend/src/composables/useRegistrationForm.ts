@@ -4,6 +4,7 @@
  */
 
 import { ref, computed } from 'vue'
+import { i18n } from '@/i18n'
 import { useFormValidation } from './useFormValidation'
 
 export type Step = 1 | 2 | 3
@@ -70,7 +71,7 @@ export function useRegistrationForm() {
 
     if (step === 1) {
       if (!formData.value.participationType) {
-        errors.value.type = 'Please select a participation type'
+        errors.value.type = i18n.global.t('registration.selectType')
         return false
       }
       return true
@@ -79,33 +80,33 @@ export function useRegistrationForm() {
     if (step === 2) {
       if (isSolo.value) {
         if (!formData.value.displayName.trim()) {
-          errors.value.displayName = 'Display name is required'
+          errors.value.displayName = i18n.global.t('registration.displayNameRequired')
         } else if (!validateField(formData.value.displayName, ['sanitize'], 'temp')) {
-          errors.value.displayName = 'Display name contains invalid characters'
+          errors.value.displayName = i18n.global.t('registration.displayNameInvalid')
         }
         if (!formData.value.email.trim()) {
-          errors.value.email = 'Email is required'
+          errors.value.email = i18n.global.t('registration.emailRequired')
         } else if (!validateField(formData.value.email, ['email', 'sanitize'], 'temp')) {
-          errors.value.email = 'Please enter a valid email address'
+          errors.value.email = i18n.global.t('registration.emailInvalid')
         }
         if (!formData.value.inGameUsername.trim()) {
-          errors.value.inGameUsername = 'In-game username is required'
+          errors.value.inGameUsername = i18n.global.t('registration.inGameRequired')
         } else if (!validateField(formData.value.inGameUsername, ['sanitize'], 'temp')) {
-          errors.value.inGameUsername = 'In-game username contains invalid characters'
+          errors.value.inGameUsername = i18n.global.t('registration.inGameInvalid')
         }
       }
 
       if (isTeam.value) {
         if (!formData.value.teamName.trim()) {
-          errors.value.teamName = 'Team name is required'
+          errors.value.teamName = i18n.global.t('registration.teamNameRequired')
         } else if (!validateField(formData.value.teamName, ['sanitize'], 'temp')) {
-          errors.value.teamName = 'Team name contains invalid characters'
+          errors.value.teamName = i18n.global.t('registration.teamNameInvalid')
         }
         if (formData.value.teamMembers.length === 0) {
-          errors.value.teamMembers = 'Select at least one teammate'
+          errors.value.teamMembers = i18n.global.t('registration.selectTeammate')
         }
         if (formData.value.teamMembers.length > 4) {
-          errors.value.teamMembers = 'Maximum 4 teammates allowed'
+          errors.value.teamMembers = i18n.global.t('registration.maxTeammates')
         }
       }
 
@@ -114,7 +115,7 @@ export function useRegistrationForm() {
 
     if (step === 3) {
       if (!formData.value.acceptRules) {
-        errors.value.rules = 'You must accept the rules to proceed'
+        errors.value.rules = i18n.global.t('registration.acceptRules')
         return false
       }
       return true

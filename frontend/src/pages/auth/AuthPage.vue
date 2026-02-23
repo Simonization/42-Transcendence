@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { authApi } from '../../api/auth'
 import { usersApi } from '../../api/users'
 import { getAccessToken, clearTokens } from '../../api'
@@ -20,6 +21,7 @@ const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
 
+const { t } = useI18n()
 const { validate, errors, isValid } = useFormValidation()
 const { message, messageType, handleError, handleSuccess, clearMessage } = useErrorHandler()
 
@@ -54,16 +56,16 @@ const login = async () => {
     })
 
     if (requiresTwoFactor(response)) {
-      handleSuccess('Credentials valid. Redirecting to 2FA...')
+      handleSuccess(t('auth.credentialsValid'))
       setTimeout(() => {
         router.push(`/auth/2fa?userId=${response.userId}`)
       }, REDIRECT_DELAY)
     } else {
-      handleSuccess(`Welcome, ${response.user.username}`)
+      handleSuccess(t('auth.welcome', { username: response.user.username }))
       router.push('/menu')
     }
   } catch (error) {
-    handleError(error, 'Network error')
+    handleError(error, t('auth.networkError'))
   } finally {
     isLoading.value = false
   }
@@ -89,12 +91,12 @@ const register = async () => {
       mail: email.value,
       password: password.value,
     })
-    handleSuccess('Registration successful! Check your email to verify.')
+    handleSuccess(t('auth.registrationSuccess'))
     username.value = ''
     email.value = ''
     password.value = ''
   } catch (error) {
-    handleError(error, 'Network error')
+    handleError(error, t('auth.networkError'))
   } finally {
     isLoading.value = false
   }
@@ -118,19 +120,19 @@ const handleGoogleLogin = () => {
     <div class="auth-panel">
       <div class="auth-header">
         <h1 class="auth-title">ESPORTENDENCE</h1>
-        <p class="auth-subtitle">{{ isLogin ? 'SIGN IN' : 'CREATE ACCOUNT' }}</p>
+        <p class="auth-subtitle">{{ isLogin ? $t('auth.signIn') : $t('auth.createAccount') }}</p>
       </div>
 
       <form @submit.prevent="isLogin ? login() : register()" class="auth-form">
         <div class="field">
-          <label class="field-label" for="username">USERNAME</label>
+          <label class="field-label" for="username">{{ $t('auth.username') }}</label>
           <input
             id="username"
             v-model="username"
             type="text"
             class="field-input"
             :class="{ 'field-input-error': errors.username }"
-            placeholder="Enter username"
+            :placeholder="$t('auth.enterUsername')"
             required
             autocomplete="username"
             @blur="validate(username, ['required'], 'username')"
@@ -141,14 +143,14 @@ const handleGoogleLogin = () => {
         </div>
 
         <div v-if="!isLogin" class="field">
-          <label class="field-label" for="email">EMAIL</label>
+          <label class="field-label" for="email">{{ $t('auth.email') }}</label>
           <input
             id="email"
             v-model="email"
             type="email"
             class="field-input"
             :class="{ 'field-input-error': errors.email }"
-            placeholder="Enter email"
+            :placeholder="$t('auth.enterEmail')"
             required
             autocomplete="email"
             @blur="validate(email, ['required', 'email', 'sanitize'], 'email')"
@@ -159,14 +161,14 @@ const handleGoogleLogin = () => {
         </div>
 
         <div class="field">
-          <label class="field-label" for="password">PASSWORD</label>
+          <label class="field-label" for="password">{{ $t('auth.password') }}</label>
           <input
             id="password"
             v-model="password"
             type="password"
             class="field-input"
             :class="{ 'field-input-error': errors.password }"
-            :placeholder="isLogin ? 'Enter password' : 'Min. 8 characters'"
+            :placeholder="isLogin ? $t('auth.enterPassword') : $t('auth.minChars')"
             required
             autocomplete="current-password"
             @blur="isLogin ? validate(password, ['required'], 'password') : validate(password, ['required', 'password', 'sanitize'], 'password')"
@@ -183,22 +185,22 @@ const handleGoogleLogin = () => {
           :disabled="isLoading"
           class="auth-shader-btn"
         >
-          {{ isLoading ? 'LOADING...' : (isLogin ? 'LOGIN' : 'REGISTER') }}
+          {{ isLoading ? $t('common.loadingDots') : (isLogin ? $t('auth.login') : $t('auth.register')) }}
         </ShaderButton>
       </form>
 
       <div class="auth-divider">
-        <span class="auth-divider-text">OR</span>
+        <span class="auth-divider-text">{{ $t('common.or') }}</span>
       </div>
 
       <button @click="handleGoogleLogin" class="auth-btn auth-btn-google">
-        SIGN IN WITH GOOGLE
+        {{ $t('auth.signInWithGoogle') }}
       </button>
 
       <p class="auth-toggle">
-        {{ isLogin ? "No account?" : 'Already registered?' }}
+        {{ isLogin ? $t('auth.noAccount') : $t('auth.alreadyRegistered') }}
         <a @click="toggleMode" class="auth-toggle-link">
-          {{ isLogin ? 'REGISTER' : 'LOGIN' }}
+          {{ isLogin ? $t('auth.register') : $t('auth.login') }}
         </a>
       </p>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usersApi } from '../../api/users'
 import { useErrorHandler } from '../../composables/useErrorHandler'
 import { useFormValidation } from '../../composables/useFormValidation'
@@ -13,6 +14,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   updated: []
 }>()
+
+const { t } = useI18n()
 
 const isEditing = ref(false)
 const isSaving = ref(false)
@@ -57,11 +60,11 @@ const saveProfile = async () => {
       displayName: displayName.value || undefined,
       bio: bio.value || undefined,
     })
-    handleSuccess('Profile updated')
+    handleSuccess(t('profile.profileUpdated'))
     isEditing.value = false
     emit('updated')
   } catch (error) {
-    handleError(error, 'Failed to save')
+    handleError(error, t('profile.failedToSave'))
   } finally {
     isSaving.value = false
   }
@@ -70,7 +73,7 @@ const saveProfile = async () => {
 
 <template>
   <section class="section">
-    <h3 class="section-title">PROFILE</h3>
+    <h3 class="section-title">{{ $t('profile.title') }}</h3>
 
     <div class="profile-header">
       <div class="avatar">
@@ -93,13 +96,13 @@ const saveProfile = async () => {
 
         <template v-else>
           <div class="field">
-            <label for="display-name" class="label-caps">DISPLAY NAME</label>
+            <label for="display-name" class="label-caps">{{ $t('profile.displayName') }}</label>
             <input
               id="display-name"
               v-model="displayName"
               class="input"
               :class="{ 'input-error': errors.displayName }"
-              placeholder="Display name"
+              :placeholder="$t('profile.displayNamePlaceholder')"
               @blur="validate(displayName, ['sanitize'], 'displayName')"
               :aria-invalid="!!errors.displayName"
               :aria-describedby="errors.displayName ? 'displayName-error' : undefined"
@@ -107,13 +110,13 @@ const saveProfile = async () => {
             <span v-if="errors.displayName" id="displayName-error" class="field-error">{{ errors.displayName }}</span>
           </div>
           <div class="field">
-            <label for="bio" class="label-caps">BIO</label>
+            <label for="bio" class="label-caps">{{ $t('profile.bio') }}</label>
             <textarea
               id="bio"
               v-model="bio"
               class="input textarea"
               :class="{ 'input-error': errors.bio }"
-              placeholder="Short bio"
+              :placeholder="$t('profile.bioPlaceholder')"
               rows="3"
               @blur="validate(bio, ['sanitize'], 'bio')"
               :aria-invalid="!!errors.bio"
@@ -127,12 +130,12 @@ const saveProfile = async () => {
 
     <div class="section-actions">
       <template v-if="!isEditing">
-        <button class="btn btn-secondary btn-sm" @click="startEdit">EDIT</button>
+        <button class="btn btn-secondary btn-sm" @click="startEdit">{{ $t('common.edit') }}</button>
       </template>
       <template v-else>
-        <button class="btn btn-ghost btn-sm" @click="cancelEdit">CANCEL</button>
+        <button class="btn btn-ghost btn-sm" @click="cancelEdit">{{ $t('common.cancel') }}</button>
         <button class="btn btn-primary btn-sm" @click="saveProfile" :disabled="isSaving">
-          {{ isSaving ? 'SAVING...' : 'SAVE' }}
+          {{ isSaving ? $t('common.saving') : $t('common.save') }}
         </button>
       </template>
     </div>

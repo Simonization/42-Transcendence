@@ -5,6 +5,7 @@
  */
 
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardTab from '../../components/admin/DashboardTab.vue'
 import CreateTournamentTab from '../../components/admin/CreateTournamentTab.vue'
 import MyTournamentsTab from '../../components/admin/MyTournamentsTab.vue'
@@ -12,13 +13,15 @@ import ParticipantsTab from '../../components/admin/ParticipantsTab.vue'
 
 type AdminTab = 'dashboard' | 'create' | 'tournaments' | 'participants'
 
+const { t } = useI18n()
+
 const activeTab = ref<AdminTab>('dashboard')
 
 const tabs: Array<{ id: AdminTab; label: string; icon: string }> = [
-  { id: 'dashboard', label: 'DASHBOARD', icon: '📊' },
-  { id: 'create', label: 'CREATE', icon: '➕' },
-  { id: 'tournaments', label: 'TOURNAMENTS', icon: '🏆' },
-  { id: 'participants', label: 'PARTICIPANTS', icon: '👥' },
+  { id: 'dashboard', label: t('admin.dashboard'), icon: '📊' },
+  { id: 'create', label: t('admin.create'), icon: '➕' },
+  { id: 'tournaments', label: t('admin.tournaments'), icon: '🏆' },
+  { id: 'participants', label: t('admin.participantsTab'), icon: '👥' },
 ]
 </script>
 
@@ -27,10 +30,10 @@ const tabs: Array<{ id: AdminTab; label: string; icon: string }> = [
     <!-- Admin Header -->
     <header class="admin-header glass-header">
       <div class="admin-header-content">
-        <h1 class="admin-title">ADMIN CONTROL PANEL</h1>
-        <span class="admin-subtitle">Tournament Management System</span>
+        <h1 class="admin-title">{{ $t('admin.title') }}</h1>
+        <span class="admin-subtitle">{{ $t('admin.subtitle') }}</span>
       </div>
-      <span class="admin-badge v2-badge">BETA</span>
+      <span class="admin-badge v2-badge">{{ $t('common.beta') }}</span>
     </header>
 
     <!-- Tab Navigation -->

@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { i18n } from '@/i18n'
 
 type ValidationRule = string | [string, ...unknown[]]
 
@@ -11,7 +12,7 @@ const validationRules: Record<string, ValidationRuleDefinition> = {
     const valid = value.trim().length > 0
     return {
       valid,
-      error: valid ? undefined : 'This field is required',
+      error: valid ? undefined : i18n.global.t('validation.required'),
     }
   },
 
@@ -20,7 +21,7 @@ const validationRules: Record<string, ValidationRuleDefinition> = {
     const valid = emailRegex.test(value)
     return {
       valid,
-      error: valid ? undefined : 'Please enter a valid email address',
+      error: valid ? undefined : i18n.global.t('validation.email'),
     }
   },
 
@@ -29,7 +30,7 @@ const validationRules: Record<string, ValidationRuleDefinition> = {
     const valid = value.length >= minNum
     return {
       valid,
-      error: valid ? undefined : `Must be at least ${minNum} characters`,
+      error: valid ? undefined : i18n.global.t('validation.minLength', { min: minNum }),
     }
   },
 
@@ -38,7 +39,7 @@ const validationRules: Record<string, ValidationRuleDefinition> = {
     const valid = value.length <= maxNum
     return {
       valid,
-      error: valid ? undefined : `Must be at most ${maxNum} characters`,
+      error: valid ? undefined : i18n.global.t('validation.maxLength', { max: maxNum }),
     }
   },
 
@@ -49,7 +50,7 @@ const validationRules: Record<string, ValidationRuleDefinition> = {
       valid,
       error: valid
         ? undefined
-        : 'Username must be 3-20 characters, containing only letters, numbers, dashes, and underscores',
+        : i18n.global.t('validation.username'),
     }
   },
 
@@ -57,7 +58,7 @@ const validationRules: Record<string, ValidationRuleDefinition> = {
     const valid = value.length >= 8
     return {
       valid,
-      error: valid ? undefined : 'Password must be at least 8 characters',
+      error: valid ? undefined : i18n.global.t('validation.password'),
     }
   },
 
@@ -75,7 +76,7 @@ const validationRules: Record<string, ValidationRuleDefinition> = {
     const valid = !xssPatterns.some(pattern => pattern.test(value))
     return {
       valid,
-      error: valid ? undefined : 'Input contains invalid characters',
+      error: valid ? undefined : i18n.global.t('validation.sanitize'),
     }
   },
 }
@@ -107,7 +108,7 @@ export function useFormValidation() {
 
       const result = ruleFunc(value, ...ruleArgs)
       if (!result.valid) {
-        errors.value[fieldName] = result.error || 'Validation failed'
+        errors.value[fieldName] = result.error || i18n.global.t('validation.failed')
         return false
       }
     }

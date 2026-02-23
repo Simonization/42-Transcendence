@@ -45,7 +45,7 @@ const hasToken = computed(() => !!getAccessToken())
           size="md"
           @click="router.push('/menu')"
         >
-          GO TO MENU
+          {{ $t('landing.goToMenu') }}
         </ShaderButton>
         <ShaderButton
           v-else
@@ -53,7 +53,7 @@ const hasToken = computed(() => !!getAccessToken())
           size="md"
           @click="router.push('/auth')"
         >
-          SIGN IN
+          {{ $t('landing.signIn') }}
         </ShaderButton>
       </div>
     </header>

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { setTokens, clearTokens } from '../../api'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const { checkAuth } = authStore
 
@@ -37,8 +39,8 @@ onMounted(async () => {
     <div class="auth-panel">
       <div class="state-container">
         <div class="spinner"></div>
-        <h2 class="state-title">AUTHENTICATING</h2>
-        <p class="state-text">Redirecting...</p>
+        <h2 class="state-title">{{ $t('oauth.processing') }}</h2>
+        <p class="state-text">{{ $t('oauth.pleaseWait') }}</p>
       </div>
     </div>
   </div>

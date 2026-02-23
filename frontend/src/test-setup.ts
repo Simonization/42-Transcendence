@@ -5,10 +5,18 @@
 
 import { createPinia, setActivePinia } from 'pinia'
 import { vi } from 'vitest'
+import { config } from '@vue/test-utils'
+import { i18n } from './i18n'
 
 // Create and set active Pinia for each test file
 const pinia = createPinia()
 setActivePinia(pinia)
+
+// Initialize i18n locale to English for consistent test results
+i18n.global.locale.value = 'en'
+
+// Register i18n globally so all mounted components can use useI18n()
+config.global.plugins = [i18n]
 
 // Reset Pinia state before each test
 beforeEach(() => {

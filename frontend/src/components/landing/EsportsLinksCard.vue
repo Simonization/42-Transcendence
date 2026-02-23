@@ -22,8 +22,8 @@ const links = [
 <template>
   <section class="esports-card clip-card" aria-label="Esports and streaming links">
     <header class="card-header">
-      <h2 class="card-title">ESPORTS & LINKS</h2>
-      <span class="hud-serial">{{ links.length }} ENTRIES</span>
+      <h2 class="card-title">{{ $t('landing.esportsLinks') }}</h2>
+      <span class="hud-serial">{{ links.length }} {{ $t('common.results', { count: links.length }) }}</span>
     </header>
 
     <ul class="links-list">

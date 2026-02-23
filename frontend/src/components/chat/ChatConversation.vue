@@ -26,10 +26,10 @@ watch(() => props.messages.length, async () => {
 
 <template>
   <div ref="scrollContainer" class="conversation">
-    <div v-if="isLoading" class="loading-text">Loading messages...</div>
+    <div v-if="isLoading" class="loading-text">{{ $t('chat.loadingMessages') }}</div>
 
     <div v-else-if="messages.length === 0" class="empty-state">
-      <p class="text-tertiary">No messages yet. Say hello!</p>
+      <p class="text-tertiary">{{ $t('chat.noMessages') }} {{ $t('chat.noMessagesHint') }}</p>
     </div>
 
     <template v-else>

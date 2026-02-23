@@ -5,12 +5,14 @@
  */
 
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useMatches } from '../../composables/useMatches'
 import { useAuthStore } from '../../stores/auth'
 import type { GameType, MatchResult } from '../../types'
 
 type SortBy = 'date' | 'result'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const { user } = authStore
 const { matches, isLoading, error, stats, uniqueGames, fetchMyHistory } = useMatches(user?.id ?? 0)
@@ -86,7 +88,7 @@ const goToPage = (page: number) => {
 }
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(date).toLocaleDateString(locale.value, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 </script>
 
@@ -95,38 +97,38 @@ const formatDate = (date: string) => {
     <!-- No user guard -->
     <div v-if="!user" class="loading-state glass-panel">
       <span class="loading-spinner"></span>
-      <p class="loading-text">Loading...</p>
+      <p class="loading-text">{{ $t('common.loading') }}</p>
     </div>
 
     <template v-else>
     <!-- Header -->
     <header class="match-header glass-header">
-      <h1 class="match-title">MATCH HISTORY</h1>
-      <span class="match-count">{{ filteredMatches.length }} MATCHES</span>
+      <h1 class="match-title">{{ $t('match.title') }}</h1>
+      <span class="match-count">{{ $t('common.matches', { count: filteredMatches.length }) }}</span>
     </header>
 
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state glass-panel">
       <span class="loading-spinner"></span>
-      <p class="loading-text">Loading match history...</p>
+      <p class="loading-text">{{ $t('match.loadingHistory') }}</p>
     </div>
 
     <!-- Error State -->
     <div v-else-if="error" class="error-state glass-panel">
       <p class="error-text">{{ error }}</p>
-      <button class="retry-btn" @click="fetchMyHistory()">Retry</button>
+      <button class="retry-btn" @click="fetchMyHistory()">{{ $t('common.retry') }}</button>
     </div>
 
     <template v-else>
       <!-- Stats Cards -->
       <div class="stats-grid glass-panel">
         <div class="stat-item">
-          <span class="stat-label">Win Rate</span>
+          <span class="stat-label">{{ $t('match.winRate') }}</span>
           <span class="stat-value">{{ stats.winRate }}%</span>
           <span class="stat-secondary">{{ stats.wins }}W - {{ stats.losses }}L - {{ stats.draws }}D</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">Total Matches</span>
+          <span class="stat-label">{{ $t('match.totalMatches') }}</span>
           <span class="stat-value">{{ stats.totalMatches }}</span>
           <span class="stat-secondary">{{ stats.wins }}W / {{ stats.losses }}L / {{ stats.draws }}D</span>
         </div>
@@ -135,9 +137,9 @@ const formatDate = (date: string) => {
       <!-- Filters & Controls -->
       <div class="filters-bar glass-panel">
         <div class="filter-group">
-          <label for="filter-game" class="filter-label">Game</label>
+          <label for="filter-game" class="filter-label">{{ $t('match.game') }}</label>
           <select id="filter-game" v-model="filterGame" class="filter-select">
-            <option value="all">All Games</option>
+            <option value="all">{{ $t('match.allGames') }}</option>
             <option v-for="game in uniqueGames" :key="game" :value="game">
               {{ game }}
             </option>
@@ -145,20 +147,20 @@ const formatDate = (date: string) => {
         </div>
 
         <div class="filter-group">
-          <label for="filter-result" class="filter-label">Result</label>
+          <label for="filter-result" class="filter-label">{{ $t('match.result') }}</label>
           <select id="filter-result" v-model="filterResult" class="filter-select">
-            <option value="all">All Results</option>
-            <option value="win">Wins Only</option>
-            <option value="loss">Losses Only</option>
-            <option value="draw">Draws Only</option>
+            <option value="all">{{ $t('match.allResults') }}</option>
+            <option value="win">{{ $t('match.winsOnly') }}</option>
+            <option value="loss">{{ $t('match.lossesOnly') }}</option>
+            <option value="draw">{{ $t('match.drawsOnly') }}</option>
           </select>
         </div>
 
         <div class="filter-group">
-          <label for="sort-by" class="filter-label">Sort By</label>
+          <label for="sort-by" class="filter-label">{{ $t('match.sortBy') }}</label>
           <select id="sort-by" v-model="sortBy" class="filter-select">
-            <option value="date">Date (Newest)</option>
-            <option value="result">Result</option>
+            <option value="date">{{ $t('match.dateNewest') }}</option>
+            <option value="result">{{ $t('match.result') }}</option>
           </select>
         </div>
       </div>
@@ -169,10 +171,10 @@ const formatDate = (date: string) => {
           <caption class="visually-hidden">Match history results table showing date, opponent, game, and result</caption>
           <thead>
             <tr>
-              <th>DATE</th>
-              <th>OPPONENT</th>
-              <th>GAME</th>
-              <th>RESULT</th>
+              <th>{{ $t('match.date') }}</th>
+              <th>{{ $t('match.opponent') }}</th>
+              <th>{{ $t('match.gameCol') }}</th>
+              <th>{{ $t('match.resultCol') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -191,7 +193,7 @@ const formatDate = (date: string) => {
         <!-- No Results -->
         <div v-if="filteredMatches.length === 0" class="no-results">
           <span class="no-results-icon">🔍</span>
-          <p class="no-results-text">No matches found</p>
+          <p class="no-results-text">{{ $t('match.noMatches') }}</p>
         </div>
       </div>
 
@@ -203,11 +205,11 @@ const formatDate = (date: string) => {
           aria-label="Go to previous page of match history"
           @click="goToPage(currentPage - 1)"
         >
-          ← PREVIOUS
+          {{ $t('common.previous') }}
         </button>
 
         <div class="pagination-info">
-          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <span>{{ $t('common.pageOf', { current: currentPage, total: totalPages }) }}</span>
         </div>
 
         <button
@@ -216,7 +218,7 @@ const formatDate = (date: string) => {
           aria-label="Go to next page of match history"
           @click="goToPage(currentPage + 1)"
         >
-          NEXT →
+          {{ $t('common.next') }}
         </button>
       </div>
     </template>

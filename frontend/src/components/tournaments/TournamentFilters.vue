@@ -4,11 +4,14 @@
  */
 
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface Filters {
   games: string[]
   statuses: string[]
 }
+
+const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
@@ -46,11 +49,11 @@ const gameOptions = [
   'Street Fighter VI',
 ]
 
-const statusOptions = [
-  { value: 'open', label: 'Registration Open' },
-  { value: 'live', label: 'Live' },
-  { value: 'finished', label: 'Finished' },
-]
+const statusOptions = computed(() => [
+  { value: 'open', label: t('tournament.registrationOpen') },
+  { value: 'live', label: t('tournament.live') },
+  { value: 'finished', label: t('tournament.finished') },
+])
 
 const toggleGame = (game: string) => {
   const idx = localFilters.value.games.indexOf(game)
@@ -93,7 +96,7 @@ const hasActiveFilters = computed(
   <aside class="tournament-filters" :class="{ 'tournament-filters--open': isOpen }">
     <!-- Header -->
     <div class="filters-header">
-      <h3 class="filters-title">FILTERS</h3>
+      <h3 class="filters-title">{{ $t('common.filters') }}</h3>
       <button class="filters-close-btn" @click="emit('close')" aria-label="Close filters">
         ✕
       </button>
@@ -101,7 +104,7 @@ const hasActiveFilters = computed(
 
     <!-- Game Filter -->
     <div class="filter-group">
-      <h4 class="filter-group-title">GAME</h4>
+      <h4 class="filter-group-title">{{ $t('tournament.game') }}</h4>
       <div class="filter-options">
         <label v-for="game in gameOptions" :key="game" class="filter-checkbox">
           <input
@@ -116,7 +119,7 @@ const hasActiveFilters = computed(
 
     <!-- Status Filter -->
     <div class="filter-group">
-      <h4 class="filter-group-title">STATUS</h4>
+      <h4 class="filter-group-title">{{ $t('tournament.status') }}</h4>
       <div class="filter-options">
         <label v-for="option in statusOptions" :key="option.value" class="filter-checkbox">
           <input
@@ -135,7 +138,7 @@ const hasActiveFilters = computed(
       class="filters-reset-btn"
       @click="resetFilters"
     >
-      RESET FILTERS
+      {{ $t('tournament.clearFilters') }}
     </button>
   </aside>
 </template>

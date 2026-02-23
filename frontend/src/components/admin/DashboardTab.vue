@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const stats = computed(() => ({
   activeTournaments: 3,
@@ -19,14 +22,14 @@ const recentActivity = [
 
 <template>
   <div class="dashboard-content">
-    <h2 class="section-title">DASHBOARD OVERVIEW</h2>
+    <h2 class="section-title">{{ t('admin.dashboardOverview') }}</h2>
 
     <!-- Stats Cards Grid -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon">🏆</div>
         <div class="stat-info">
-          <span class="stat-label">Active Tournaments</span>
+          <span class="stat-label">{{ t('admin.activeTournaments') }}</span>
           <span class="stat-value">{{ stats.activeTournaments }}</span>
         </div>
       </div>
@@ -34,7 +37,7 @@ const recentActivity = [
       <div class="stat-card">
         <div class="stat-icon">👥</div>
         <div class="stat-info">
-          <span class="stat-label">Total Participants</span>
+          <span class="stat-label">{{ t('admin.totalParticipants') }}</span>
           <span class="stat-value">{{ stats.totalParticipants }}</span>
         </div>
       </div>
@@ -42,7 +45,7 @@ const recentActivity = [
       <div class="stat-card">
         <div class="stat-icon">📊</div>
         <div class="stat-info">
-          <span class="stat-label">Matches Today</span>
+          <span class="stat-label">{{ t('admin.matchesToday') }}</span>
           <span class="stat-value">{{ stats.matchesToday }}</span>
         </div>
       </div>
@@ -50,7 +53,7 @@ const recentActivity = [
       <div class="stat-card">
         <div class="stat-icon">⏳</div>
         <div class="stat-info">
-          <span class="stat-label">Pending Registrations</span>
+          <span class="stat-label">{{ t('admin.pendingRegistrations') }}</span>
           <span class="stat-value">{{ stats.pendingRegistrations }}</span>
         </div>
       </div>
@@ -58,21 +61,21 @@ const recentActivity = [
 
     <!-- Quick Actions -->
     <div class="quick-actions">
-      <h3 class="quick-actions-title">QUICK ACTIONS</h3>
+      <h3 class="quick-actions-title">{{ t('admin.quickActions') }}</h3>
       <div class="action-buttons">
         <button class="action-btn action-btn-disabled">
           <span class="action-icon">➕</span>
-          <span class="action-label">Create Tournament</span>
+          <span class="action-label">{{ t('admin.createTournament') }}</span>
           <span class="v2-badge-small">V2.0</span>
         </button>
         <button class="action-btn action-btn-disabled">
           <span class="action-icon">👥</span>
-          <span class="action-label">Manage Users</span>
+          <span class="action-label">{{ t('admin.manageUsers') }}</span>
           <span class="v2-badge-small">V2.0</span>
         </button>
         <button class="action-btn action-btn-disabled">
           <span class="action-icon">📈</span>
-          <span class="action-label">View Reports</span>
+          <span class="action-label">{{ t('admin.viewReports') }}</span>
           <span class="v2-badge-small">V2.0</span>
         </button>
       </div>
@@ -80,7 +83,7 @@ const recentActivity = [
 
     <!-- Recent Activity Feed -->
     <div class="activity-feed">
-      <h3 class="activity-feed-title">RECENT ACTIVITY</h3>
+      <h3 class="activity-feed-title">{{ t('admin.recentActivity') }}</h3>
       <ul class="activity-list">
         <li v-for="activity in recentActivity" :key="activity.id" class="activity-item">
           <span class="activity-icon">{{ activity.icon }}</span>

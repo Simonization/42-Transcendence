@@ -45,24 +45,24 @@ const handleCreateAccount = () => {
     <div class="hero-content">
       <div class="hero-main">
         <h1 class="hero-title">ESPORTENDENCE</h1>
-        <p class="hero-subtitle">Your esports companion platform</p>
-        <p class="hero-tagline">Discover tournaments. Connect with players. Compete globally.</p>
+        <p class="hero-subtitle">{{ $t('landing.heroSubtitle') }}</p>
+        <p class="hero-tagline">{{ $t('landing.heroTagline') }}</p>
       </div>
 
       <div class="hero-stats">
         <div class="stat-item">
           <span class="stat-value">{{ activeTournaments.length }}</span>
-          <span class="stat-label">Active Tournaments</span>
+          <span class="stat-label">{{ $t('landing.activeTournaments') }}</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <span class="stat-value">{{ totalParticipants }}</span>
-          <span class="stat-label">Total Players</span>
+          <span class="stat-label">{{ $t('landing.totalPlayers') }}</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <span class="stat-value">6</span>
-          <span class="stat-label">Game Titles</span>
+          <span class="stat-label">{{ $t('landing.gameTitles') }}</span>
         </div>
       </div>
 
@@ -73,7 +73,7 @@ const handleCreateAccount = () => {
           size="lg"
           @click="handleBrowseTournaments"
         >
-          BROWSE TOURNAMENTS
+          {{ $t('landing.browseTournaments') }}
         </ShaderButton>
 
         <ShaderButton
@@ -83,7 +83,7 @@ const handleCreateAccount = () => {
           size="lg"
           @click="handleCreateAccount"
         >
-          CREATE ACCOUNT
+          {{ $t('auth.createAccount') }}
         </ShaderButton>
       </div>
     </div>

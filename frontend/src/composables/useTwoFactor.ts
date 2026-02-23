@@ -4,6 +4,7 @@
  */
 
 import { ref } from 'vue'
+import { i18n } from '@/i18n'
 import { usersApi } from '../api/users'
 import { authApi } from '../api/auth'
 import { useErrorHandler } from './useErrorHandler'
@@ -40,10 +41,10 @@ export function useTwoFactor() {
     loading.value = true
     try {
       await authApi.enable2FA()
-      handleSuccess('Code sent to email.')
+      handleSuccess(i18n.global.t('twoFactorComposable.codeSent'))
       showForm.value = true
     } catch (error) {
-      handleError(error, 'Network error!')
+      handleError(error, i18n.global.t('twoFactorComposable.networkError'))
     } finally {
       loading.value = false
     }
@@ -56,12 +57,12 @@ export function useTwoFactor() {
     loading.value = true
     try {
       await authApi.confirm2FA({ code: code.value })
-      handleSuccess('2FA Enabled!')
+      handleSuccess(i18n.global.t('twoFactorComposable.enabled'))
       enabled.value = true
       showForm.value = false
       code.value = ''
     } catch (error) {
-      handleError(error, 'Network error!')
+      handleError(error, i18n.global.t('twoFactorComposable.networkError'))
     } finally {
       loading.value = false
     }
@@ -74,11 +75,11 @@ export function useTwoFactor() {
     loading.value = true
     try {
       await authApi.disable2FA()
-      handleSuccess('2FA Disabled')
+      handleSuccess(i18n.global.t('twoFactorComposable.disabled'))
       enabled.value = false
       showForm.value = false
     } catch (error) {
-      handleError(error, 'Network error!')
+      handleError(error, i18n.global.t('twoFactorComposable.networkError'))
     } finally {
       loading.value = false
     }

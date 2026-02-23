@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { authApi } from '../../api/auth'
 import { useErrorHandler } from '../../composables/useErrorHandler'
 
@@ -11,6 +12,7 @@ const isLoading = ref(true)
 const isSuccess = ref(false)
 const isError = ref(false)
 
+const { t } = useI18n()
 const { message: errorMessage } = useErrorHandler()
 
 onMounted(async () => {
@@ -19,7 +21,7 @@ onMounted(async () => {
   if (!token) {
     isLoading.value = false
     isError.value = true
-    errorMessage.value = 'No verification token provided.'
+    errorMessage.value = t('verifyEmail.noToken')
     return
   }
 
@@ -28,7 +30,7 @@ onMounted(async () => {
     isSuccess.value = true
   } catch (error) {
     isError.value = true
-    errorMessage.value = error instanceof Error ? error.message : 'Network error. Please try again later.'
+    errorMessage.value = error instanceof Error ? error.message : t('verifyEmail.networkError')
   } finally {
     isLoading.value = false
   }
@@ -45,24 +47,24 @@ const redirectToLogin = () => {
       <!-- Loading -->
       <div v-if="isLoading" class="state-container">
         <div class="spinner"></div>
-        <h2 class="state-title">VERIFYING EMAIL</h2>
-        <p class="state-text">Please wait...</p>
+        <h2 class="state-title">{{ $t('verifyEmail.verifying') }}</h2>
+        <p class="state-text">{{ $t('verifyEmail.pleaseWait') }}</p>
       </div>
 
       <!-- Success -->
       <div v-else-if="isSuccess" class="state-container">
         <div class="state-icon state-icon-success">&#x2713;</div>
-        <h2 class="state-title">EMAIL VERIFIED</h2>
-        <p class="state-text">Your email has been confirmed.</p>
-        <button @click="redirectToLogin" class="auth-btn">GO TO LOGIN</button>
+        <h2 class="state-title">{{ $t('verifyEmail.verified') }}</h2>
+        <p class="state-text">{{ $t('verifyEmail.verifiedMsg') }}</p>
+        <button @click="redirectToLogin" class="auth-btn">{{ $t('verifyEmail.goToLogin') }}</button>
       </div>
 
       <!-- Error -->
       <div v-else-if="isError" class="state-container">
         <div class="state-icon state-icon-error">&#x2715;</div>
-        <h2 class="state-title">VERIFICATION FAILED</h2>
+        <h2 class="state-title">{{ $t('verifyEmail.failed') }}</h2>
         <p class="state-text">{{ errorMessage }}</p>
-        <button @click="redirectToLogin" class="auth-btn auth-btn-secondary">BACK TO LOGIN</button>
+        <button @click="redirectToLogin" class="auth-btn auth-btn-secondary">{{ $t('verifyEmail.backToLogin') }}</button>
       </div>
     </div>
   </div>

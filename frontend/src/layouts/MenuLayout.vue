@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import { useChat } from '@/composables/useChat'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const { logout, user } = authStore
@@ -25,19 +27,19 @@ const handleLogout = async () => {
 
 const navItems = computed(() => {
   const baseItems = [
-    { to: '/', label: 'HOME', icon: '⚡︎' },
-    { to: '/menu/user', label: 'USER', icon: '👤', badge: null },
-    { to: '/menu/friend', label: 'FRIEND', icon: '👥', badge: null },
-    { to: '/menu/chat', label: 'CHAT', icon: '💬', badge: null },
-    { to: '/menu/tournaments', label: 'TOURN', icon: '🏆' },
-    { to: '/menu/history', label: 'HISTORY', icon: '📊' },
-    { to: '/menu/brackets', label: 'BRACKETS', icon: '🏅' },
-    { to: '/menu/dev', label: 'DEV', icon: '🛠' },
+    { to: '/', label: t('nav.home'), icon: '⚡︎' },
+    { to: '/menu/user', label: t('nav.user'), icon: '👤', badge: null },
+    { to: '/menu/friend', label: t('nav.friend'), icon: '👥', badge: null },
+    { to: '/menu/chat', label: t('nav.chat'), icon: '💬', badge: null },
+    { to: '/menu/tournaments', label: t('nav.tourn'), icon: '🏆' },
+    { to: '/menu/history', label: t('nav.history'), icon: '📊' },
+    { to: '/menu/brackets', label: t('nav.brackets'), icon: '🏅' },
+    { to: '/menu/dev', label: t('nav.dev'), icon: '🛠' },
   ]
 
   // Add admin module if user has admin role (placeholder - check actual role field)
   if (user.value && (user.value as any).role === 'admin') {
-    baseItems.push({ to: '/menu/admin', label: 'ADMIN', icon: '⚙️' })
+    baseItems.push({ to: '/menu/admin', label: t('nav.admin'), icon: '⚙️' })
   }
 
   return baseItems
@@ -62,7 +64,7 @@ const navItems = computed(() => {
       </div>
       <div class="menu-header-actions">
         <ThemeToggle />
-        <button @click="handleLogout" class="menu-quit-btn">QUIT</button>
+        <button @click="handleLogout" class="menu-quit-btn">{{ $t('common.quit') }}</button>
       </div>
     </header>
 

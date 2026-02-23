@@ -107,15 +107,15 @@ const getPageNumbers = () => {
     <!-- Header -->
     <header class="tournaments-header glass-header">
       <div class="tournaments-header-content">
-        <h1 class="tournaments-title">TOURNAMENTS</h1>
-        <span class="tournaments-count">{{ filteredTournaments.length }} RESULTS</span>
+        <h1 class="tournaments-title">{{ $t('tournament.title') }}</h1>
+        <span class="tournaments-count">{{ $t('common.results', { count: filteredTournaments.length }) }}</span>
       </div>
       <button
         class="tournaments-filter-toggle"
         @click="filtersOpen = !filtersOpen"
         aria-label="Toggle filters"
       >
-        🔍 FILTERS
+        🔍 {{ $t('common.filters') }}
       </button>
     </header>
 
@@ -125,7 +125,7 @@ const getPageNumbers = () => {
         v-model="searchQuery"
         type="text"
         class="search-input"
-        placeholder="Search tournaments..."
+        :placeholder="$t('tournament.searchPlaceholder')"
         aria-label="Search tournaments"
       />
       <span class="search-icon">🔍</span>
@@ -146,8 +146,8 @@ const getPageNumbers = () => {
         <!-- No Results Message -->
         <div v-if="filteredTournaments.length === 0" class="no-results">
           <div class="no-results-icon">🏆</div>
-          <h2 class="no-results-title">NO TOURNAMENTS FOUND</h2>
-          <p class="no-results-text">Try adjusting your search or filters</p>
+          <h2 class="no-results-title">{{ $t('tournament.noTournamentsFound') }}</h2>
+          <p class="no-results-text">{{ $t('tournament.noTournamentsHint') }}</p>
         </div>
 
         <!-- Tournament Grid -->
@@ -167,7 +167,7 @@ const getPageNumbers = () => {
             aria-label="Go to previous page of tournaments"
             @click="goToPage(currentPage - 1)"
           >
-            ← PREVIOUS
+            {{ $t('common.previous') }}
           </button>
 
           <div class="pagination-numbers">
@@ -190,7 +190,7 @@ const getPageNumbers = () => {
             aria-label="Go to next page of tournaments"
             @click="goToPage(currentPage + 1)"
           >
-            NEXT →
+            {{ $t('common.next') }}
           </button>
         </div>
       </main>

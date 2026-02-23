@@ -15,7 +15,7 @@ const emit = defineEmits<{
 <template>
   <div class="request-list">
     <div v-if="requests.length === 0" class="empty-state">
-      <p class="text-tertiary">No pending requests</p>
+      <p class="text-tertiary">{{ $t('friends.noRequests') }}</p>
     </div>
 
     <div v-for="request in requests" :key="request.id" class="request-item">
@@ -35,14 +35,14 @@ const emit = defineEmits<{
           :disabled="isUpdating"
           @click="emit('accept', request.id)"
         >
-          {{ isUpdating ? 'UPDATING...' : 'ACCEPT' }}
+          {{ isUpdating ? $t('friends.updating') : $t('friends.accept') }}
         </button>
         <button
           class="btn btn-ghost btn-sm"
           :disabled="isUpdating"
           @click="emit('decline', request.id)"
         >
-          {{ isUpdating ? 'UPDATING...' : 'DECLINE' }}
+          {{ isUpdating ? $t('friends.updating') : $t('friends.decline') }}
         </button>
       </div>
     </div>

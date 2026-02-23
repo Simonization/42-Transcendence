@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const mockParticipants = [
   { id: '1', username: 'admin_user', role: 'Admin', status: 'active' },
   { id: '2', username: 'moderator_01', role: 'Moderator', status: 'active' },
@@ -9,26 +13,26 @@ const mockParticipants = [
 
 <template>
   <div class="participants-content">
-    <h2 class="section-title">PARTICIPANTS MANAGEMENT</h2>
+    <h2 class="section-title">{{ t('admin.participantsManagement') }}</h2>
 
     <div class="v2-overlay">
       <div class="v2-banner">
         <span class="v2-banner-icon">🚀</span>
-        <span class="v2-banner-text">Coming Soon - V2.0</span>
-        <span class="v2-banner-desc">Advanced participant management features coming in V2.0</span>
+        <span class="v2-banner-text">{{ t('admin.comingSoonBanner') }}</span>
+        <span class="v2-banner-desc">{{ t('admin.comingSoonParticipantsDesc') }}</span>
       </div>
 
       <div class="participants-preview">
         <!-- Search Bar -->
         <div class="search-container">
-          <label for="participant-search-preview" class="visually-hidden">Search participants</label>
+          <label for="participant-search-preview" class="visually-hidden">{{ t('admin.searchParticipants') }}</label>
           <input
             id="participant-search-preview"
             type="text"
             class="search-input-preview"
-            placeholder="Search participants..."
+            :placeholder="t('admin.searchParticipants')"
             disabled
-            aria-label="Search participants (disabled preview)"
+            :aria-label="t('admin.searchParticipants')"
           />
           <span class="search-icon-preview" aria-hidden="true">🔍</span>
         </div>
@@ -38,10 +42,10 @@ const mockParticipants = [
           <caption class="visually-hidden">Participant management preview with username, role, status, and actions (feature coming in V2.0)</caption>
           <thead>
             <tr>
-              <th>USERNAME</th>
-              <th>ROLE</th>
-              <th>STATUS</th>
-              <th>ACTIONS</th>
+              <th>{{ t('admin.username') }}</th>
+              <th>{{ t('admin.role') }}</th>
+              <th>{{ t('admin.statusCol') }}</th>
+              <th>{{ t('admin.actionsCol') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -50,8 +54,8 @@ const mockParticipants = [
               <td>{{ participant.role }}</td>
               <td>{{ participant.status }}</td>
               <td>
-                <button class="action-link-preview" disabled aria-disabled="true">Edit</button>
-                <button class="action-link-preview" disabled aria-disabled="true">Ban</button>
+                <button class="action-link-preview" disabled aria-disabled="true">{{ t('admin.editAction') }}</button>
+                <button class="action-link-preview" disabled aria-disabled="true">{{ t('admin.banAction') }}</button>
               </td>
             </tr>
           </tbody>

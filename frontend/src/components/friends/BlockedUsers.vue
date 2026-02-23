@@ -14,7 +14,7 @@ const emit = defineEmits<{
 <template>
   <div class="block-list">
     <div v-if="blocks.length === 0" class="empty-state">
-      <p class="text-tertiary">No blocked users</p>
+      <p class="text-tertiary">{{ $t('friends.noBlocked') }}</p>
     </div>
 
     <div v-for="block in blocks" :key="block.id" class="block-item">
@@ -28,7 +28,7 @@ const emit = defineEmits<{
         :disabled="isUpdating"
         @click="emit('unblock', block.blocked.id)"
       >
-        {{ isUpdating ? 'UPDATING...' : 'UNBLOCK' }}
+        {{ isUpdating ? $t('friends.updating') : $t('friends.unblock') }}
       </button>
     </div>
   </div>

@@ -7,6 +7,7 @@
  */
 
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useFriendsStore } from '../../stores/friends'
 
@@ -46,6 +47,8 @@ const formData = ref<FormData>({
 })
 
 const errors = ref<Record<string, string>>({})
+
+const { t } = useI18n()
 
 // API Integration for friends
 const authStore = useAuthStore()
@@ -117,7 +120,7 @@ const validateStep = (step: Step): boolean => {
 
   if (step === 1) {
     if (!formData.value.participationType) {
-      errors.value.type = 'Please select a participation type'
+      errors.value.type = t('registration.selectType')
       return false
     }
     return true
@@ -126,25 +129,25 @@ const validateStep = (step: Step): boolean => {
   if (step === 2) {
     if (isSolo.value) {
       if (!formData.value.displayName.trim()) {
-        errors.value.displayName = 'Display name is required'
+        errors.value.displayName = t('registration.displayNameRequired')
       }
       if (!formData.value.email.trim()) {
-        errors.value.email = 'Email is required'
+        errors.value.email = t('registration.emailRequired')
       }
       if (!formData.value.inGameUsername.trim()) {
-        errors.value.inGameUsername = 'In-game username is required'
+        errors.value.inGameUsername = t('registration.inGameRequired')
       }
     }
 
     if (isTeam.value) {
       if (!formData.value.teamName.trim()) {
-        errors.value.teamName = 'Team name is required'
+        errors.value.teamName = t('registration.teamNameRequired')
       }
       if (formData.value.teamMembers.length === 0) {
-        errors.value.teamMembers = 'Select at least one teammate'
+        errors.value.teamMembers = t('registration.selectTeammate')
       }
       if (formData.value.teamMembers.length > 4) {
-        errors.value.teamMembers = 'Maximum 4 teammates allowed'
+        errors.value.teamMembers = t('registration.maxTeammates')
       }
     }
 
@@ -153,7 +156,7 @@ const validateStep = (step: Step): boolean => {
 
   if (step === 3) {
     if (!formData.value.acceptRules) {
-      errors.value.rules = 'You must accept the rules to proceed'
+      errors.value.rules = t('registration.acceptRules')
       return false
     }
     return true
@@ -211,8 +214,8 @@ const toggleTeamMember = (memberId: string) => {
         <div class="modal-container glass-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-description">
           <!-- Modal Header -->
           <header class="modal-header">
-            <h2 id="modal-title" class="modal-title">TOURNAMENT REGISTRATION</h2>
-            <p id="modal-description" class="visually-hidden">Complete this 3-step registration wizard to sign up for the tournament</p>
+            <h2 id="modal-title" class="modal-title">{{ $t('registration.title') }}</h2>
+            <p id="modal-description" class="visually-hidden">{{ $t('registration.step1Of3') }}</p>
             <button class="modal-close-btn" @click="handleCancel" aria-label="Close registration modal and return to tournament page">
               ✕
             </button>
@@ -237,7 +240,7 @@ const toggleTeamMember = (memberId: string) => {
             <!-- Step 1: Participation Type -->
             <section v-show="currentStep === 1" class="step-pane">
               <fieldset>
-                <legend class="step-title">Step 1 of 3: Choose Participation Type</legend>
+                <legend class="step-title">{{ $t('registration.step1Of3') }}</legend>
 
                 <div class="radio-group">
                   <label class="radio-option">
@@ -248,8 +251,8 @@ const toggleTeamMember = (memberId: string) => {
                       value="solo"
                       aria-describedby="solo-description"
                     />
-                    <span class="radio-label">Solo Registration</span>
-                    <span id="solo-description" class="radio-description">Register as an individual player</span>
+                    <span class="radio-label">{{ $t('registration.soloRegistration') }}</span>
+                    <span id="solo-description" class="radio-description">{{ $t('registration.soloDescription') }}</span>
                   </label>
 
                   <label class="radio-option">
@@ -260,8 +263,8 @@ const toggleTeamMember = (memberId: string) => {
                       value="team"
                       aria-describedby="team-description"
                     />
-                    <span class="radio-label">Team Registration</span>
-                    <span id="team-description" class="radio-description">Register as a team (up to 4 players)</span>
+                    <span class="radio-label">{{ $t('registration.teamRegistration') }}</span>
+                    <span id="team-description" class="radio-description">{{ $t('registration.teamDescription') }}</span>
                   </label>
                 </div>
               </fieldset>
@@ -273,16 +276,16 @@ const toggleTeamMember = (memberId: string) => {
 
             <!-- Step 2: Details (Solo) -->
             <section v-show="currentStep === 2 && isSolo" class="step-pane">
-              <h3 class="step-title">Step 2 of 3: Confirm Details</h3>
+              <h3 class="step-title">{{ $t('registration.step2SoloOf3') }}</h3>
 
               <div class="form-group">
-                <label for="display-name" class="form-label">Display Name *</label>
+                <label for="display-name" class="form-label">{{ $t('registration.displayName') }} *</label>
                 <input
                   id="display-name"
                   v-model="formData.displayName"
                   type="text"
                   class="form-input"
-                  placeholder="Your display name"
+                  :placeholder="$t('registration.displayNamePlaceholder')"
                   required
                   aria-required="true"
                   :aria-invalid="!!errors.displayName"
@@ -294,13 +297,13 @@ const toggleTeamMember = (memberId: string) => {
               </div>
 
               <div class="form-group">
-                <label for="email" class="form-label">Email *</label>
+                <label for="email" class="form-label">{{ $t('registration.emailLabel') }} *</label>
                 <input
                   id="email"
                   v-model="formData.email"
                   type="email"
                   class="form-input"
-                  placeholder="your@email.com"
+                  :placeholder="$t('registration.emailPlaceholder')"
                   required
                   aria-required="true"
                   :aria-invalid="!!errors.email"
@@ -312,13 +315,13 @@ const toggleTeamMember = (memberId: string) => {
               </div>
 
               <div class="form-group">
-                <label for="in-game-username" class="form-label">In-Game Username *</label>
+                <label for="in-game-username" class="form-label">{{ $t('registration.inGameUsername') }} *</label>
                 <input
                   id="in-game-username"
                   v-model="formData.inGameUsername"
                   type="text"
                   class="form-input"
-                  placeholder="Your in-game username"
+                  :placeholder="$t('registration.inGamePlaceholder')"
                   required
                   aria-required="true"
                   :aria-invalid="!!errors.inGameUsername"
@@ -332,16 +335,16 @@ const toggleTeamMember = (memberId: string) => {
 
             <!-- Step 2: Details (Team) -->
             <section v-show="currentStep === 2 && isTeam" class="step-pane">
-              <h3 class="step-title">Step 2 of 3: Team Details</h3>
+              <h3 class="step-title">{{ $t('registration.step2TeamOf3') }}</h3>
 
               <div class="form-group">
-                <label for="team-name" class="form-label">Team Name *</label>
+                <label for="team-name" class="form-label">{{ $t('registration.teamName') }} *</label>
                 <input
                   id="team-name"
                   v-model="formData.teamName"
                   type="text"
                   class="form-input"
-                  placeholder="Your team name"
+                  :placeholder="$t('registration.teamNamePlaceholder')"
                   required
                   aria-required="true"
                   :aria-invalid="!!errors.teamName"
@@ -353,7 +356,7 @@ const toggleTeamMember = (memberId: string) => {
               </div>
 
               <fieldset class="form-group">
-                <legend class="form-label">Select Team Members (1-4) *</legend>
+                <legend class="form-label">{{ $t('registration.selectMembers') }}</legend>
 
                 <!-- Search Input -->
                 <div class="member-search">
@@ -363,8 +366,8 @@ const toggleTeamMember = (memberId: string) => {
                     v-model="searchQuery"
                     type="text"
                     class="search-input"
-                    placeholder="Search friends..."
-                    aria-label="Search team members by username or display name"
+                    :placeholder="$t('registration.searchFriends')"
+                    :aria-label="$t('registration.searchFriends')"
                   />
                   <span class="search-icon" aria-hidden="true">🔍</span>
                 </div>
@@ -372,20 +375,20 @@ const toggleTeamMember = (memberId: string) => {
                 <!-- Loading State -->
                 <div v-if="friendsStore.isLoading" class="member-loading">
                   <span class="loading-spinner">⏳</span>
-                  <p>Loading friends...</p>
+                  <p>{{ $t('registration.loadingFriends') }}</p>
                 </div>
 
                 <!-- Empty State -->
                 <div v-else-if="friendsStore.acceptedFriends.length === 0" class="member-empty">
                   <span class="empty-icon">👥</span>
-                  <p class="empty-text">No friends yet</p>
-                  <p class="empty-subtext">Add friends from the Friends page to form a team</p>
+                  <p class="empty-text">{{ $t('registration.noFriends') }}</p>
+                  <p class="empty-subtext">{{ $t('registration.noFriendsHint') }}</p>
                 </div>
 
                 <!-- No Search Results -->
                 <div v-else-if="filteredFriends.length === 0 && searchQuery" class="member-no-results">
                   <span class="no-results-icon">🔍</span>
-                  <p>No friends match "{{ searchQuery }}"</p>
+                  <p>{{ $t('registration.noResults', { query: searchQuery }) }}</p>
                 </div>
 
                 <!-- Member Grid -->
@@ -427,14 +430,14 @@ const toggleTeamMember = (memberId: string) => {
               </fieldset>
 
               <div class="team-summary">
-                <span class="summary-label">Selected:</span>
+                <span class="summary-label">{{ $t('registration.selected') }}</span>
                 <span class="summary-value">{{ formData.teamMembers.length }}/4</span>
               </div>
             </section>
 
             <!-- Step 3: Rules -->
             <section v-show="currentStep === 3" class="step-pane">
-              <h3 class="step-title">Step 3 of 3: Accept Rules</h3>
+              <h3 class="step-title">{{ $t('registration.step3Of3') }}</h3>
 
               <div class="rules-container" role="region" aria-label="Tournament rules">
                 <pre class="rules-text">{{ rules }}</pre>
@@ -450,7 +453,7 @@ const toggleTeamMember = (memberId: string) => {
                   :aria-invalid="!!errors.rules"
                   :aria-describedby="errors.rules ? 'rules-error' : undefined"
                 />
-                <span class="checkbox-text">I accept the tournament rules *</span>
+                <span class="checkbox-text">{{ $t('registration.rulesAcceptRequired') }}</span>
               </label>
 
               <span v-if="errors.rules" id="rules-error" role="alert" class="error-message">
@@ -462,7 +465,7 @@ const toggleTeamMember = (memberId: string) => {
           <!-- Modal Footer -->
           <footer class="modal-footer">
             <button class="modal-btn modal-btn-secondary" @click="handleCancel">
-              CANCEL
+              {{ $t('registration.cancel') }}
             </button>
 
             <div class="modal-btn-group">
@@ -471,7 +474,7 @@ const toggleTeamMember = (memberId: string) => {
                 class="modal-btn modal-btn-secondary"
                 @click="handleBack"
               >
-                ← BACK
+                ← {{ $t('registration.backBtn') }}
               </button>
 
               <button
@@ -480,7 +483,7 @@ const toggleTeamMember = (memberId: string) => {
                 :disabled="!canProceedStep2 && currentStep === 2"
                 @click="handleNext"
               >
-                NEXT →
+                {{ $t('registration.nextBtn') }} →
               </button>
 
               <button
@@ -489,7 +492,7 @@ const toggleTeamMember = (memberId: string) => {
                 :disabled="!canSubmit"
                 @click="handleSubmit"
               >
-                REGISTER
+                {{ $t('registration.register') }}
               </button>
             </div>
           </footer>

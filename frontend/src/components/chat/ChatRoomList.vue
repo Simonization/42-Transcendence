@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { ChatRoom } from '../../types'
 
 defineProps<{
@@ -11,15 +12,17 @@ const emit = defineEmits<{
   select: [roomId: number]
 }>()
 
+const { t } = useI18n()
+
 const getRoomName = (room: ChatRoom, currentUserId: number): string => {
   if (room.title) return room.title
   // For DMs, show the other participant's name
   const other = room.participants.find(p => p.id !== currentUserId)
-  return other?.username || 'Unknown'
+  return other?.username || t('chat.unknownUser')
 }
 
 const getPreview = (room: ChatRoom): string => {
-  if (!room.lastMessage) return 'No messages yet'
+  if (!room.lastMessage) return t('chat.noMessages')
   const content = room.lastMessage.content
   return content.length > 40 ? content.slice(0, 40) + '...' : content
 }
@@ -38,7 +41,7 @@ const getTime = (room: ChatRoom): string => {
 <template>
   <div class="room-list">
     <div v-if="rooms.length === 0" class="empty-state">
-      <p class="text-tertiary">No conversations</p>
+      <p class="text-tertiary">{{ $t('chat.noConversations') }}</p>
     </div>
 
     <button

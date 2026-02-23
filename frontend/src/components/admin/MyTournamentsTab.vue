@@ -1,17 +1,21 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const mockMyTournaments: any[] = [] // Empty for empty state
 </script>
 
 <template>
   <div class="my-tournaments-content">
-    <h2 class="section-title">MY TOURNAMENTS</h2>
+    <h2 class="section-title">{{ t('admin.myTournaments') }}</h2>
 
     <div v-if="mockMyTournaments.length === 0" class="empty-state">
       <div class="empty-state-icon">🏆</div>
-      <h3 class="empty-state-title">NO TOURNAMENTS CREATED</h3>
-      <p class="empty-state-text">You haven't created any tournaments yet</p>
-      <button class="empty-state-cta" disabled aria-disabled="true" aria-label="Create tournament (available in V2.0)">
-        CREATE YOUR FIRST TOURNAMENT
+      <h3 class="empty-state-title">{{ t('admin.noTournamentsCreated') }}</h3>
+      <p class="empty-state-text">{{ t('admin.noTournamentsHint') }}</p>
+      <button class="empty-state-cta" disabled aria-disabled="true" :aria-label="t('admin.createFirst')">
+        {{ t('admin.createFirst') }}
       </button>
     </div>
 
@@ -20,11 +24,11 @@ const mockMyTournaments: any[] = [] // Empty for empty state
         <caption class="visually-hidden">Tournaments you have created with name, game, status, participant count, and actions</caption>
         <thead>
           <tr>
-            <th>NAME</th>
-            <th>GAME</th>
-            <th>STATUS</th>
-            <th>PARTICIPANTS</th>
-            <th>ACTIONS</th>
+            <th>{{ t('admin.name') }}</th>
+            <th>{{ t('admin.game') }}</th>
+            <th>{{ t('admin.statusCol') }}</th>
+            <th>{{ t('admin.participantsCol') }}</th>
+            <th>{{ t('admin.actionsCol') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -34,8 +38,8 @@ const mockMyTournaments: any[] = [] // Empty for empty state
             <td>{{ tournament.status }}</td>
             <td>{{ tournament.participants }}</td>
             <td>
-              <button class="action-link">Edit</button>
-              <button class="action-link">Delete</button>
+              <button class="action-link">{{ t('admin.editAction') }}</button>
+              <button class="action-link">{{ t('common.delete') }}</button>
             </td>
           </tr>
         </tbody>

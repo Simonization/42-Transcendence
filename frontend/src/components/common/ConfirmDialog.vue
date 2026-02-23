@@ -67,14 +67,14 @@ onUnmounted(() => {
         <p class="dialog-message">{{ message }}</p>
         <div class="dialog-actions">
           <button ref="cancelButtonRef" class="btn btn-secondary" @click="emit('cancel')">
-            {{ cancelLabel || 'CANCEL' }}
+            {{ cancelLabel || $t('confirm.defaultCancel') }}
           </button>
           <button
             class="btn"
             :class="danger ? 'btn-danger' : 'btn-primary'"
             @click="emit('confirm')"
           >
-            {{ confirmLabel || 'CONFIRM' }}
+            {{ confirmLabel || $t('common.confirm') }}
           </button>
         </div>
       </div>

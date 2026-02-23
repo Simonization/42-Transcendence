@@ -59,7 +59,7 @@ const progressPercentage = computed(() => {
       </div>
 
       <!-- Dismiss Button -->
-      <button class="toast-close" @click="onDismiss" aria-label="Close notification">
+      <button class="toast-close" @click="onDismiss" :aria-label="$t('notifications.closeNotification')">
         ✕
       </button>
 
