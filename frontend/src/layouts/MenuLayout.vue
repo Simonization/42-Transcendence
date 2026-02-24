@@ -210,6 +210,14 @@ const navItems = computed(() => {
   border: var(--hud-border) solid var(--border-default);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
+  -webkit-clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
   clip-path: polygon(
     var(--chamfer-sm) 0,
     100% 0,
@@ -238,6 +246,7 @@ const navItems = computed(() => {
   gap: var(--space-2);
   padding: var(--space-4) var(--space-3);
   background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--backdrop-blur-medium);
   backdrop-filter: var(--backdrop-blur-medium);
   border-right: 1px solid var(--glass-border);
   z-index: 9;
@@ -258,6 +267,14 @@ const navItems = computed(() => {
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-widest);
   transition: all var(--duration-fast) var(--ease-default);
+  -webkit-clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
   clip-path: polygon(
     var(--chamfer-sm) 0,
     100% 0,

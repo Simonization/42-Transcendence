@@ -154,6 +154,7 @@ const saveProfile = async () => {
 .avatar {
   width: 64px;
   height: 64px;
+  -webkit-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   background: var(--accent-primary-subtle);
   display: flex;

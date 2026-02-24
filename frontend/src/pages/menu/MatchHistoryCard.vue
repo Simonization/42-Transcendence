@@ -240,6 +240,7 @@ const formatDate = (date: string) => {
   justify-content: space-between;
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -274,6 +275,7 @@ const formatDate = (date: string) => {
   justify-content: center;
   padding: var(--space-12);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -336,6 +338,7 @@ const formatDate = (date: string) => {
   gap: var(--space-4);
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -377,6 +380,7 @@ const formatDate = (date: string) => {
   gap: var(--space-4);
   padding: var(--space-4);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -422,6 +426,7 @@ const formatDate = (date: string) => {
 .matches-container {
   padding: 0;
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -530,6 +535,7 @@ const formatDate = (date: string) => {
   gap: var(--space-4);
   padding: var(--space-4);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:

@@ -180,6 +180,7 @@ const handleNewChat = async () => {
 .ws-dot {
   width: 8px;
   height: 8px;
+  -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 

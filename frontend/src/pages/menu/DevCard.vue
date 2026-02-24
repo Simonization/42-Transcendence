@@ -266,6 +266,7 @@ const tokenInfo = computed(() => {
   color: var(--text-secondary);
   background: transparent;
   border: 1px solid var(--border-default);
+  -webkit-clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
@@ -315,6 +316,7 @@ const tokenInfo = computed(() => {
   margin-top: var(--space-2);
   padding: var(--space-3);
   background: var(--bg-tertiary);
+  -webkit-clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   font-family: var(--font-mono);
   font-size: var(--text-xs);

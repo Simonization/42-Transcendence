@@ -38,6 +38,14 @@
   transition: all var(--duration-fast) var(--ease-default);
   text-decoration: none;
   position: relative;
+  -webkit-clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
   clip-path: polygon(
     var(--chamfer-sm) 0,
     100% 0,
@@ -59,6 +67,7 @@
   position: absolute;
   inset: 0;
   border: var(--hud-border) solid transparent;
+  -webkit-clip-path: inherit;
   clip-path: inherit;
   transition: border-color var(--duration-fast) var(--ease-default);
   pointer-events: none;
@@ -124,6 +133,14 @@
   background: var(--card-bg);
   border: var(--hud-border) solid var(--card-border);
   box-shadow: var(--card-shadow);
+  -webkit-clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-lg)) 0,
+    100% var(--chamfer-lg),
+    100% 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
   clip-path: polygon(
     0 0,
     calc(100% - var(--chamfer-lg)) 0,
@@ -184,6 +201,14 @@
   transition: all var(--duration-fast) var(--ease-default);
   text-decoration: none;
   position: relative;
+  -webkit-clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
   clip-path: polygon(
     var(--chamfer-sm) 0,
     100% 0,
@@ -224,6 +249,13 @@
   color: var(--text-primary);
   background: var(--input-bg);
   border: var(--hud-border) solid var(--input-border);
+  -webkit-clip-path: polygon(
+    var(--chamfer-xs) 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 var(--chamfer-xs)
+  );
   clip-path: polygon(
     var(--chamfer-xs) 0,
     100% 0,
@@ -294,6 +326,7 @@
   height: 4px;
   background: var(--progress-bg);
   overflow: hidden;
+  -webkit-clip-path: polygon(2px 0, 100% 0, calc(100% - 2px) 100%, 0 100%);
   clip-path: polygon(2px 0, 100% 0, calc(100% - 2px) 100%, 0 100%);
 }
 
@@ -327,6 +360,7 @@
   background: var(--timeline-dot);
   border: 2px solid var(--bg-primary);
   z-index: 1;
+  -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
@@ -360,6 +394,14 @@
   font-weight: var(--font-semibold);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
+  -webkit-clip-path: polygon(
+    var(--chamfer-xs) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-xs)),
+    calc(100% - var(--chamfer-xs)) 100%,
+    0 100%,
+    0 var(--chamfer-xs)
+  );
   clip-path: polygon(
     var(--chamfer-xs) 0,
     100% 0,
@@ -410,6 +452,14 @@
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
+  -webkit-clip-path: polygon(
+    var(--chamfer-xs) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-xs)),
+    calc(100% - var(--chamfer-xs)) 100%,
+    0 100%,
+    0 var(--chamfer-xs)
+  );
   clip-path: polygon(
     var(--chamfer-xs) 0,
     100% 0,
@@ -592,11 +642,20 @@
 /* ---------- GLASS MORPHISM PANELS ---------- */
 .glass-panel {
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
     var(--shadow-xl),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  -webkit-clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-lg)) 0,
+    100% var(--chamfer-lg),
+    100% 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
   clip-path: polygon(
     0 0,
     calc(100% - var(--chamfer-lg)) 0,
@@ -630,6 +689,7 @@
 /* ---------- GLASS HEADER/FOOTER ---------- */
 .glass-header {
   background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--backdrop-blur-medium);
   backdrop-filter: var(--backdrop-blur-medium);
   border-bottom: var(--hud-border) solid var(--glass-border);
   position: relative;
@@ -638,6 +698,7 @@
 
 .glass-footer {
   background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--backdrop-blur-light);
   backdrop-filter: var(--backdrop-blur-light);
   border-top: var(--hud-border) solid var(--glass-border);
   position: relative;

@@ -320,6 +320,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   gap: var(--space-6);
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -398,6 +399,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   gap: var(--space-2);
   padding: var(--space-4);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -405,6 +407,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow-x: auto;
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .detail-tabs::-webkit-scrollbar {
@@ -453,6 +456,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 .tab-pane {
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -797,6 +801,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   align-items: center;
   gap: var(--space-4);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
 }

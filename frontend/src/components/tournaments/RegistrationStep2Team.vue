@@ -335,6 +335,7 @@ fieldset {
   display: flex;
   align-items: center;
   justify-content: center;
+  -webkit-clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
   clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
   background: var(--bg-secondary);
   overflow: hidden;

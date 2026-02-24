@@ -106,6 +106,7 @@ const getProgressPercentage = (current: number, max: number) => {
 .tournament-card {
   padding: var(--space-4);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:

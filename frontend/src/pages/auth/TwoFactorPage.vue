@@ -143,6 +143,7 @@ const goBackToLogin = () => {
 .state-icon {
   width: 64px;
   height: 64px;
+  -webkit-clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
   clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
   display: flex;
   align-items: center;
@@ -181,6 +182,7 @@ const goBackToLogin = () => {
   color: var(--text-primary);
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.12);
+  -webkit-clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% 100%, 0 100%, 0 var(--chamfer-xs));
   clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% 100%, 0 100%, 0 var(--chamfer-xs));
   outline: none;
   transition: border-color var(--duration-fast) var(--ease-default),
@@ -203,6 +205,7 @@ const goBackToLogin = () => {
   color: var(--bg-primary);
   background: var(--text-primary);
   border: 1px solid transparent;
+  -webkit-clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
@@ -233,6 +236,7 @@ const goBackToLogin = () => {
 .auth-message {
   width: 100%;
   padding: var(--space-3) var(--space-4);
+  -webkit-clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   font-size: var(--text-sm);
 }

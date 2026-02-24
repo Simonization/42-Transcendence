@@ -156,6 +156,7 @@ const saveSettings = async () => {
   inset: 0;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-default);
+  -webkit-clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
   clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
   transition: all var(--duration-fast) var(--ease-default);
 }
@@ -168,6 +169,7 @@ const saveSettings = async () => {
   width: 18px;
   height: 18px;
   background: var(--text-secondary);
+  -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   transition: all var(--duration-fast) var(--ease-default);
 }

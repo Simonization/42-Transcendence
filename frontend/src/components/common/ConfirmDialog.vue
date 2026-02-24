@@ -91,6 +91,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -100,6 +101,14 @@ onUnmounted(() => {
   padding: var(--space-6);
   background: var(--bg-elevated);
   border: 1px solid var(--border-default);
+  -webkit-clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-md)) 0,
+    100% var(--chamfer-md),
+    100% 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
   clip-path: polygon(
     0 0,
     calc(100% - var(--chamfer-md)) 0,

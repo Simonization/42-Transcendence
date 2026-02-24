@@ -152,6 +152,14 @@ body {
 
 /* Button chamfer: top-left + bottom-right cut */
 .clip-btn {
+  -webkit-clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
   clip-path: polygon(
     var(--chamfer-sm) 0,
     100% 0,
@@ -164,6 +172,14 @@ body {
 
 /* Card chamfer: deep top-right cut, subtle others */
 .clip-card {
+  -webkit-clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-lg)) 0,
+    100% var(--chamfer-lg),
+    100% 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
   clip-path: polygon(
     0 0,
     calc(100% - var(--chamfer-lg)) 0,
@@ -176,6 +192,14 @@ body {
 
 /* Panel chamfer: symmetric opposing cuts */
 .clip-panel {
+  -webkit-clip-path: polygon(
+    var(--chamfer-md) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-md)),
+    calc(100% - var(--chamfer-md)) 100%,
+    0 100%,
+    0 var(--chamfer-md)
+  );
   clip-path: polygon(
     var(--chamfer-md) 0,
     100% 0,
@@ -188,6 +212,13 @@ body {
 
 /* Input chamfer: subtle top-left cut only */
 .clip-input {
+  -webkit-clip-path: polygon(
+    var(--chamfer-xs) 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 var(--chamfer-xs)
+  );
   clip-path: polygon(
     var(--chamfer-xs) 0,
     100% 0,
@@ -199,11 +230,20 @@ body {
 
 /* Hexagon for avatars */
 .clip-hex {
+  -webkit-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
 }
 
 /* Badge chamfer: tiny opposing cuts */
 .clip-badge {
+  -webkit-clip-path: polygon(
+    var(--chamfer-xs) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-xs)),
+    calc(100% - var(--chamfer-xs)) 100%,
+    0 100%,
+    0 var(--chamfer-xs)
+  );
   clip-path: polygon(
     var(--chamfer-xs) 0,
     100% 0,
@@ -216,6 +256,14 @@ body {
 
 /* Dialog/modal chamfer: deep top-right, medium bottom-left */
 .clip-dialog {
+  -webkit-clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-xl)) 0,
+    100% var(--chamfer-xl),
+    100% 100%,
+    var(--chamfer-md) 100%,
+    0 calc(100% - var(--chamfer-md))
+  );
   clip-path: polygon(
     0 0,
     calc(100% - var(--chamfer-xl)) 0,
@@ -228,6 +276,14 @@ body {
 
 /* Message bubble: asymmetric */
 .clip-bubble {
+  -webkit-clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-xs)),
+    calc(100% - var(--chamfer-xs)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
   clip-path: polygon(
     var(--chamfer-sm) 0,
     100% 0,
@@ -239,6 +295,14 @@ body {
 }
 
 .clip-bubble-own {
+  -webkit-clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer-sm)) 0,
+    100% var(--chamfer-sm),
+    100% 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
   clip-path: polygon(
     0 0,
     calc(100% - var(--chamfer-sm)) 0,
@@ -251,6 +315,14 @@ body {
 
 /* Tab: bottom-left and bottom-right cuts */
 .clip-tab {
+  -webkit-clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-xs)),
+    calc(100% - var(--chamfer-xs)) 100%,
+    var(--chamfer-xs) 100%,
+    0 calc(100% - var(--chamfer-xs))
+  );
   clip-path: polygon(
     0 0,
     100% 0,
@@ -263,6 +335,10 @@ body {
 
 /* Status icon: octagon */
 .clip-octagon {
+  -webkit-clip-path: polygon(
+    30% 0%, 70% 0%, 100% 30%, 100% 70%,
+    70% 100%, 30% 100%, 0% 70%, 0% 30%
+  );
   clip-path: polygon(
     30% 0%, 70% 0%, 100% 30%, 100% 70%,
     70% 100%, 30% 100%, 0% 70%, 0% 30%
@@ -271,6 +347,7 @@ body {
 
 /* Toggle track: parallelogram */
 .clip-toggle-track {
+  -webkit-clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
   clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
 

@@ -58,6 +58,7 @@ const time = computed(() => {
   position: relative;
   max-width: 75%;
   padding: var(--space-2) var(--space-3);
+  -webkit-clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% calc(100% - var(--chamfer-xs)), calc(100% - var(--chamfer-xs)) 100%, 0 100%, 0 var(--chamfer-xs));
   background: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
@@ -118,6 +119,7 @@ const time = computed(() => {
   color: var(--text-tertiary);
   background: transparent;
   border: none;
+  -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   cursor: pointer;
   opacity: 0;

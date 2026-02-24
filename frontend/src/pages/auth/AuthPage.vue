@@ -263,6 +263,7 @@ const handleGoogleLogin = () => {
   color: var(--text-primary);
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.12);
+  -webkit-clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% 100%, 0 100%, 0 var(--chamfer-xs));
   clip-path: polygon(var(--chamfer-xs) 0, 100% 0, 100% 100%, 0 100%, 0 var(--chamfer-xs));
   outline: none;
   transition: border-color var(--duration-fast) var(--ease-default),
@@ -303,6 +304,7 @@ const handleGoogleLogin = () => {
   color: var(--bg-primary);
   background: var(--text-primary);
   border: 1px solid transparent;
+  -webkit-clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);

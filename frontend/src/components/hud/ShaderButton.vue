@@ -111,6 +111,14 @@ const sizeClass = computed(() => `shader-btn-${props.size}`)
   cursor: pointer;
   overflow: hidden;
   transition: all var(--duration-fast) var(--ease-default);
+  -webkit-clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
   clip-path: polygon(
     var(--chamfer-sm) 0,
     100% 0,

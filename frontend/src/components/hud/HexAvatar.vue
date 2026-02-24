@@ -55,6 +55,7 @@ const displayInitials = computed(() => {
   inset: -2px;
   background: var(--accent-primary);
   opacity: 0.4;
+  -webkit-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   transition: opacity var(--duration-fast) var(--ease-default);
 }
@@ -68,6 +69,7 @@ const displayInitials = computed(() => {
   width: 100%;
   height: 100%;
   background: var(--accent-primary-subtle);
+  -webkit-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   display: flex;
   align-items: center;
@@ -95,6 +97,7 @@ const displayInitials = computed(() => {
   width: 10px;
   height: 10px;
   background: var(--color-success);
+  -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   box-shadow: 0 0 6px var(--color-success);
 }

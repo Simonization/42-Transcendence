@@ -80,6 +80,7 @@ const toggleTheme = () => {
   width: 52px;
   height: 28px;
   background: var(--bg-tertiary);
+  -webkit-clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
   clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
   border: 1px solid var(--border-default);
   transition: all var(--duration-normal) var(--ease-default);
@@ -91,6 +92,7 @@ const toggleTheme = () => {
   left: 2px;
   width: 22px;
   height: 22px;
+  -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   display: flex;
   align-items: center;

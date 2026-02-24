@@ -231,6 +231,7 @@ const getPageNumbers = () => {
   justify-content: space-between;
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -291,6 +292,7 @@ const getPageNumbers = () => {
   font-family: var(--font-sans);
   font-size: var(--text-base);
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   color: var(--text-primary);
@@ -340,6 +342,7 @@ const getPageNumbers = () => {
   padding: var(--space-16);
   text-align: center;
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) dashed var(--glass-border);
 }

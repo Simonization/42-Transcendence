@@ -546,6 +546,7 @@ legend {
   max-width: 600px;
   max-height: 90vh;
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -836,6 +837,7 @@ legend {
   display: flex;
   align-items: center;
   justify-content: center;
+  -webkit-clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
   clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
   background: var(--bg-secondary);
   overflow: hidden;

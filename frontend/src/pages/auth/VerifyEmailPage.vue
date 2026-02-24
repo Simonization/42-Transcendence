@@ -88,6 +88,7 @@ const redirectToLogin = () => {
 .state-icon {
   width: 64px;
   height: 64px;
+  -webkit-clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
   clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
   display: flex;
   align-items: center;
@@ -120,6 +121,7 @@ const redirectToLogin = () => {
   color: var(--bg-primary);
   background: var(--text-primary);
   border: 1px solid transparent;
+  -webkit-clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);

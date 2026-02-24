@@ -179,6 +179,7 @@ function formatDate(iso: string): string {
   gap: var(--space-4);
   padding: var(--space-4) var(--space-6);
   background: linear-gradient(135deg, var(--glass-bg-elevated) 0%, var(--accent-primary-subtle) 100%);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--accent-primary-subtle);
   box-shadow:
@@ -222,6 +223,7 @@ function formatDate(iso: string): string {
 .bracket-viz {
   position: relative;
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   box-shadow:
@@ -245,6 +247,7 @@ function formatDate(iso: string): string {
 
   /* Hide scrollbar but keep functionality */
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .bracket-grid::-webkit-scrollbar {
@@ -300,6 +303,7 @@ function formatDate(iso: string): string {
   gap: 0;
   padding: 0;
   background: var(--glass-bg-elevated);
+  -webkit-backdrop-filter: var(--backdrop-blur-medium);
   backdrop-filter: var(--backdrop-blur-medium);
   border: var(--hud-border) solid var(--glass-border);
   border-radius: 4px;
