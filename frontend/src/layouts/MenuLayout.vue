@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import SearchModal from '../components/common/SearchModal.vue'
 import { useChat } from '@/composables/useChat'
+import { useSearch } from '@/composables/useSearch'
+import { friendsApi } from '../api/friends'
+import type { Friend, ChatRoom } from '../types'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -13,10 +17,16 @@ const authStore = useAuthStore()
 const { logout } = authStore
 const themeStore = useThemeStore()
 const { theme } = themeStore
-const { connectSocket, disconnectSocket } = useChat()
+const { connectSocket, disconnectSocket, rooms: chatRooms } = useChat()
+const { isOpen: searchOpen, openSearch, closeSearch } = useSearch()
+
+const friends = ref<Friend[]>([])
 
 onMounted(async () => {
     connectSocket()
+    if (authStore.user?.id) {
+      friendsApi.getFriends(authStore.user.id).then(f => { friends.value = f }).catch(() => {})
+    }
 })
 
 const handleLogout = async () => {
@@ -62,6 +72,7 @@ const navItems = computed(() => {
         <span class="hud-serial">SYS::ONLINE</span>
       </div>
       <div class="menu-header-actions">
+        <button class="menu-search-btn" @click="openSearch" :title="$t('search.open')">&#9906;</button>
         <ThemeToggle />
         <button @click="handleLogout" class="menu-quit-btn">{{ $t('common.quit') }}</button>
       </div>
@@ -95,6 +106,17 @@ const navItems = computed(() => {
     <div class="menu-hud-footer glass-footer">
       <span class="hud-serial">ESP-2026 // TOURNAMENT PLATFORM v3.0</span>
     </div>
+
+    <!-- Search modal -->
+    <SearchModal
+      v-if="searchOpen"
+      :friends="friends"
+      :rooms="chatRooms"
+      :current-user-id="authStore.user?.id || 0"
+      @close="closeSearch"
+      @select-room="closeSearch(); router.push('/menu/chat')"
+      @select-tournament="(id) => { closeSearch(); router.push(`/menu/tournaments/${id}`) }"
+    />
   </div>
 </template>
 
@@ -196,6 +218,38 @@ const navItems = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+}
+
+.menu-search-btn {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  background: transparent;
+  border: var(--hud-border) solid var(--border-default);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  -webkit-clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
+  clip-path: polygon(
+    var(--chamfer-sm) 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-sm)),
+    calc(100% - var(--chamfer-sm)) 100%,
+    0 100%,
+    0 var(--chamfer-sm)
+  );
+}
+
+.menu-search-btn:hover {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 .menu-quit-btn {

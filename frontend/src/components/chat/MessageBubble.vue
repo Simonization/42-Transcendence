@@ -5,6 +5,7 @@ import type { Message } from '../../types'
 const props = defineProps<{
   message: Message
   currentUserId: number
+  isBlocked?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 const isOwn = computed(() => props.message.senderId === props.currentUserId)
 const isDeleted = computed(() => !!props.message.deletedAt)
 const isEdited = computed(() => !!props.message.editedAt && !isDeleted.value)
+const hasReadReceipts = computed(() => (props.message.readBy?.length ?? 0) > 0)
 
 const time = computed(() => {
   const d = new Date(props.message.createdAt)
@@ -23,14 +25,19 @@ const time = computed(() => {
 
 <template>
   <div class="bubble-row" :class="{ own: isOwn }">
-    <div class="bubble" :class="{ own: isOwn, deleted: isDeleted }">
+    <div class="bubble" :class="{ own: isOwn, deleted: isDeleted, blocked: isBlocked }">
       <p v-if="!isOwn && message.sender" class="bubble-sender">
         {{ message.sender.username }}
       </p>
-      <p class="bubble-content">{{ message.content }}</p>
+      <p v-if="isBlocked" class="bubble-content bubble-content-blocked">
+        <em>{{ $t('chat.blockedMessage') }}</em>
+      </p>
+      <p v-else class="bubble-content">{{ message.content }}</p>
       <div class="bubble-meta">
         <span class="bubble-time">{{ time }}</span>
         <span v-if="isEdited" class="bubble-edited">edited</span>
+        <span v-if="isOwn && hasReadReceipts" class="bubble-receipt bubble-receipt-read" :title="$t('chat.seenBy')">&#10003;&#10003;</span>
+        <span v-else-if="isOwn && message.deliveredAt" class="bubble-receipt bubble-receipt-delivered" :title="$t('chat.delivered')">&#10003;</span>
       </div>
       <button
         v-if="isOwn && !isDeleted"
@@ -74,6 +81,10 @@ const time = computed(() => {
   font-style: italic;
 }
 
+.bubble.blocked {
+  opacity: 0.4;
+}
+
 .bubble-sender {
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
@@ -87,6 +98,10 @@ const time = computed(() => {
   margin: 0;
   word-break: break-word;
   line-height: var(--leading-relaxed);
+}
+
+.bubble-content-blocked {
+  color: var(--text-tertiary);
 }
 
 .bubble-meta {
@@ -105,6 +120,19 @@ const time = computed(() => {
   font-size: 10px;
   color: var(--text-tertiary);
   font-style: italic;
+}
+
+.bubble-receipt {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.bubble-receipt-read {
+  color: var(--color-success);
+}
+
+.bubble-receipt-delivered {
+  color: var(--text-tertiary);
 }
 
 .bubble-delete {

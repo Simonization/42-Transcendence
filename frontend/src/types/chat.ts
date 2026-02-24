@@ -25,6 +25,26 @@ export interface Message {
     id: number
     username: string
   }
+  readBy?: number[]
+  deliveredAt?: string | null
+}
+
+export interface TypingUser {
+  userId: number
+  username: string
+  roomId: number
+}
+
+export interface TypingEvent {
+  userId: number
+  username: string
+  chatId: number
+}
+
+export interface MessageReadEvent {
+  userId: number
+  chatId: number
+  lastMessageId: number
 }
 
 export interface ChatRoom {

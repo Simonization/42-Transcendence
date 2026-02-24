@@ -75,6 +75,11 @@ const hasToken = computed(() => !!getAccessToken())
     <!-- Glass footer -->
     <footer class="landing-footer glass-footer">
       <span class="hud-serial">ESP-2026 // TOURNAMENT PLATFORM v3.0</span>
+      <nav class="footer-links" aria-label="Legal">
+        <RouterLink to="/privacy" class="footer-link">{{ $t('legal.privacy') }}</RouterLink>
+        <span class="footer-divider" aria-hidden="true">//</span>
+        <RouterLink to="/terms" class="footer-link">{{ $t('legal.terms') }}</RouterLink>
+      </nav>
     </footer>
   </div>
 </template>
@@ -234,10 +239,38 @@ const hasToken = computed(() => !!getAccessToken())
 }
 
 .landing-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: var(--space-2) var(--space-8);
-  text-align: right;
   position: relative;
   z-index: 10;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.footer-link {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  letter-spacing: var(--tracking-wider);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-default);
+}
+
+.footer-link:hover {
+  color: var(--accent-primary);
+}
+
+.footer-divider {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  opacity: 0.5;
 }
 
 .hud-serial {

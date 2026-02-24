@@ -95,6 +95,10 @@ const router = createRouter({
       ],
     },
 
+    // Legal pages (public)
+    { path: '/privacy', name: 'privacy', component: () => import('../pages/PrivacyPolicyPage.vue') },
+    { path: '/terms', name: 'terms', component: () => import('../pages/TermsOfServicePage.vue') },
+
     // Legacy redirects
     { path: '/login', redirect: '/auth' },
     { path: '/login-success', redirect: '/auth/callback' },
@@ -106,7 +110,7 @@ const router = createRouter({
 
 // Auth guard - validates tokens with server before allowing access
 router.beforeEach(async (to) => {
-  const publicPaths = ['/', '/auth', '/auth/verify-email', '/auth/2fa', '/auth/callback']
+  const publicPaths = ['/', '/auth', '/auth/verify-email', '/auth/2fa', '/auth/callback', '/privacy', '/terms']
   const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/')
 
   // Public routes don't need authentication

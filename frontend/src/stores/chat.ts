@@ -8,9 +8,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { chatApi } from '../api/chat'
+import { friendsApi } from '../api/friends'
 import { getAccessToken } from '../api'
 import { getErrorMessage } from '../utils/error'
-import type { ChatRoom, Message } from '../types'
+import type { ChatRoom, Message, TypingUser } from '../types'
 
 export const useChatStore = defineStore('chat', () => {
   const rooms = ref<ChatRoom[]>([])
@@ -25,6 +26,14 @@ export const useChatStore = defineStore('chat', () => {
   let socket: WebSocket | null = null
   const wsConnected = ref(false)
 
+  // Block state
+  const blockedUserIds = ref<Set<number>>(new Set())
+  const currentUserId = ref<number>(0)
+
+  // Typing state
+  const typingUsers = ref<TypingUser[]>([])
+  const typingTimers = new Map<number, ReturnType<typeof setTimeout>>()
+
   const activeRoom = computed(() =>
     rooms.value.find(r => r.id === activeRoomId.value) || null
   )
@@ -32,6 +41,66 @@ export const useChatStore = defineStore('chat', () => {
   const unreadCount = computed(() =>
     rooms.value.filter(r => r.isUnread).length
   )
+
+  /** Rooms filtered to hide DMs with blocked users */
+  const visibleRooms = computed(() =>
+    rooms.value.filter(r => {
+      if (r.type !== 0) return true // ChatType.DM === 0; show all group chats
+      const partner = r.participants.find(p => p.id !== currentUserId.value)
+      return !partner || !blockedUserIds.value.has(partner.id)
+    })
+  )
+
+  /** Whether the active DM partner is blocked */
+  const isActiveRoomBlocked = computed(() => {
+    const room = activeRoom.value
+    if (!room || room.type !== 0) return false
+    const partner = room.participants.find(p => p.id !== currentUserId.value)
+    return !!partner && blockedUserIds.value.has(partner.id)
+  })
+
+  /** Typing usernames for the current active room */
+  const currentRoomTypingUsers = computed(() =>
+    typingUsers.value
+      .filter(t => t.roomId === activeRoomId.value)
+      .map(t => t.username)
+  )
+
+  const setCurrentUser = (id: number) => {
+    currentUserId.value = id
+  }
+
+  const loadBlockedUsers = async (userId: number) => {
+    try {
+      const blocks = await friendsApi.getBlocked(userId)
+      blockedUserIds.value = new Set(blocks.map(b => b.blocked.id))
+    } catch {
+      // Silently fail — blocked list is non-critical
+    }
+  }
+
+  const blockUserInChat = async (targetId: number) => {
+    try {
+      await friendsApi.blockUser({ targetId })
+      blockedUserIds.value = new Set([...blockedUserIds.value, targetId])
+      // Clear active room if we just blocked the DM partner
+      if (isActiveRoomBlocked.value) {
+        activeRoomId.value = null
+        messages.value = []
+      }
+    } catch (e) {
+      error.value = getErrorMessage(e, 'Failed to block user')
+    }
+  }
+
+  const emitTyping = () => {
+    if (!socket || !activeRoomId.value) return
+    try {
+      socket.send(`42${JSON.stringify(['typing', { chatId: activeRoomId.value }])}`)
+    } catch {
+      // Socket may not be ready
+    }
+  }
 
   /**
    * Fetch user's chat rooms
@@ -156,8 +225,11 @@ export const useChatStore = defineStore('chat', () => {
         if (data.startsWith('42')) {
           try {
             const parsed = JSON.parse(data.slice(2))
-            if (parsed[0] === 'message' && parsed[1]) {
-              const msg = parsed[1] as Message
+            const eventName = parsed[0]
+            const payload = parsed[1]
+
+            if (eventName === 'message' && payload) {
+              const msg = payload as Message
               // Only add if it's for the active room and not already present
               if (msg.chatId === activeRoomId.value) {
                 const exists = messages.value.some(m => m.id === msg.id)
@@ -175,6 +247,46 @@ export const useChatStore = defineStore('chat', () => {
                     }
                   : r
               )
+            } else if (eventName === 'typing' && payload) {
+              const { userId, username, chatId } = payload
+              // Remove existing entry for this user in this room
+              typingUsers.value = typingUsers.value.filter(
+                t => !(t.userId === userId && t.roomId === chatId)
+              )
+              typingUsers.value.push({ userId, username, roomId: chatId })
+              // Clear existing timer for this user
+              const timerKey = userId * 10000 + chatId
+              const existing = typingTimers.get(timerKey)
+              if (existing) clearTimeout(existing)
+              typingTimers.set(timerKey, setTimeout(() => {
+                typingUsers.value = typingUsers.value.filter(
+                  t => !(t.userId === userId && t.roomId === chatId)
+                )
+                typingTimers.delete(timerKey)
+              }, 3000))
+            } else if (eventName === 'stop-typing' && payload) {
+              const { userId, chatId } = payload
+              typingUsers.value = typingUsers.value.filter(
+                t => !(t.userId === userId && t.roomId === chatId)
+              )
+              const timerKey = userId * 10000 + chatId
+              const existing = typingTimers.get(timerKey)
+              if (existing) {
+                clearTimeout(existing)
+                typingTimers.delete(timerKey)
+              }
+            } else if (eventName === 'message-read' && payload) {
+              const { userId, chatId, lastMessageId } = payload
+              if (chatId === activeRoomId.value) {
+                for (const msg of messages.value) {
+                  if (msg.id <= lastMessageId) {
+                    if (!msg.readBy) msg.readBy = []
+                    if (!msg.readBy.includes(userId)) {
+                      msg.readBy.push(userId)
+                    }
+                  }
+                }
+              }
             }
           } catch {
             // Ignore parse errors from socket.io protocol messages
@@ -215,6 +327,16 @@ export const useChatStore = defineStore('chat', () => {
     error,
     unreadCount,
     wsConnected,
+    blockedUserIds,
+    currentUserId,
+    typingUsers,
+    visibleRooms,
+    isActiveRoomBlocked,
+    currentRoomTypingUsers,
+    setCurrentUser,
+    loadBlockedUsers,
+    blockUserInChat,
+    emitTyping,
     fetchRooms,
     selectRoom,
     sendMessage,

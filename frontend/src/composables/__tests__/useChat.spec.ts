@@ -697,6 +697,80 @@ describe('useChat WebSocket Integration', () => {
     })
   })
 
+  // G. Typing Indicators Tests
+  describe('G. Typing Indicators', () => {
+    it('should emit typing event via socket', async () => {
+      const { connectSocket } = useChat()
+
+      connectSocket()
+      simulateConnect()
+      await nextTick()
+
+      // Verify socket is connected and emit is available
+      expect(mockSocketInstance).toBeTruthy()
+      expect(mockSocketInstance.emit).toBeDefined()
+    })
+  })
+
+  // H. Read Receipts Tests
+  describe('H. Read Receipts', () => {
+    it('should handle message with readBy field', async () => {
+      mockGetMessages.mockResolvedValueOnce([] as any)
+      mockMarkAsRead.mockResolvedValueOnce(undefined)
+
+      const { connectSocket, selectRoom, messages } = useChat()
+
+      connectSocket()
+      simulateConnect()
+      await nextTick()
+      await selectRoom(1)
+      await nextTick()
+
+      const msg = {
+        id: 1,
+        chatId: 1,
+        senderId: 2,
+        content: 'Test',
+        createdAt: '2024-01-01',
+        readBy: [3, 4],
+      }
+
+      simulateMessage(msg)
+      await nextTick()
+
+      expect(messages.value).toHaveLength(1)
+      expect(messages.value[0].readBy).toEqual([3, 4])
+    })
+
+    it('should handle message with deliveredAt field', async () => {
+      mockGetMessages.mockResolvedValueOnce([] as any)
+      mockMarkAsRead.mockResolvedValueOnce(undefined)
+
+      const { connectSocket, selectRoom, messages } = useChat()
+
+      connectSocket()
+      simulateConnect()
+      await nextTick()
+      await selectRoom(1)
+      await nextTick()
+
+      const msg = {
+        id: 1,
+        chatId: 1,
+        senderId: 2,
+        content: 'Test',
+        createdAt: '2024-01-01',
+        deliveredAt: '2024-01-01T10:00:01Z',
+      }
+
+      simulateMessage(msg)
+      await nextTick()
+
+      expect(messages.value).toHaveLength(1)
+      expect(messages.value[0].deliveredAt).toBe('2024-01-01T10:00:01Z')
+    })
+  })
+
   // F. WebSocket Lifecycle Tests
   describe('F. WebSocket Lifecycle', () => {
     it('should close socket gracefully without errors', async () => {

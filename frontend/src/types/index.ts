@@ -45,6 +45,9 @@ export {
   type CreateRoomDto,
   type SendMessageDto,
   type EditMessageDto,
+  type TypingUser,
+  type TypingEvent,
+  type MessageReadEvent,
   ChatType,
 } from './chat';
 

@@ -238,7 +238,15 @@
     "unknownUser": "Bilinmiyor",
     "deleteMessage": "Mesajı sil",
     "yesterday": "Dün",
-    "today": "Bugün"
+    "today": "Bugün",
+    "blockUser": "KULLANICIYI ENGELLE",
+    "blockedMessage": "Engellenen kullanıcıdan mesaj",
+    "userIsTyping": "{name} yazıyor...",
+    "multipleTyping": "Birkaç kişi yazıyor...",
+    "seenBy": "Görüldü",
+    "delivered": "İletildi",
+    "blockedConversation": "Bu sohbet engellenmiş",
+    "cannotMessageBlocked": "Engellenen bir kullanıcıya mesaj gönderemezsiniz"
   },
   "admin": {
     "title": "YÖNETİCİ KONTROL PANELİ",
@@ -416,5 +424,27 @@
   "confirm": {
     "defaultTitle": "Onayla",
     "defaultCancel": "İPTAL"
+  },
+  "legal": {
+    "privacy": "GİZLİLİK POLİTİKASI",
+    "terms": "KULLANIM KOŞULLARI",
+    "privacyTitle": "GİZLİLİK POLİTİKASI",
+    "termsTitle": "KULLANIM KOŞULLARI",
+    "backToHome": "ANA SAYFAYA DÖN",
+    "lastUpdated": "Son güncelleme"
+  },
+  "search": {
+    "open": "ARA",
+    "placeholder": "Turnuva, oyuncu, sohbet ara...",
+    "tabTournaments": "TURNUVALAR",
+    "tabUsers": "OYUNCULAR",
+    "tabRooms": "SOHBETLER",
+    "noResults": "Sonuç bulunamadı",
+    "sortBy": "SIRALA",
+    "sortName": "Ad",
+    "sortDate": "Tarih",
+    "sortStatus": "Durum",
+    "from": "Başlangıç",
+    "to": "Bitiş"
   }
 }

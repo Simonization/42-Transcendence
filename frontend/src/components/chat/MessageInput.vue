@@ -7,9 +7,11 @@ defineProps<{
 
 const emit = defineEmits<{
   send: [content: string]
+  typing: []
 }>()
 
 const content = ref('')
+let typingTimeout: ReturnType<typeof setTimeout> | null = null
 
 const handleSubmit = () => {
   if (!content.value.trim()) return
@@ -23,6 +25,14 @@ const handleKeydown = (e: KeyboardEvent) => {
     handleSubmit()
   }
 }
+
+const handleInput = () => {
+  if (typingTimeout) return
+  emit('typing')
+  typingTimeout = setTimeout(() => {
+    typingTimeout = null
+  }, 300)
+}
 </script>
 
 <template>
@@ -35,6 +45,7 @@ const handleKeydown = (e: KeyboardEvent) => {
       :disabled="disabled"
       :aria-label="$t('chat.typeMessage')"
       @keydown="handleKeydown"
+      @input="handleInput"
       autocomplete="off"
     />
     <button

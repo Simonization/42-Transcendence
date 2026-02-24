@@ -238,7 +238,15 @@
     "unknownUser": "Inconnu",
     "deleteMessage": "Supprimer le message",
     "yesterday": "Hier",
-    "today": "Aujourd'hui"
+    "today": "Aujourd'hui",
+    "blockUser": "BLOQUER L'UTILISATEUR",
+    "blockedMessage": "Message d'un utilisateur bloqué",
+    "userIsTyping": "{name} est en train d'écrire...",
+    "multipleTyping": "Plusieurs personnes écrivent...",
+    "seenBy": "Vu",
+    "delivered": "Envoyé",
+    "blockedConversation": "Cette conversation est bloquée",
+    "cannotMessageBlocked": "Vous ne pouvez pas envoyer de messages à un utilisateur bloqué"
   },
   "admin": {
     "title": "PANNEAU D'ADMINISTRATION",
@@ -416,5 +424,27 @@
   "confirm": {
     "defaultTitle": "Confirmation",
     "defaultCancel": "ANNULER"
+  },
+  "legal": {
+    "privacy": "POLITIQUE DE CONFIDENTIALITÉ",
+    "terms": "CONDITIONS D'UTILISATION",
+    "privacyTitle": "POLITIQUE DE CONFIDENTIALITÉ",
+    "termsTitle": "CONDITIONS D'UTILISATION",
+    "backToHome": "RETOUR À L'ACCUEIL",
+    "lastUpdated": "Dernière mise à jour"
+  },
+  "search": {
+    "open": "RECHERCHER",
+    "placeholder": "Rechercher des tournois, joueurs, conversations...",
+    "tabTournaments": "TOURNOIS",
+    "tabUsers": "JOUEURS",
+    "tabRooms": "CONVERSATIONS",
+    "noResults": "Aucun résultat trouvé",
+    "sortBy": "TRIER PAR",
+    "sortName": "Nom",
+    "sortDate": "Date",
+    "sortStatus": "Statut",
+    "from": "Du",
+    "to": "Au"
   }
 }

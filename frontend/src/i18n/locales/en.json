@@ -238,7 +238,15 @@
     "unknownUser": "Unknown",
     "deleteMessage": "Delete message",
     "yesterday": "Yesterday",
-    "today": "Today"
+    "today": "Today",
+    "blockUser": "BLOCK USER",
+    "blockedMessage": "Message from blocked user",
+    "userIsTyping": "{name} is typing...",
+    "multipleTyping": "Several people are typing...",
+    "seenBy": "Seen",
+    "delivered": "Delivered",
+    "blockedConversation": "This conversation is blocked",
+    "cannotMessageBlocked": "You cannot send messages to a blocked user"
   },
   "admin": {
     "title": "ADMIN CONTROL PANEL",
@@ -416,5 +424,27 @@
   "confirm": {
     "defaultTitle": "Confirm",
     "defaultCancel": "CANCEL"
+  },
+  "legal": {
+    "privacy": "PRIVACY POLICY",
+    "terms": "TERMS OF SERVICE",
+    "privacyTitle": "PRIVACY POLICY",
+    "termsTitle": "TERMS OF SERVICE",
+    "backToHome": "BACK TO HOME",
+    "lastUpdated": "Last updated"
+  },
+  "search": {
+    "open": "SEARCH",
+    "placeholder": "Search tournaments, players, conversations...",
+    "tabTournaments": "TOURNAMENTS",
+    "tabUsers": "PLAYERS",
+    "tabRooms": "CONVERSATIONS",
+    "noResults": "No results found",
+    "sortBy": "SORT BY",
+    "sortName": "Name",
+    "sortDate": "Date",
+    "sortStatus": "Status",
+    "from": "From",
+    "to": "To"
   }
 }

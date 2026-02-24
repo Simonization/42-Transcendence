@@ -5,11 +5,13 @@ import { useChatStore } from '../../stores/chat'
 import ChatRoomList from '../../components/chat/ChatRoomList.vue'
 import ChatConversation from '../../components/chat/ChatConversation.vue'
 import MessageInput from '../../components/chat/MessageInput.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
+import { storeToRefs } from 'pinia'
 
-const { user } = useAuthStore()
+const authStore = useAuthStore()
+const { user } = authStore
 const chatStore = useChatStore()
 const {
-  rooms,
   activeRoomId,
   activeRoom,
   messages,
@@ -18,17 +20,27 @@ const {
   isSending,
   error,
   wsConnected,
+  visibleRooms,
+  isActiveRoomBlocked,
+  currentRoomTypingUsers,
+  blockedUserIds,
+} = storeToRefs(chatStore)
+
+const {
   fetchRooms,
   selectRoom,
   sendMessage,
   createRoom,
   deleteMessage,
-  connectSocket,
-  disconnectSocket,
+  setCurrentUser,
+  loadBlockedUsers,
+  blockUserInChat,
+  emitTyping,
 } = chatStore
 
 const newChatUserId = ref('')
 const showNewChat = ref(false)
+const showBlockConfirm = ref(false)
 
 const activeRoomTitle = computed(() => {
   if (!activeRoom.value) return 'Chat'
@@ -37,7 +49,18 @@ const activeRoomTitle = computed(() => {
     || 'Chat'
 })
 
+const dmPartnerId = computed(() => {
+  if (!activeRoom.value || activeRoom.value.type !== 0) return null
+  return activeRoom.value.participants.find(p => p.id !== user.value?.id)?.id ?? null
+})
+
+const blockedIdsArray = computed(() => [...blockedUserIds.value])
+
 onMounted(() => {
+  if (user.value?.id) {
+    setCurrentUser(user.value.id)
+    loadBlockedUsers(user.value.id)
+  }
   fetchRooms()
 })
 
@@ -55,6 +78,13 @@ const handleNewChat = async () => {
   await createRoom([id])
   newChatUserId.value = ''
   showNewChat.value = false
+}
+
+const handleBlockConfirm = async () => {
+  if (dmPartnerId.value) {
+    await blockUserInChat(dmPartnerId.value)
+  }
+  showBlockConfirm.value = false
 }
 </script>
 
@@ -90,7 +120,7 @@ const handleNewChat = async () => {
       <div v-if="isLoadingRooms" class="loading-text">{{ $t('common.loading') }}</div>
       <ChatRoomList
         v-else
-        :rooms="rooms"
+        :rooms="visibleRooms"
         :active-room-id="activeRoomId"
         :current-user-id="user?.id || 0"
         @select="selectRoom"
@@ -105,18 +135,36 @@ const handleNewChat = async () => {
             {{ activeRoomTitle }}
           </h3>
           <span class="badge badge-primary" v-if="activeRoom.type === 1">{{ $t('common.group') }}</span>
+          <button
+            v-if="dmPartnerId && !isActiveRoomBlocked"
+            class="btn btn-ghost btn-sm block-btn"
+            @click="showBlockConfirm = true"
+            :title="$t('chat.blockUser')"
+          >
+            &#128683;
+          </button>
+        </div>
+
+        <!-- Blocked state notice -->
+        <div v-if="isActiveRoomBlocked" class="blocked-notice">
+          <p>{{ $t('chat.blockedConversation') }}</p>
         </div>
 
         <ChatConversation
+          v-if="!isActiveRoomBlocked"
           :messages="messages"
           :current-user-id="user?.id || 0"
           :is-loading="isLoadingMessages"
+          :typing-users="currentRoomTypingUsers"
+          :blocked-user-ids="blockedIdsArray"
           @delete-message="deleteMessage"
         />
 
         <MessageInput
+          v-if="!isActiveRoomBlocked"
           :disabled="isSending"
           @send="handleSend"
+          @typing="emitTyping"
         />
       </template>
 
@@ -129,6 +177,16 @@ const handleNewChat = async () => {
     <Transition name="msg">
       <p v-if="error" class="chat-error alert alert-error">{{ error }}</p>
     </Transition>
+
+    <!-- Block confirmation dialog -->
+    <ConfirmDialog
+      v-if="showBlockConfirm"
+      :title="$t('chat.blockUser')"
+      :message="$t('chat.cannotMessageBlocked')"
+      :danger="true"
+      @confirm="handleBlockConfirm"
+      @cancel="showBlockConfirm = false"
+    />
   </div>
 </template>
 
@@ -230,6 +288,22 @@ const handleNewChat = async () => {
   margin: 0;
   letter-spacing: var(--tracking-wider);
   text-transform: uppercase;
+}
+
+.block-btn {
+  margin-left: auto;
+  font-size: var(--text-sm);
+}
+
+.blocked-notice {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  font-style: italic;
 }
 
 .chat-empty {
