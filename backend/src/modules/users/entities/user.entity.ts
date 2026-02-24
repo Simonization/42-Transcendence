@@ -89,4 +89,5 @@ export class User {
 
     @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
     refreshTokens: RefreshToken[];
+    teams: any;
 }

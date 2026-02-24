@@ -18,6 +18,7 @@ import { MailModule } from './modules/mail/mail.module';
 import { FriendsModule } from './modules/friends/friends.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { MatchesModule } from './modules/matches/matches.module';
+import { GamesModule } from './modules/games/games.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
@@ -42,6 +43,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     ChatModule,
     MatchesModule,
     NotificationsModule,
+    GamesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
