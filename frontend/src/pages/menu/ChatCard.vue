@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useChatStore } from '../../stores/chat'
 import ChatRoomList from '../../components/chat/ChatRoomList.vue'
@@ -64,9 +64,6 @@ onMounted(() => {
   fetchRooms()
 })
 
-onUnmounted(() => {
-
-})
 
 const handleSend = (content: string) => {
   sendMessage(content)
@@ -86,6 +83,21 @@ const handleBlockConfirm = async () => {
   }
   showBlockConfirm.value = false
 }
+
+// Auto-dismiss transient errors after 5 seconds
+let errorTimer: ReturnType<typeof setTimeout> | null = null
+watch(error, (val) => {
+  if (errorTimer) clearTimeout(errorTimer)
+  if (val) {
+    errorTimer = setTimeout(() => {
+      error.value = ''
+    }, 5000)
+  }
+})
+
+onUnmounted(() => {
+  if (errorTimer) clearTimeout(errorTimer)
+})
 </script>
 
 <template>
@@ -118,6 +130,14 @@ const handleBlockConfirm = async () => {
       </div>
 
       <div v-if="isLoadingRooms" class="loading-text">{{ $t('common.loading') }}</div>
+      <div v-else-if="error && visibleRooms.length === 0" class="sidebar-error">
+        <p class="sidebar-error-text">{{ $t('chat.loadError') }}</p>
+        <button class="btn btn-ghost btn-sm" @click="fetchRooms()">{{ $t('common.retry') }}</button>
+      </div>
+      <div v-else-if="visibleRooms.length === 0" class="sidebar-empty">
+        <p class="sidebar-empty-text">{{ $t('chat.noConversations') }}</p>
+        <p class="sidebar-empty-hint">{{ $t('chat.noConversationsHint') }}</p>
+      </div>
       <ChatRoomList
         v-else
         :rooms="visibleRooms"
@@ -318,6 +338,34 @@ const handleBlockConfirm = async () => {
   text-align: center;
   color: var(--text-tertiary);
   font-size: var(--text-sm);
+}
+
+.sidebar-error,
+.sidebar-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.sidebar-error-text {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-error);
+}
+
+.sidebar-empty-text {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.sidebar-empty-hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 .chat-error {

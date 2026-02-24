@@ -11,8 +11,9 @@ import DashboardTab from '../../components/admin/DashboardTab.vue'
 import CreateTournamentTab from '../../components/admin/CreateTournamentTab.vue'
 import MyTournamentsTab from '../../components/admin/MyTournamentsTab.vue'
 import ParticipantsTab from '../../components/admin/ParticipantsTab.vue'
+import ManageUsersTab from '../../components/admin/ManageUsersTab.vue'
 
-type AdminTab = 'dashboard' | 'create' | 'tournaments' | 'participants'
+type AdminTab = 'dashboard' | 'create' | 'tournaments' | 'participants' | 'users'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -25,6 +26,7 @@ const tabs: Array<{ id: AdminTab; label: string; icon: string }> = [
   { id: 'create', label: t('admin.create'), icon: '➕' },
   { id: 'tournaments', label: t('admin.tournaments'), icon: '🏆' },
   { id: 'participants', label: t('admin.participantsTab'), icon: '👥' },
+  { id: 'users', label: t('admin.usersTab'), icon: '🛡' },
 ]
 </script>
 
@@ -55,10 +57,11 @@ const tabs: Array<{ id: AdminTab; label: string; icon: string }> = [
 
     <!-- Tab Content -->
     <main class="admin-content">
-      <DashboardTab v-show="activeTab === 'dashboard'" class="tab-pane glass-panel" />
+      <DashboardTab v-show="activeTab === 'dashboard'" class="tab-pane glass-panel" @navigate-tab="(tab: string) => activeTab = tab as AdminTab" />
       <CreateTournamentTab v-show="activeTab === 'create'" class="tab-pane glass-panel" />
       <MyTournamentsTab v-show="activeTab === 'tournaments'" class="tab-pane glass-panel" />
       <ParticipantsTab v-show="activeTab === 'participants'" class="tab-pane glass-panel" />
+      <ManageUsersTab v-show="activeTab === 'users'" class="tab-pane glass-panel" />
     </main>
   </div>
   <div v-else class="access-denied glass-panel">

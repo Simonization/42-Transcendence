@@ -2,6 +2,10 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+const emit = defineEmits<{
+  (e: 'navigate-tab', tab: string): void
+}>()
+
 const { t } = useI18n()
 
 const stats = computed(() => ({
@@ -68,10 +72,9 @@ const recentActivity = [
           <span class="action-label">{{ t('admin.createTournament') }}</span>
           <span class="v2-badge-small">V2.0</span>
         </button>
-        <button class="action-btn action-btn-disabled">
+        <button class="action-btn" @click="emit('navigate-tab', 'users')">
           <span class="action-icon">👥</span>
           <span class="action-label">{{ t('admin.manageUsers') }}</span>
-          <span class="v2-badge-small">V2.0</span>
         </button>
         <button class="action-btn action-btn-disabled">
           <span class="action-icon">📈</span>

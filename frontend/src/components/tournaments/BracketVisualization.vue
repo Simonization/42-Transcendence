@@ -8,7 +8,7 @@ import { ref, computed } from 'vue'
 import type { TournamentBracket, BracketMatch } from '../../data/mockBracket'
 import { getWinnerOfMatch } from '../../data/mockBracket'
 
-defineProps<{
+const props = defineProps<{
   bracket: TournamentBracket
   tournamentName?: string
 }>()
@@ -22,8 +22,8 @@ const bracketRef = ref<HTMLElement | null>(null)
 
 const champion = computed(() => {
   // Find the winner of the final match (last round, first match)
-  if (bracket.rounds.length > 0) {
-    const finalRound = bracket.rounds[bracket.rounds.length - 1]
+  if (props.bracket.rounds.length > 0) {
+    const finalRound = props.bracket.rounds[props.bracket.rounds.length - 1]
     if (finalRound.matches.length > 0) {
       const finalMatch = finalRound.matches[0]
       return getWinnerOfMatch(finalMatch)

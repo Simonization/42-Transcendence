@@ -19,7 +19,7 @@ const bracket = getMockBracket('1')
     </div>
 
     <div class="card-body">
-      <BracketVisualization :bracket="bracket" tournament-name="Spring Championship 2026" />
+      <BracketVisualization v-if="bracket" :bracket="bracket" tournament-name="Spring Championship 2026" />
     </div>
   </div>
 </template>

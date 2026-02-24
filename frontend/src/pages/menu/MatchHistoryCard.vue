@@ -17,6 +17,15 @@ const authStore = useAuthStore()
 const { user } = authStore
 const { matches, isLoading, error, stats, uniqueGames, fetchMyHistory } = useMatches(user?.id ?? 0)
 
+const friendlyError = computed(() => {
+  if (!error.value) return ''
+  const raw = error.value.toLowerCase()
+  if (raw.includes('500') || raw.includes('internal') || raw.includes('server')) {
+    return t('match.serverError')
+  }
+  return error.value
+})
+
 const currentPage = ref(1)
 const sortBy = ref<SortBy>('date')
 const filterGame = ref<GameType | 'all'>('all')
@@ -115,7 +124,7 @@ const formatDate = (date: string) => {
 
     <!-- Error State -->
     <div v-else-if="error" class="error-state glass-panel">
-      <p class="error-text">{{ error }}</p>
+      <p class="error-text">{{ friendlyError }}</p>
       <button class="retry-btn" @click="fetchMyHistory()">{{ $t('common.retry') }}</button>
     </div>
 

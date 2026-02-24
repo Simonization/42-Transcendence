@@ -147,6 +147,7 @@
     "gameCol": "JEU",
     "resultCol": "RÉSULTAT",
     "noMatches": "Aucun match trouvé",
+    "serverError": "Une erreur est survenue lors du chargement de votre historique. Veuillez réessayer.",
     "tableCaption": "Tableau de l'historique des matchs affichant la date, l'adversaire, le jeu et le résultat"
   },
   "tournament": {
@@ -246,7 +247,9 @@
     "seenBy": "Vu",
     "delivered": "Envoyé",
     "blockedConversation": "Cette conversation est bloquée",
-    "cannotMessageBlocked": "Vous ne pouvez pas envoyer de messages à un utilisateur bloqué"
+    "cannotMessageBlocked": "Vous ne pouvez pas envoyer de messages à un utilisateur bloqué",
+    "loadError": "Impossible de charger les conversations",
+    "noConversationsHint": "Commencez une nouvelle conversation avec +"
   },
   "admin": {
     "title": "PANNEAU D'ADMINISTRATION",
@@ -295,6 +298,21 @@
     "comingSoonDesc": "Assistant avancé de création de tournoi",
     "comingSoonWizardDesc": "L'assistant complet de création de tournoi sera disponible en V2.0",
     "comingSoonParticipantsDesc": "Les fonctionnalités avancées de gestion des participants arrivent en V2.0",
+    "usersTab": "UTILISATEURS",
+    "manageUsersTitle": "GESTION DES UTILISATEURS",
+    "searchUsers": "Rechercher des utilisateurs...",
+    "noUsersFound": "Aucun utilisateur trouvé",
+    "userActive": "Actif",
+    "userBanned": "Banni",
+    "confirmBan": "Êtes-vous sûr de vouloir bannir cet utilisateur ?",
+    "confirmUnban": "Êtes-vous sûr de vouloir débannir cet utilisateur ?",
+    "confirmRemoveAvatar": "Êtes-vous sûr de vouloir supprimer l'avatar de cet utilisateur ?",
+    "unbanAction": "Débannir",
+    "removeAvatar": "Supprimer l'avatar",
+    "userUpdated": "Utilisateur mis à jour",
+    "userBanned": "Utilisateur banni",
+    "userUnbanned": "Utilisateur débanni",
+    "avatarRemoved": "Avatar supprimé",
     "accessDenied": "ACCÈS REFUSÉ",
     "accessDeniedMsg": "Vous n'avez pas la permission de voir cette page."
   },

@@ -201,6 +201,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
         class="tab-pane"
       >
         <BracketVisualization
+          v-if="bracketData"
           :bracket="bracketData"
           :tournament-name="tournament?.name"
         />

@@ -147,6 +147,7 @@
     "gameCol": "GAME",
     "resultCol": "RESULT",
     "noMatches": "No matches found",
+    "serverError": "Something went wrong loading your match history. Please try again.",
     "tableCaption": "Match history results table showing date, opponent, game, and result"
   },
   "tournament": {
@@ -246,7 +247,9 @@
     "seenBy": "Seen",
     "delivered": "Delivered",
     "blockedConversation": "This conversation is blocked",
-    "cannotMessageBlocked": "You cannot send messages to a blocked user"
+    "cannotMessageBlocked": "You cannot send messages to a blocked user",
+    "loadError": "Failed to load conversations",
+    "noConversationsHint": "Start a new conversation with +"
   },
   "admin": {
     "title": "ADMIN CONTROL PANEL",
@@ -295,6 +298,21 @@
     "comingSoonDesc": "Advanced tournament creation wizard",
     "comingSoonWizardDesc": "Full tournament creation wizard will be available in V2.0",
     "comingSoonParticipantsDesc": "Advanced participant management features coming in V2.0",
+    "usersTab": "USERS",
+    "manageUsersTitle": "MANAGE USERS",
+    "searchUsers": "Search users...",
+    "noUsersFound": "No users found",
+    "userActive": "Active",
+    "userBanned": "Banned",
+    "confirmBan": "Are you sure you want to ban this user?",
+    "confirmUnban": "Are you sure you want to unban this user?",
+    "confirmRemoveAvatar": "Are you sure you want to remove this user's avatar?",
+    "unbanAction": "Unban",
+    "removeAvatar": "Remove Avatar",
+    "userUpdated": "User updated",
+    "userBanned": "User banned",
+    "userUnbanned": "User unbanned",
+    "avatarRemoved": "Avatar removed",
     "accessDenied": "ACCESS DENIED",
     "accessDeniedMsg": "You do not have permission to view this page."
   },

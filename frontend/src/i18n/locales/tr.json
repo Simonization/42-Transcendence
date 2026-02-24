@@ -147,6 +147,7 @@
     "gameCol": "OYUN",
     "resultCol": "SONUÇ",
     "noMatches": "Maç bulunamadı",
+    "serverError": "Maç geçmişiniz yüklenirken bir hata oluştu. Lütfen tekrar deneyin.",
     "tableCaption": "Tarih, rakip, oyun ve sonuç gösteren maç geçmişi sonuç tablosu"
   },
   "tournament": {
@@ -246,7 +247,9 @@
     "seenBy": "Görüldü",
     "delivered": "İletildi",
     "blockedConversation": "Bu sohbet engellenmiş",
-    "cannotMessageBlocked": "Engellenen bir kullanıcıya mesaj gönderemezsiniz"
+    "cannotMessageBlocked": "Engellenen bir kullanıcıya mesaj gönderemezsiniz",
+    "loadError": "Sohbetler yüklenemedi",
+    "noConversationsHint": "Yeni bir sohbet başlatmak için + kullanın"
   },
   "admin": {
     "title": "YÖNETİCİ KONTROL PANELİ",
@@ -295,6 +298,21 @@
     "comingSoonDesc": "Gelişmiş turnuva oluşturma sihirbazı",
     "comingSoonWizardDesc": "Tam turnuva oluşturma sihirbazı V2.0'da kullanılabilir olacak",
     "comingSoonParticipantsDesc": "Gelişmiş katılımcı yönetimi özellikleri V2.0'da geliyor",
+    "usersTab": "KULLANICILAR",
+    "manageUsersTitle": "KULLANICI YÖNETİMİ",
+    "searchUsers": "Kullanıcı ara...",
+    "noUsersFound": "Kullanıcı bulunamadı",
+    "userActive": "Aktif",
+    "userBanned": "Yasaklı",
+    "confirmBan": "Bu kullanıcıyı yasaklamak istediğinizden emin misiniz?",
+    "confirmUnban": "Bu kullanıcının yasağını kaldırmak istediğinizden emin misiniz?",
+    "confirmRemoveAvatar": "Bu kullanıcının avatarını kaldırmak istediğinizden emin misiniz?",
+    "unbanAction": "Yasağı Kaldır",
+    "removeAvatar": "Avatarı Kaldır",
+    "userUpdated": "Kullanıcı güncellendi",
+    "userBanned": "Kullanıcı yasaklandı",
+    "userUnbanned": "Kullanıcının yasağı kaldırıldı",
+    "avatarRemoved": "Avatar kaldırıldı",
     "accessDenied": "ERİŞİM REDDEDİLDİ",
     "accessDeniedMsg": "Bu sayfayı görüntüleme izniniz yok."
   },
