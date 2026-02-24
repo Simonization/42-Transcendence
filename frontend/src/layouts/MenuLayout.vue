@@ -44,6 +44,7 @@ const navItems = computed(() => {
     { to: '/menu/tournaments', label: t('nav.tourn'), icon: '🏆' },
     { to: '/menu/history', label: t('nav.history'), icon: '📊' },
     { to: '/menu/brackets', label: t('nav.brackets'), icon: '🏅' },
+    { to: '/menu/organizations', label: t('nav.orgs'), icon: '🏢' },
   ]
 
   if (authStore.isAdmin) {

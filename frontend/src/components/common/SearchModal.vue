@@ -524,4 +524,21 @@ onUnmounted(() => {
   color: var(--text-tertiary);
   font-family: var(--font-mono);
 }
+
+@media (max-width: 480px) {
+  .search-modal {
+    max-width: 100%;
+    max-height: 85vh;
+    margin: var(--space-2);
+  }
+
+  .filter-date {
+    max-width: 100%;
+  }
+
+  .filter-checkboxes {
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+}
 </style>

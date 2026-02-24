@@ -62,6 +62,7 @@
     "tourn": "TOURNOI",
     "history": "HISTORIQUE",
     "brackets": "TABLEAUX",
+    "orgs": "ORGAS",
     "dev": "DEV",
     "admin": "ADMIN"
   },
@@ -237,6 +238,7 @@
     "noConversations": "Aucune conversation",
     "loadingMessages": "Chargement des messages...",
     "unknownUser": "Inconnu",
+    "edited": "modifié",
     "deleteMessage": "Supprimer le message",
     "yesterday": "Hier",
     "today": "Aujourd'hui",
@@ -468,5 +470,28 @@
     "sortStatus": "Statut",
     "from": "Du",
     "to": "Au"
+  },
+  "org": {
+    "title": "ORGANISATIONS",
+    "subtitle": "Créer et gérer des équipes",
+    "createNew": "NOUVELLE ORGA",
+    "backToList": "RETOUR",
+    "namePlaceholder": "Nom de l'organisation",
+    "descriptionPlaceholder": "Description (optionnel)",
+    "searchPlaceholder": "Rechercher des organisations...",
+    "noOrgs": "Aucune organisation",
+    "members": "membres",
+    "owner": "Propriétaire",
+    "role": "Rôle",
+    "nonMember": "Non-membre",
+    "editOrg": "MODIFIER L'ORGANISATION",
+    "deleteOrg": "SUPPRIMER L'ORGANISATION",
+    "confirmDelete": "Voulez-vous vraiment supprimer \"{name}\" ? Cette action est irréversible.",
+    "addMember": "AJOUTER UN MEMBRE",
+    "userIdPlaceholder": "ID utilisateur",
+    "membersList": "MEMBRES",
+    "noMembers": "Aucun membre",
+    "removeMember": "RETIRER LE MEMBRE",
+    "confirmRemoveMember": "Retirer {name} de cette organisation ?"
   }
 }

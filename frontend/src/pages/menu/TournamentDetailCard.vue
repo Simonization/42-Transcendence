@@ -56,7 +56,6 @@ const handleRegister = () => {
 
 const handleRegistrationSubmit = (data: any) => {
   // Simulate registration success
-  console.log('Registration submitted:', data)
   registrationSuccess.value = true
   isRegistered.value = true
   registrationModalOpen.value = false

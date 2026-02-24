@@ -62,6 +62,7 @@
     "tourn": "TOURN",
     "history": "HISTORY",
     "brackets": "BRACKETS",
+    "orgs": "ORGS",
     "dev": "DEV",
     "admin": "ADMIN"
   },
@@ -237,6 +238,7 @@
     "noConversations": "No conversations",
     "loadingMessages": "Loading messages...",
     "unknownUser": "Unknown",
+    "edited": "edited",
     "deleteMessage": "Delete message",
     "yesterday": "Yesterday",
     "today": "Today",
@@ -468,5 +470,28 @@
     "sortStatus": "Status",
     "from": "From",
     "to": "To"
+  },
+  "org": {
+    "title": "ORGANIZATIONS",
+    "subtitle": "Create and manage teams",
+    "createNew": "NEW ORG",
+    "backToList": "BACK",
+    "namePlaceholder": "Organization name",
+    "descriptionPlaceholder": "Description (optional)",
+    "searchPlaceholder": "Search organizations...",
+    "noOrgs": "No organizations yet",
+    "members": "members",
+    "owner": "Owner",
+    "role": "Role",
+    "nonMember": "Non-member",
+    "editOrg": "EDIT ORGANIZATION",
+    "deleteOrg": "DELETE ORGANIZATION",
+    "confirmDelete": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+    "addMember": "ADD MEMBER",
+    "userIdPlaceholder": "User ID",
+    "membersList": "MEMBERS",
+    "noMembers": "No members yet",
+    "removeMember": "REMOVE MEMBER",
+    "confirmRemoveMember": "Remove {name} from this organization?"
   }
 }

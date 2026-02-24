@@ -77,3 +77,13 @@ export {
   type RegisterResponse,
   TOKEN_KEYS,
 } from './auth';
+
+// Organization types
+export {
+  type Organization,
+  type OrgMember,
+  type CreateOrgDto,
+  type UpdateOrgDto,
+  type AddOrgMemberDto,
+  OrgRole,
+} from './organization';

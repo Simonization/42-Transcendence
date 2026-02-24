@@ -39,7 +39,7 @@ const time = computed(() => {
       <p v-else class="bubble-content">{{ message.content }}</p>
       <div class="bubble-meta">
         <span class="bubble-time">{{ time }}</span>
-        <span v-if="isEdited" class="bubble-edited">edited</span>
+        <span v-if="isEdited" class="bubble-edited">{{ $t('chat.edited') }}</span>
         <span v-if="isOwn && hasReadReceipts" class="bubble-receipt bubble-receipt-read" :title="$t('chat.seenBy')">&#10003;&#10003;</span>
         <span v-else-if="isOwn && message.deliveredAt" class="bubble-receipt bubble-receipt-delivered" :title="$t('chat.delivered')">&#10003;</span>
       </div>
@@ -47,7 +47,7 @@ const time = computed(() => {
         v-if="isOwn && !isDeleted"
         class="bubble-delete"
         @click="emit('delete', message.id)"
-        title="Delete message"
+        :title="$t('chat.deleteMessage')"
       >
         &times;
       </button>

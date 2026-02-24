@@ -443,4 +443,27 @@ onUnmounted(() => {
 .msg-leave-active { transition: all var(--duration-fast) var(--ease-in); }
 .msg-enter-from,
 .msg-leave-to { opacity: 0; transform: translateY(8px); }
+
+@media (max-width: 768px) {
+  .chat-layout {
+    flex-direction: column;
+    max-height: none;
+  }
+
+  .chat-sidebar {
+    width: 100%;
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .chat-main {
+    min-height: 300px;
+  }
+
+  .chat-main-header {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+}
 </style>

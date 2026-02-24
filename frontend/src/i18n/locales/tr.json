@@ -62,6 +62,7 @@
     "tourn": "TURNUVA",
     "history": "GEÇMİŞ",
     "brackets": "EŞLEŞMELER",
+    "orgs": "ÖRGÜTLER",
     "dev": "GELİŞTİRİCİ",
     "admin": "YÖNETİCİ"
   },
@@ -237,6 +238,7 @@
     "noConversations": "Sohbet yok",
     "loadingMessages": "Mesajlar yükleniyor...",
     "unknownUser": "Bilinmiyor",
+    "edited": "düzenlendi",
     "deleteMessage": "Mesajı sil",
     "yesterday": "Dün",
     "today": "Bugün",
@@ -468,5 +470,28 @@
     "sortStatus": "Durum",
     "from": "Başlangıç",
     "to": "Bitiş"
+  },
+  "org": {
+    "title": "ÖRGÜTLER",
+    "subtitle": "Takım oluştur ve yönet",
+    "createNew": "YENİ ÖRGÜT",
+    "backToList": "GERİ",
+    "namePlaceholder": "Örgüt adı",
+    "descriptionPlaceholder": "Açıklama (isteğe bağlı)",
+    "searchPlaceholder": "Örgüt ara...",
+    "noOrgs": "Henüz örgüt yok",
+    "members": "üye",
+    "owner": "Sahip",
+    "role": "Rol",
+    "nonMember": "Üye değil",
+    "editOrg": "ÖRGÜTÜ DÜZENLE",
+    "deleteOrg": "ÖRGÜTÜ SİL",
+    "confirmDelete": "\"{name}\" silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+    "addMember": "ÜYE EKLE",
+    "userIdPlaceholder": "Kullanıcı ID",
+    "membersList": "ÜYELER",
+    "noMembers": "Henüz üye yok",
+    "removeMember": "ÜYEYİ ÇIKAR",
+    "confirmRemoveMember": "{name} bu örgütten çıkarılsın mı?"
   }
 }

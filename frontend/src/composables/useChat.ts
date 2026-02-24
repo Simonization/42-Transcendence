@@ -126,12 +126,10 @@ export function useChat() {
 		})
 
 		socket.value.on('connect', () => {
-			console.log('Socket.IO connected, ID:', socket.value?.id)
 			wsConnected.value = true
 		})
 
 		socket.value.on('disconnect', () => {
-			console.log('Socket.IO disconnected.')
 			wsConnected.value = false
 		})
 
@@ -146,13 +144,10 @@ export function useChat() {
 					const roomIdx = rooms.value.findIndex(r => r.id === msg.chatId)
 					if (roomIdx !== -1) rooms.value[roomIdx] = { ...rooms.value[roomIdx], isUnread: true }
 				}
-			} else {
-				console.log('System Message:', msg)
 			}
 		})
 
-		socket.value.on('connect_error', (err: Error) => {
-			console.error('Socket connection error:', err.message)
+		socket.value.on('connect_error', () => {
 			wsConnected.value = false
 		})
 

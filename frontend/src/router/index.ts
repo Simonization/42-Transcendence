@@ -82,6 +82,11 @@ const router = createRouter({
           component: () => import('../pages/menu/TournamentDetailCard.vue'),
         },
         {
+          path: 'organizations',
+          name: 'organizations',
+          component: () => import('../pages/menu/OrganizationsCard.vue'),
+        },
+        {
           path: 'notification-tester',
           name: 'notification-tester',
           component: () => import('../pages/menu/NotificationTester.vue'),

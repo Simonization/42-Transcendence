@@ -22,7 +22,6 @@ watch(() => authStore.isLoading, (loading) => {
 })
 
 onMounted(() => {
-  console.log("App mounted, connecting socket...")
   connectSocket()
 })
 
