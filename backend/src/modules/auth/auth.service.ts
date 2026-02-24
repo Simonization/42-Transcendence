@@ -8,9 +8,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity'
 import { RefreshToken } from '../users/entities/refresh-token.entity';
+import { AdminInvite } from './entities/admin-invite.entity';
 import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
+import { ADMIN_ROLE } from '../users/constants/user-roles';
+
+const DEFAULT_ADMIN_INVITE_EXPIRATION_HOURS = 24;
 
 @Injectable()
 export class AuthService {
@@ -22,6 +26,8 @@ export class AuthService {
         private readonly userRepository: Repository<User>,
         @InjectRepository(RefreshToken)
         private readonly refreshTokenRepository: Repository<RefreshToken>,
+        @InjectRepository(AdminInvite)
+        private readonly adminInviteRepository: Repository<AdminInvite>,
     ) {}
     
     // create user and send verification email
@@ -172,6 +178,99 @@ export class AuthService {
         } catch {
             throw new UnauthorizedException('Invalid refresh token');
         }
+    }
+
+    // ====================================
+    // ADMIN INVITES
+    // ====================================
+
+    async createAdminInvite(createdByUserId: number, expiresInHours?: number) {
+        const token = this.generateAdminToken();
+        const expiresAt = this.getAdminInviteExpiration(expiresInHours);
+
+        await this.adminInviteRepository.save({
+            tokenHash: this.hashToken(token),
+            createdByUserId,
+            expiresAt,
+        });
+
+        return {
+            token,
+            expiresAt,
+        };
+    }
+
+    async createAdminInviteWithBootstrap(secret: string, expiresInHours?: number) {
+        const bootstrapSecret = process.env.ADMIN_BOOTSTRAP_SECRET;
+        if (!bootstrapSecret) {
+            throw new BadRequestException('Admin bootstrap secret is not configured');
+        }
+
+        if (secret !== bootstrapSecret) {
+            throw new BadRequestException('Invalid bootstrap secret');
+        }
+
+        const adminsCount = await this.userRepository.count({ where: { role: ADMIN_ROLE } });
+        if (adminsCount > 0) {
+            throw new BadRequestException('Admin bootstrap is already completed');
+        }
+
+        const token = this.generateAdminToken();
+        const expiresAt = this.getAdminInviteExpiration(expiresInHours);
+
+        await this.adminInviteRepository.save({
+            tokenHash: this.hashToken(token),
+            expiresAt,
+        });
+
+        return {
+            token,
+            expiresAt,
+        };
+    }
+
+    async redeemAdminInvite(userId: number, token: string) {
+        const tokenHash = this.hashToken(token);
+
+        return this.adminInviteRepository.manager.transaction(async (manager) => {
+            const user = await manager.getRepository(User).findOne({ where: { id: userId } });
+            if (!user) {
+                throw new BadRequestException('User not found');
+            }
+
+            const invite = await manager.getRepository(AdminInvite).findOne({
+                where: { tokenHash },
+            });
+
+            if (!invite) {
+                throw new BadRequestException('Invalid admin invite token');
+            }
+
+            if (invite.usedAt) {
+                throw new BadRequestException('Admin invite token already used');
+            }
+
+            if (invite.expiresAt && new Date() > invite.expiresAt) {
+                throw new BadRequestException('Admin invite token expired');
+            }
+
+            const alreadyAdmin = user.role === ADMIN_ROLE;
+
+            invite.usedAt = new Date();
+            invite.usedByUserId = userId;
+            await manager.getRepository(AdminInvite).save(invite);
+
+            if (!alreadyAdmin) {
+                user.role = ADMIN_ROLE;
+                await manager.getRepository(User).save(user);
+            }
+
+            return {
+                message: alreadyAdmin
+                    ? 'User is already admin. Invite token consumed.'
+                    : 'User promoted to admin successfully.',
+            };
+        });
     }
 
     // ====================================
@@ -347,5 +446,20 @@ export class AuthService {
             },
             ...tokens
         };
+    }
+
+    private generateAdminToken(): string {
+        return crypto.randomBytes(32).toString('base64url');
+    }
+
+    private hashToken(token: string): string {
+        return crypto.createHash('sha256').update(token).digest('hex');
+    }
+
+    private getAdminInviteExpiration(expiresInHours?: number): Date {
+        const hours = expiresInHours ?? DEFAULT_ADMIN_INVITE_EXPIRATION_HOURS;
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + hours);
+        return expiresAt;
     }
 }

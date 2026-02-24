@@ -92,6 +92,11 @@ const router = createRouter({
           meta: { requiredRole: UserRole.ADMIN },
           component: () => import('../pages/menu/AdminCard.vue'),
         },
+        {
+          path: 'admin-invite-test',
+          name: 'admin-invite-test',
+          component: () => import('../pages/menu/AdminInviteTest.vue'),
+        },
       ],
     },
 

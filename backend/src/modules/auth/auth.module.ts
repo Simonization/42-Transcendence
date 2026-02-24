@@ -8,15 +8,17 @@ import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
 import { User } from '../users/entities/user.entity';
 import { RefreshToken } from '../users/entities/refresh-token.entity';
+import { AdminInvite } from './entities/admin-invite.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { AdminGuard } from './guards/admin.guard';
 
 @Module({
     imports: [
         UsersModule,
         MailModule,
         PassportModule.register({ defaultStrategy: 'jwt' }),
-        TypeOrmModule.forFeature([User, RefreshToken]),
+        TypeOrmModule.forFeature([User, RefreshToken, AdminInvite]),
         PassportModule,
         JwtModule.register({
             secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
@@ -24,7 +26,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, GoogleStrategy],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, AdminGuard],
     exports: [AuthService]
 })
 export class AuthModule {}
