@@ -249,7 +249,11 @@
     "blockedConversation": "This conversation is blocked",
     "cannotMessageBlocked": "You cannot send messages to a blocked user",
     "loadError": "Failed to load conversations",
-    "noConversationsHint": "Start a new conversation with +"
+    "noConversationsHint": "Start a new conversation with +",
+    "viewProfile": "View profile",
+    "sendMessage": "SEND MESSAGE",
+    "viewInFriends": "VIEW IN FRIENDS",
+    "inviteToGame": "Invite to game"
   },
   "admin": {
     "title": "ADMIN CONTROL PANEL",

@@ -249,7 +249,11 @@
     "blockedConversation": "Cette conversation est bloquée",
     "cannotMessageBlocked": "Vous ne pouvez pas envoyer de messages à un utilisateur bloqué",
     "loadError": "Impossible de charger les conversations",
-    "noConversationsHint": "Commencez une nouvelle conversation avec +"
+    "noConversationsHint": "Commencez une nouvelle conversation avec +",
+    "viewProfile": "Voir le profil",
+    "sendMessage": "ENVOYER MESSAGE",
+    "viewInFriends": "VOIR DANS AMIS",
+    "inviteToGame": "Inviter à jouer"
   },
   "admin": {
     "title": "PANNEAU D'ADMINISTRATION",

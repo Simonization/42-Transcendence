@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useChatStore } from '../../stores/chat'
 import ChatRoomList from '../../components/chat/ChatRoomList.vue'
 import ChatConversation from '../../components/chat/ChatConversation.vue'
 import MessageInput from '../../components/chat/MessageInput.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
+import UserProfilePopup from '../../components/chat/UserProfilePopup.vue'
 import { storeToRefs } from 'pinia'
 
 const authStore = useAuthStore()
@@ -38,9 +40,12 @@ const {
   emitTyping,
 } = chatStore
 
+const router = useRouter()
+
 const newChatUserId = ref('')
 const showNewChat = ref(false)
 const showBlockConfirm = ref(false)
+const profilePopupUser = ref<{ id: number; username: string } | null>(null)
 
 const activeRoomTitle = computed(() => {
   if (!activeRoom.value) return 'Chat'
@@ -82,6 +87,29 @@ const handleBlockConfirm = async () => {
     await blockUserInChat(dmPartnerId.value)
   }
   showBlockConfirm.value = false
+}
+
+const handleViewProfile = (userId: number) => {
+  // Find username from active room participants or message senders
+  const participant = activeRoom.value?.participants.find(p => p.id === userId)
+  const msgSender = messages.value.find(m => m.senderId === userId)?.sender
+  const username = participant?.username || msgSender?.username || `User #${userId}`
+  profilePopupUser.value = { id: userId, username }
+}
+
+const handleProfileSendMessage = () => {
+  // Already in the conversation — just close the popup
+  profilePopupUser.value = null
+}
+
+const handleProfileViewFriends = () => {
+  profilePopupUser.value = null
+  router.push('/menu/friend')
+}
+
+const handleGameInvite = () => {
+  const partnerName = activeRoom.value?.participants.find(p => p.id !== user.value?.id)?.username || 'opponent'
+  sendMessage(`🎮 Game invitation! I'm challenging ${partnerName} to a match. Ready to play?`)
 }
 
 // Auto-dismiss transient errors after 5 seconds
@@ -157,6 +185,22 @@ onUnmounted(() => {
           <span class="badge badge-primary" v-if="activeRoom.type === 1">{{ $t('common.group') }}</span>
           <button
             v-if="dmPartnerId && !isActiveRoomBlocked"
+            class="btn btn-ghost btn-sm invite-btn"
+            @click="handleGameInvite"
+            :title="$t('chat.inviteToGame')"
+          >
+            &#127918;
+          </button>
+          <button
+            v-if="dmPartnerId"
+            class="btn btn-ghost btn-sm profile-btn"
+            @click="handleViewProfile(dmPartnerId)"
+            :title="$t('chat.viewProfile')"
+          >
+            &#128100;
+          </button>
+          <button
+            v-if="dmPartnerId && !isActiveRoomBlocked"
             class="btn btn-ghost btn-sm block-btn"
             @click="showBlockConfirm = true"
             :title="$t('chat.blockUser')"
@@ -178,6 +222,7 @@ onUnmounted(() => {
           :typing-users="currentRoomTypingUsers"
           :blocked-user-ids="blockedIdsArray"
           @delete-message="deleteMessage"
+          @view-profile="handleViewProfile"
         />
 
         <MessageInput
@@ -197,6 +242,16 @@ onUnmounted(() => {
     <Transition name="msg">
       <p v-if="error" class="chat-error alert alert-error">{{ error }}</p>
     </Transition>
+
+    <!-- User profile popup -->
+    <UserProfilePopup
+      v-if="profilePopupUser"
+      :user-id="profilePopupUser.id"
+      :username="profilePopupUser.username"
+      @close="profilePopupUser = null"
+      @send-message="handleProfileSendMessage"
+      @view-friends="handleProfileViewFriends"
+    />
 
     <!-- Block confirmation dialog -->
     <ConfirmDialog
@@ -310,8 +365,16 @@ onUnmounted(() => {
   text-transform: uppercase;
 }
 
-.block-btn {
+.invite-btn {
   margin-left: auto;
+  font-size: var(--text-sm);
+}
+
+.profile-btn {
+  font-size: var(--text-sm);
+}
+
+.block-btn {
   font-size: var(--text-sm);
 }
 

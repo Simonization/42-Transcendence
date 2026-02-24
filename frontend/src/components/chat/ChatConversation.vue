@@ -13,6 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   deleteMessage: [messageId: number]
+  viewProfile: [userId: number]
 }>()
 
 const scrollContainer = ref<HTMLElement | null>(null)
@@ -44,6 +45,7 @@ watch(() => props.messages.length, async () => {
         :current-user-id="currentUserId"
         :is-blocked="blockedUserIds?.includes(msg.senderId)"
         @delete="emit('deleteMessage', $event)"
+        @view-profile="emit('viewProfile', $event)"
       />
     </template>
 

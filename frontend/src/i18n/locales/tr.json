@@ -249,7 +249,11 @@
     "blockedConversation": "Bu sohbet engellenmiş",
     "cannotMessageBlocked": "Engellenen bir kullanıcıya mesaj gönderemezsiniz",
     "loadError": "Sohbetler yüklenemedi",
-    "noConversationsHint": "Yeni bir sohbet başlatmak için + kullanın"
+    "noConversationsHint": "Yeni bir sohbet başlatmak için + kullanın",
+    "viewProfile": "Profili görüntüle",
+    "sendMessage": "MESAJ GÖNDER",
+    "viewInFriends": "ARKADAŞLARDA GÖRÜNTÜLE",
+    "inviteToGame": "Oyuna davet et"
   },
   "admin": {
     "title": "YÖNETİCİ KONTROL PANELİ",

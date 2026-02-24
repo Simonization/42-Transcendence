@@ -10,12 +10,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   delete: [messageId: number]
+  viewProfile: [userId: number]
 }>()
 
 const isOwn = computed(() => props.message.senderId === props.currentUserId)
 const isDeleted = computed(() => !!props.message.deletedAt)
 const isEdited = computed(() => !!props.message.editedAt && !isDeleted.value)
 const hasReadReceipts = computed(() => (props.message.readBy?.length ?? 0) > 0)
+const isGameInvite = computed(() => props.message.content.startsWith('\u{1F3AE} Game invitation!'))
 
 const time = computed(() => {
   const d = new Date(props.message.createdAt)
@@ -25,9 +27,11 @@ const time = computed(() => {
 
 <template>
   <div class="bubble-row" :class="{ own: isOwn }">
-    <div class="bubble" :class="{ own: isOwn, deleted: isDeleted, blocked: isBlocked }">
+    <div class="bubble" :class="{ own: isOwn, deleted: isDeleted, blocked: isBlocked, 'game-invite': isGameInvite }">
       <p v-if="!isOwn && message.sender" class="bubble-sender">
-        {{ message.sender.username }}
+        <button class="sender-link" @click.stop="emit('viewProfile', message.senderId)">
+          {{ message.sender.username }}
+        </button>
       </p>
       <p v-if="isBlocked" class="bubble-content bubble-content-blocked">
         <em>{{ $t('chat.blockedMessage') }}</em>
@@ -85,11 +89,32 @@ const time = computed(() => {
   opacity: 0.4;
 }
 
+.bubble.game-invite {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary-subtle);
+}
+
 .bubble-sender {
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   color: var(--accent-primary);
   margin: 0 0 var(--space-1) 0;
+}
+
+.sender-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.sender-link:hover {
+  opacity: 0.7;
+  text-decoration: underline;
 }
 
 .bubble-content {
