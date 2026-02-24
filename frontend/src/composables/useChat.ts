@@ -136,15 +136,24 @@ export function useChat() {
 		})
 
 		socket.value.on('message', (msg: any) => {
-
-			if (typeof msg === 'object' && msg.chatId) {
+			if (typeof msg === 'object' && msg !== null && msg.chatId) {
 				if (msg.chatId === activeRoomId.value) {
 					const exists = messages.value.some(m => m.id === msg.id)
 					if (!exists) messages.value.push(msg)
+					const roomIdx = rooms.value.findIndex(r => r.id === msg.chatId)
+					if (roomIdx !== -1) rooms.value[roomIdx] = { ...rooms.value[roomIdx], lastMessage: msg }
+				} else {
+					const roomIdx = rooms.value.findIndex(r => r.id === msg.chatId)
+					if (roomIdx !== -1) rooms.value[roomIdx] = { ...rooms.value[roomIdx], isUnread: true }
 				}
 			} else {
 				console.log('System Message:', msg)
 			}
+		})
+
+		socket.value.on('connect_error', (err: Error) => {
+			console.error('Socket connection error:', err.message)
+			wsConnected.value = false
 		})
 
 		socket.value.on('time-pulse', (serverTime: string) => {

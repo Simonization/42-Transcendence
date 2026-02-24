@@ -7,11 +7,22 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminCard from '../AdminCard.vue'
+import { useAuthStore } from '../../../stores/auth'
+import { UserRole } from '../../../types'
 
 describe('AdminCard', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+
+    const authStore = useAuthStore()
+    authStore.user = {
+      id: 1, username: 'test_admin', mail: 'admin@test.com',
+      twoFactorEnabled: false, role: UserRole.ADMIN,
+      profile: { userId: 1, displayName: 'Admin', avatarUrl: null, bio: null, createdAt: '' },
+      settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
+    } as any
+    authStore.isAuthenticated = true
   })
 
   afterEach(() => {
