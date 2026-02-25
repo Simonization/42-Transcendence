@@ -87,3 +87,19 @@ export {
   type AddOrgMemberDto,
   OrgRole,
 } from './organization';
+
+// Tournament types
+export {
+  type BackendTournament,
+  type BackendPhase,
+  type BackendTeam,
+  type BackendTeamMember,
+  type BackendGame,
+  type BackendMatch as BackendTournamentMatch,
+  type CreateTournamentDto,
+  type CreatePhaseDto,
+  type UpdateTournamentDto,
+  type RegisterTournamentDto,
+  TournamentStatus,
+  PhaseType,
+} from './tournament';

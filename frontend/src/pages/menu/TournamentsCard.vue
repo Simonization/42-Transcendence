@@ -4,10 +4,15 @@
  * Main tournament browsing with search, filters, and pagination
  */
 
-import { computed, ref } from 'vue'
-import { mockTournaments, type Tournament } from '../../data/mockTournaments'
+import { computed, onMounted, ref } from 'vue'
 import TournamentCard from '../../components/tournaments/TournamentCard.vue'
 import TournamentFilters from '../../components/tournaments/TournamentFilters.vue'
+import { useTournaments } from '../../composables/useTournaments'
+import { toDisplayTournament } from '../../utils/tournamentMapper'
+
+const { tournaments, isLoading, error, fetchTournaments } = useTournaments()
+
+onMounted(() => fetchTournaments())
 
 const searchQuery = ref('')
 const filtersOpen = ref(false)
@@ -19,9 +24,14 @@ const activeFilters = ref({
   statuses: [] as string[],
 })
 
+// Map backend tournaments to display format
+const displayTournaments = computed(() =>
+  tournaments.value.map(toDisplayTournament)
+)
+
 // Filter and search tournaments
 const filteredTournaments = computed(() => {
-  return mockTournaments.filter(tournament => {
+  return displayTournaments.value.filter(tournament => {
     // Search filter
     if (
       searchQuery.value &&
@@ -143,8 +153,23 @@ const getPageNumbers = () => {
 
       <!-- Main Content -->
       <main class="tournaments-main">
+        <!-- Loading State -->
+        <div v-if="isLoading" class="no-results">
+          <div class="no-results-icon">⏳</div>
+          <h2 class="no-results-title">{{ $t('common.loading') }}</h2>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="no-results">
+          <div class="no-results-icon">⚠️</div>
+          <h2 class="no-results-title">{{ error }}</h2>
+          <button class="tournaments-filter-toggle" @click="fetchTournaments()">
+            {{ $t('common.retry') }}
+          </button>
+        </div>
+
         <!-- No Results Message -->
-        <div v-if="filteredTournaments.length === 0" class="no-results">
+        <div v-else-if="filteredTournaments.length === 0" class="no-results">
           <div class="no-results-icon">🏆</div>
           <h2 class="no-results-title">{{ $t('tournament.noTournamentsFound') }}</h2>
           <p class="no-results-text">{{ $t('tournament.noTournamentsHint') }}</p>

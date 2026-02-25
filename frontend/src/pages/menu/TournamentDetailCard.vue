@@ -5,13 +5,14 @@
  */
 
 import { useRoute, useRouter } from 'vue-router'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { mockTournaments } from '../../data/mockTournaments'
 import { useNotificationsStore } from '../../stores/notifications'
 import TournamentRegistrationModal from '../../components/tournaments/TournamentRegistrationModal.vue'
 import BracketVisualization from '../../components/tournaments/BracketVisualization.vue'
-import { getMockBracket } from '../../data/mockBracket'
+import { useTournaments } from '../../composables/useTournaments'
+import { toDisplayTournament } from '../../utils/tournamentMapper'
+import type { TournamentBracket, BracketRound } from '../../data/mockBracket'
 
 type TabType = 'overview' | 'bracket' | 'participants' | 'chat'
 
@@ -19,54 +20,108 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const notificationsStore = useNotificationsStore()
-const { success: showSuccess } = notificationsStore
+const { success: showSuccess, error: showError } = notificationsStore
 const activeTab = ref<TabType>('overview')
 const registrationModalOpen = ref(false)
 
-const tournamentId = computed(() => route.params.id as string)
+const { currentTournament, isLoading, error, fetchTournament, register } = useTournaments()
 
-const tournament = computed(() =>
-  mockTournaments.find(t => t.id === tournamentId.value)
-)
+const tournamentId = computed(() => Number(route.params.id))
 
-const bracketData = computed(() => getMockBracket(tournamentId.value))
+onMounted(() => {
+  if (tournamentId.value) fetchTournament(tournamentId.value)
+})
 
-const mockParticipants = computed(() => [
-  { id: '1', username: '@player_alpha', avatar: '👤', status: 'confirmed' },
-  { id: '2', username: '@player_beta', avatar: '🎮', status: 'confirmed' },
-  { id: '3', username: '@player_gamma', avatar: '⚡︎', status: 'pending' },
-  { id: '4', username: '@player_delta', avatar: '🏆', status: 'confirmed' },
-  { id: '5', username: '@player_epsilon', avatar: '💫', status: 'confirmed' },
-])
+watch(tournamentId, (id) => {
+  if (id) fetchTournament(id)
+})
+
+// Map backend tournament to display format for template compatibility
+const tournament = computed(() => {
+  if (!currentTournament.value) return null
+  return toDisplayTournament(currentTournament.value)
+})
+
+// Build bracket from phases/matches if available
+const bracketData = computed((): TournamentBracket | null => {
+  const bt = currentTournament.value
+  if (!bt?.phases?.length) return null
+
+  const rounds: BracketRound[] = []
+  for (const phase of bt.phases) {
+    if (!phase.matches?.length) continue
+    // Group matches by round
+    const roundMap = new Map<number, typeof phase.matches>()
+    for (const m of phase.matches) {
+      const arr = roundMap.get(m.round) ?? []
+      arr.push(m)
+      roundMap.set(m.round, arr)
+    }
+    for (const [roundNum, matches] of roundMap) {
+      rounds.push({
+        label: `ROUND ${roundNum}`,
+        matches: matches.map((m, idx) => ({
+          id: String(m.id),
+          roundIndex: roundNum - 1,
+          matchIndex: idx,
+          player1: m.team1_id ? { id: String(m.team1_id), username: `Team ${m.team1_id}`, avatar: '👤', rating: 0, seed: 0 } : null,
+          player2: m.team2_id ? { id: String(m.team2_id), username: `Team ${m.team2_id}`, avatar: '👤', rating: 0, seed: 0 } : null,
+          score1: m.team1_score,
+          score2: m.team2_score,
+          status: m.status === 'completed' ? 'completed' as const : m.status === 'live' ? 'live' as const : 'upcoming' as const,
+          winnerId: m.winner_id ? String(m.winner_id) : null,
+          scheduledAt: m.scheduledAt ?? '',
+          completedAt: m.completedAt,
+        })),
+      })
+    }
+  }
+
+  return {
+    tournamentId: String(bt.id),
+    bracketType: bt.phases[0]?.type === 'DOUBLE_ELIMINATION' ? 'double-elimination' : bt.phases[0]?.type === 'ROUND_ROBIN' ? 'round-robin' : 'single-elimination',
+    rounds,
+    champion: null,
+  }
+})
+
+// Participants derived from teams
+const participants = computed(() => {
+  const bt = currentTournament.value
+  if (!bt?.teams?.length) return []
+  return bt.teams.flatMap(team =>
+    team.members.map(member => ({
+      id: String(member.id),
+      username: `@${member.username}`,
+      avatar: '👤',
+      status: team.status === 'confirmed' ? 'confirmed' : 'pending',
+    }))
+  )
+})
 
 const searchParticipant = ref('')
 
 const filteredParticipants = computed(() =>
-  mockParticipants.value.filter(p =>
+  participants.value.filter(p =>
     p.username.toLowerCase().includes(searchParticipant.value.toLowerCase())
   )
 )
 
 const isRegistered = ref(false)
-const registrationSuccess = ref(false)
 
 const handleRegister = () => {
   registrationModalOpen.value = true
 }
 
-const handleRegistrationSubmit = (data: any) => {
-  // Simulate registration success
-  registrationSuccess.value = true
-  isRegistered.value = true
-  registrationModalOpen.value = false
-
-  // Show success notification
-  showSuccess(
-    t('tournament.registrationSuccess'),
-    4000
-  )
-
-  // Could redirect or update UI here
+const handleRegistrationSubmit = async (_data: Record<string, unknown>) => {
+  const success = await register(tournamentId.value)
+  if (success) {
+    isRegistered.value = true
+    registrationModalOpen.value = false
+    showSuccess(t('tournament.registrationSuccess'), 4000)
+  } else {
+    showError(error.value || t('tournament.registrationFailed'), 4000)
+  }
 }
 
 const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() => [
@@ -252,7 +307,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 
           <div class="participants-summary">
             <span class="summary-label">{{ $t('tournament.totalRegistered') }}</span>
-            <span class="summary-value">{{ mockParticipants.length }} / {{ tournament.maxParticipants }}</span>
+            <span class="summary-value">{{ participants.length }} / {{ tournament.maxParticipants }}</span>
           </div>
         </div>
       </section>
@@ -276,9 +331,14 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
     </main>
   </div>
 
+  <div v-else-if="isLoading" class="tournament-not-found glass-panel">
+    <div class="not-found-icon">⏳</div>
+    <h2 class="not-found-title">{{ $t('common.loading') }}</h2>
+  </div>
+
   <div v-else class="tournament-not-found glass-panel">
     <div class="not-found-icon">❌</div>
-    <h2 class="not-found-title">{{ $t('tournament.notFound') }}</h2>
+    <h2 class="not-found-title">{{ error || $t('tournament.notFound') }}</h2>
   </div>
 
   <!-- Registration Modal -->

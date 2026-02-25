@@ -182,6 +182,8 @@
     "chatWebSocket": "Intégration WebSocket pour la messagerie en direct",
     "notFound": "TOURNOI INTROUVABLE",
     "registrationSuccess": "✓ Inscription réussie ! Vérifiez vos e-mails pour la confirmation.",
+    "registrationFailed": "L'inscription a échoué. Veuillez réessayer.",
+    "noBracketData": "Aucune donnée de bracket disponible pour le moment.",
     "status": "Statut",
     "open": "Ouvert",
     "inProgress": "En cours",

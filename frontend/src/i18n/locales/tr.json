@@ -182,6 +182,8 @@
     "chatWebSocket": "Canlı mesajlaşma için WebSocket entegrasyonu",
     "notFound": "TURNUVA BULUNAMADI",
     "registrationSuccess": "✓ Kayıt başarılı! Onay için e-postanızı kontrol edin.",
+    "registrationFailed": "Kayıt başarısız oldu. Lütfen tekrar deneyin.",
+    "noBracketData": "Henüz bracket verisi mevcut değil.",
     "status": "Durum",
     "open": "Açık",
     "inProgress": "Devam Ediyor",
