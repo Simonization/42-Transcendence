@@ -1,12 +1,10 @@
-# Sprint Plan — Final Week (Feb 24–28, 2026)
+# Sprint Plan — Final Week (Feb 25–28, 2026)
 
-## Updated: Feb 26 (after main pull + latest frontend pushes)
+## Updated: Feb 25 (consolidated + reconciled across all memory files)
 
 ---
 
-## Current Scores (Corrector.md)
-
-**23 points / 14 required — 9pt buffer**
+## Score: 23 / 14 required (9pt buffer) — All 15 modules DONE
 
 | Module | Pts | Status |
 |--------|-----|--------|
@@ -28,84 +26,85 @@
 
 ---
 
-## What Was Done Since Last Sprint
+## Frontend UX Gaps — ALL RESOLVED ✅
 
-### Pulled from main (via 9ada8c1 merge):
-- Backend: tournament module, game module, matches queries from `backend_nico`
-- Docs: backend architecture doc removed (outdated)
-
-### Latest pushes to simon/frontend:
-- `cca13fe` Add inline Create Game form to admin panel (unblocks empty DB scenario)
-- `9043f4e` Remove outdated docs (stale sprint plans, old test counts, broken paths)
+These were ❌ in the previous plan and are now confirmed committed (`613b17b`):
+- ✅ FriendList "Chat" button — navigates to `/menu/chat?openWith=<id>`
+- ✅ SearchModal user results clickable — emits `selectUser`, MenuLayout handles it
+- ✅ New chat form uses username search typeahead (not raw numeric ID)
 
 ---
 
-## Remaining Frontend Tasks
+## CRITICAL — Must work for demo (Feb 28)
 
-### HIGH — UX gaps visible to corrector
+| # | Task | Owner | Status |
+|---|------|-------|--------|
+| C1 | **Backend modules registered**: `TeamsModule` + `TournamentsModule` in `app.module.ts` | Nicolas | BLOCKED — teams/tournament endpoints 404 without this |
+| C2 | **Docker `make up` works on merged main** | Ahmet | BLOCKED — corrector runs Docker first |
+| C3 | **Merge pipeline**: `test_merge_perm_+_front` → `main` once C1 is fixed | Louis | BLOCKED on C1 |
+| C4 | **Cross-browser smoke test** (Chrome + Firefox + Safari) on all 7 flows | All | Feb 28 at school |
 
-**1. FriendList "Chat" button** ❌ Missing
-- `FriendList.vue` has Remove + Block but no "Chat" button
-- A corrector will try to message a friend from the friends list and find no way
-- **Fix**: Emit `chat` event → FriendCard navigates to `/menu/chat?openWith=<id>`
-- **ChatCard**: On mount, check `route.query.openWith`, auto-open DM
-
-**2. SearchModal user results are dead** ❌ Missing
-- Users tab shows results but nothing happens on click
-- `selectUser` event not emitted, not handled in MenuLayout
-- **Fix**: Add `@click="emit('selectUser', f.id)"` on user rows
-- **MenuLayout**: Handle `@select-user` → navigate to `/menu/chat?openWith=<id>`
-
-**3. New chat form uses numeric user ID** ⚠️ Bad UX
-- ChatCard `+` button prompts for a user ID (a number)
-- No normal user knows their friend's numeric ID
-- **Fix**: Replace with username search typeahead using `usersApi.search()`
-
-### MEDIUM — Correctness / polish
-
-**4. CLAUDE.md module table** ⚠️ Stale
-- Still says "advanced search: Partial" and "advanced chat: Planned"
-- Fix: Update table to match Corrector.md (both Done)
-
-**5. TypeScript check**
-- Run `vue-tsc --noEmit` to verify no type errors before demo day
-
-### LOW — Dependent on backend team
-
-**6. Backend blockers (Nicolas)**
-- N1: `TeamsModule` not in `app.module.ts` → all /teams endpoints 404
-- N2: `TournamentsModule` not in `app.module.ts` → tournament flow broken
-- N3: No match auto-generation
-- N4: No tournament status transitions
-- N5: Match-Team entity relation bug
-
-**7. Merge pipeline**
-- `test_merge_perm_+_front` → `main` (Louis to execute when N1+N2 fixed)
-
-**8. Docker e2e test (Ahmet)**
-- `make up` not tested on merged main — critical for corrector Day 1
+### Feb 28 Test Flows (priority order)
+1. Auth: register, login, 2FA, Google OAuth
+2. Chat: DM, typing indicator, block, read receipts
+3. Friends: add, accept, message via "Chat" button
+4. Search: find users, find tournaments, filter/sort/pagination
+5. Admin: manage users, RBAC, invite admin
+6. Tournament: create game, create tournament, register, bracket *(depends on C1)*
+7. Organizations: create org, invite members, manage *(depends on C1)*
 
 ---
 
-## Saturday Feb 28 — Testing Day
+## IMPORTANT — High visibility, Simon owns
 
-**Location:** 42 Brussels school
-**Browsers:** Chrome + Firefox + Safari
-**Flows to test:**
-1. Auth: register → login → 2FA → Google OAuth
-2. Chat: DM → typing indicator → block user → read receipts
-3. Friends: add → accept → message (via "Chat" button)
-4. Tournament: create game → create tournament → register → bracket
-5. Organizations: create org → invite members → manage
-6. Search: find users → find tournaments → filter
-7. Admin: manage users → RBAC → invite admin
-
-**Risk:** Tournament flow depends on N1+N2 being fixed before Saturday.
+| # | Task | Owner | Status |
+|---|------|-------|--------|
+| I1 | **Run `vue-tsc --noEmit`** — fix any type errors before demo | Simon | TODO |
+| I2 | **Run full test suite** (`cd frontend && npx vitest run`) — confirm ~705 tests green | Simon | TODO |
+| I3 | **Backend workaround cleanup**: Remove `role`/`status`/`avatarUrl` patch in `backend/src/modules/users/users.service.ts` lines 34–43 once Louis merges | Simon | WAITING on Louis |
 
 ---
 
-## Notes on Architecture
+## NICE-TO-HAVE — Only if time permits
 
-- **Advanced search**: Real API calls (`tournamentsApi.getAll()`, `usersApi.search()`), client-side filtering after fetch — this is fine and standard
-- **Advanced chat**: typing indicators via WS, block via friendsApi, read receipts via markAsRead — complete
-- **The `simon/frontend` temp workaround**: `backend/users.service.ts` patch still live — will be superseded by permissions branch merge
+| # | Task | Owner | Status |
+|---|------|-------|--------|
+| N1 | Match auto-generation (backend) | Nicolas | Low |
+| N2 | Tournament status transitions (backend) | Nicolas | Low |
+| N3 | Match-Team entity relation bug | Nicolas | Low |
+| N4 | Polish: loading states, error boundaries, empty states | Simon | Low |
+
+---
+
+## Daily Plan
+
+### Tue Feb 25 (today)
+- [ ] I1: Run `vue-tsc --noEmit`, fix any errors
+- [ ] I2: Run full Vitest suite, confirm still green
+- [ ] Ping Nicolas re: C1 (TeamsModule + TournamentsModule in app.module.ts)
+- [ ] Ping Ahmet re: C2 (Docker test on merged main)
+
+### Wed Feb 26
+- [ ] Fix anything found in type check / tests
+- [ ] If C1 lands: test tournament + team flows end-to-end
+- [ ] If Louis merges: remove backend workaround (I3), then run tests again
+
+### Thu Feb 27
+- [ ] Final merge to main (C3)
+- [ ] Docker `make up` test (C2)
+- [ ] Full flow walkthrough locally on Chrome
+
+### Sat Feb 28 — Testing Day at 42 Brussels
+- [ ] Cross-browser test all 7 flows (C4)
+- [ ] Bug fixes on the spot
+- [ ] Final push
+
+---
+
+## Risk Register
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Nicolas doesn't fix C1 by Thu | Tournament + Team demos fail — 3pts at risk, still 20pts > 14 minimum | Demo other 12 modules; frontend shows graceful error states |
+| Docker broken on merged main | Corrector can't start the app | Test early Wed, have manual startup instructions ready |
+| Safari CSS bugs found Sat | Browser support module fails (1pt) | Test Safari on Wed if possible |

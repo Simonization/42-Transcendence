@@ -1,6 +1,6 @@
 # Briefing D — Backend Blockers & What They Unlock
 
-## Status as of Feb 25 (evening)
+## Status as of Feb 26 (morning) — UPDATED
 
  Louis created `test_merge_perm_+_front` — a test merge of `permissions` + `simon/frontend` + `backend_nico`. This is the closest thing to a "working" combined branch. Key finding: `/users/me` now returns `role` and `status` correctly (Blocker L2 resolved on that branch).
 
@@ -64,6 +64,26 @@ Ahmet's `amt` branch deletes ~20,000 lines of frontend. Do NOT merge into any br
 ### Blocker A2: Docker/Nginx setup not tested ❌ CRITICAL
 **Status:** Unknown. `make up` may or may not work on `main`.
 **Action: Someone MUST test `make up` before Saturday.** This is the corrector's first move.
+
+---
+
+## Frontend-side notes (for backend awareness)
+
+### `GET /users/search?q=<username>` is critical for 3 flows
+The frontend now uses username search (not numeric IDs) in:
+1. **New chat** (ChatCard) — search users by username to start a DM
+2. **Add org member** (OrganizationsCard) — search users by username to add to team
+3. **Search modal** (SearchModal) — already working
+
+All three call `GET /users/search?q=<query>&limit=10`. This endpoint must return `{ id, username, profile: { displayName } }`. If this endpoint is missing or broken, the above three features silently return empty results.
+
+### `?openWith=<userId>` routing relies on GET /rooms
+When a user clicks "Chat" from the friends list or search modal, the app:
+1. Navigates to `/menu/chat?openWith=<userId>`
+2. Checks existing rooms via the store (already fetched)
+3. Creates a new DM room if none exists
+
+This requires `POST /rooms` to accept `{ participantIds: [userId] }` and return the created room. If this is broken, the "Chat" button silently does nothing after navigation.
 
 ---
 
