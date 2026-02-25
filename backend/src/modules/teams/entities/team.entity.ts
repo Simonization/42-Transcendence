@@ -34,7 +34,11 @@ export class Team {
 
     // Many players can be in the team
     @ManyToMany(() => User, (user) => user.teams)
-    @JoinTable({ name: 'team_members' })
+    @JoinTable({
+        name: 'team_members',
+        joinColumn: { name: 'team_id', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'user_id', referencedColumnName: 'id' }
+    })
     members: User[];
 
     // This links the team to the tournament, not just a single match

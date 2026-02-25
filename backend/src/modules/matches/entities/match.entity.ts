@@ -11,7 +11,7 @@ import {
 import { UserMatch } from './user-match.entity';
 import { Game } from '../../games/entities/game.entity'; // Path to your new Game entity
 import { TournamentPhase } from 'src/modules/tournaments/entities/tournament-phase.entity';
-import { Team } from 'src/modules/team/entities/team.entity';
+import { Team } from 'src/modules/teams/entities/team.entity';
 
 @Entity('matches')
 export class Match {
