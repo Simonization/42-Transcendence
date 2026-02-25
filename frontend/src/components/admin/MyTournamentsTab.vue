@@ -3,7 +3,15 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-const mockMyTournaments: any[] = [] // Empty for empty state
+interface TournamentRow {
+  id: number
+  name: string
+  game: string
+  status: string
+  participants: number
+}
+
+const mockMyTournaments: TournamentRow[] = [] // Empty for empty state
 </script>
 
 <template>

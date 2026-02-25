@@ -39,7 +39,7 @@ const retry = () => {
   gap: var(--space-3);
   padding: var(--space-3) var(--space-6);
   background: var(--glass-bg);
-  border: 1px solid var(--color-error, #e74c3c);
+  border: 1px solid var(--color-error);
   backdrop-filter: var(--backdrop-blur-medium);
   clip-path: var(--clip-card);
   max-width: 600px;
@@ -53,7 +53,7 @@ const retry = () => {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--color-error, #e74c3c);
+  background: var(--color-error);
   color: var(--bg-primary);
   font-family: var(--font-display);
   font-size: var(--text-sm);
@@ -72,7 +72,7 @@ const retry = () => {
 
 .error-retry-btn {
   padding: var(--space-2) var(--space-4);
-  background: var(--color-error, #e74c3c);
+  background: var(--color-error);
   color: var(--bg-primary);
   border: none;
   font-family: var(--font-display);

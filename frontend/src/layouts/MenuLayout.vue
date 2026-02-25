@@ -364,7 +364,7 @@ const navItems = computed(() => {
   font-size: 10px;
   font-weight: var(--font-bold);
   background: var(--color-error);
-  color: white;
+  color: var(--bg-primary);
   border-radius: 9px;
   animation: badge-pulse 2s ease-in-out infinite;
 }
