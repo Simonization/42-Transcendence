@@ -523,6 +523,12 @@
     "inviteDeclineFailed": "Failed to decline invitation",
     "loadGamesFailed": "Failed to load games",
     "noGamesAvailable": "No games configured yet",
+    "addGame": "ADD GAME",
+    "gameNamePlaceholder": "e.g. Pong",
+    "teamCount": "Teams",
+    "teamSize": "Players/Team",
+    "gameAdded": "Game created!",
+    "addGameFailed": "Failed to create game",
     "tournamentCreated": "Tournament created successfully!",
     "tournamentCreateFailed": "Failed to create tournament"
   },

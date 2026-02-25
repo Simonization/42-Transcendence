@@ -523,6 +523,12 @@
     "inviteDeclineFailed": "Échec du refus de l'invitation",
     "loadGamesFailed": "Échec du chargement des jeux",
     "noGamesAvailable": "Aucun jeu configuré",
+    "addGame": "AJOUTER JEU",
+    "gameNamePlaceholder": "ex. Pong",
+    "teamCount": "Équipes",
+    "teamSize": "Joueurs/Équipe",
+    "gameAdded": "Jeu créé !",
+    "addGameFailed": "Échec de la création du jeu",
     "tournamentCreated": "Tournoi créé avec succès !",
     "tournamentCreateFailed": "Échec de la création du tournoi"
   },

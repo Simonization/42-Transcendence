@@ -19,6 +19,37 @@ const games = ref<BackendGame[]>([])
 const isLoadingGames = ref(false)
 const isSubmitting = ref(false)
 
+// Add-game inline form
+const showAddGame = ref(false)
+const newGameName = ref('')
+const newGameTeamCount = ref(2)
+const newGameTeamSize = ref(1)
+const isCreatingGame = ref(false)
+const canCreateGame = computed(() => newGameName.value.trim().length >= 2)
+
+const handleAddGame = async () => {
+  if (!canCreateGame.value) return
+  isCreatingGame.value = true
+  try {
+    const created = await gamesApi.create({
+      name: newGameName.value.trim(),
+      team_count: newGameTeamCount.value,
+      team_size: newGameTeamSize.value,
+    })
+    games.value.push(created)
+    selectedGameId.value = created.id
+    newGameName.value = ''
+    newGameTeamCount.value = 2
+    newGameTeamSize.value = 1
+    showAddGame.value = false
+    notifications.success(t('teams.gameAdded'), 3000)
+  } catch {
+    notifications.error(t('teams.addGameFailed'), 4000)
+  } finally {
+    isCreatingGame.value = false
+  }
+}
+
 // Form fields
 const name = ref('')
 const description = ref('')
@@ -127,29 +158,73 @@ const handleSubmit = async () => {
       <div class="form-group">
         <label class="form-label">{{ t('tournament.game') }} *</label>
         <div v-if="isLoadingGames" class="loading-text">{{ t('common.loading') }}</div>
-        <div v-else-if="games.length === 0" class="empty-text">{{ t('teams.noGamesAvailable') }}</div>
-        <div v-else class="game-grid">
-          <label
-            v-for="game in games"
-            :key="game.id"
-            class="game-card"
-            :class="{ 'game-card-selected': selectedGameId === game.id }"
-          >
-            <input
-              type="radio"
-              name="game"
-              :value="game.id"
-              v-model="selectedGameId"
-              class="visually-hidden"
-            />
-            <span class="game-name">{{ game.name }}</span>
-            <span class="game-info">
-              {{ game.teamSize === 1
-                ? `${game.teamCount ?? 2}P`
-                : `${game.teamCount ?? 2}×${game.teamSize}` }}
-            </span>
-          </label>
-        </div>
+        <template v-else>
+          <div v-if="games.length === 0" class="empty-text">{{ t('teams.noGamesAvailable') }}</div>
+          <div v-else class="game-grid">
+            <label
+              v-for="game in games"
+              :key="game.id"
+              class="game-card"
+              :class="{ 'game-card-selected': selectedGameId === game.id }"
+            >
+              <input
+                type="radio"
+                name="game"
+                :value="game.id"
+                v-model="selectedGameId"
+                class="visually-hidden"
+              />
+              <span class="game-name">{{ game.name }}</span>
+              <span class="game-info">
+                {{ game.teamSize === 1
+                  ? `${game.teamCount ?? 2}P`
+                  : `${game.teamCount ?? 2}×${game.teamSize}` }}
+              </span>
+            </label>
+          </div>
+          <!-- Add Game toggle (only when games exist) -->
+          <button
+            v-if="games.length > 0"
+            type="button"
+            class="add-game-toggle"
+            @click="showAddGame = !showAddGame"
+          >{{ showAddGame ? '−' : '+' }} {{ t('teams.addGame') }}</button>
+          <!-- Add Game inline form (auto-open when empty) -->
+          <div v-if="showAddGame || games.length === 0" class="add-game-form">
+            <div class="add-game-row">
+              <input
+                v-model="newGameName"
+                type="text"
+                class="form-input add-game-name-input"
+                :placeholder="t('teams.gameNamePlaceholder')"
+                maxlength="50"
+                @keydown.enter.prevent="handleAddGame"
+              />
+              <input
+                v-model.number="newGameTeamCount"
+                type="number"
+                class="form-input add-game-num"
+                :title="t('teams.teamCount')"
+                min="2"
+                max="32"
+              />
+              <input
+                v-model.number="newGameTeamSize"
+                type="number"
+                class="form-input add-game-num"
+                :title="t('teams.teamSize')"
+                min="1"
+                max="16"
+              />
+              <button
+                type="button"
+                class="add-game-submit"
+                :disabled="!canCreateGame || isCreatingGame"
+                @click="handleAddGame"
+              >{{ isCreatingGame ? '…' : t('teams.addGame') }}</button>
+            </div>
+          </div>
+        </template>
         <!-- Team info -->
         <div v-if="teamInfo" class="team-info-banner">
           {{ teamInfo.label }}
@@ -388,8 +463,71 @@ const handleSubmit = async () => {
   cursor: not-allowed;
 }
 
+/* Add Game */
+.add-game-toggle {
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-secondary);
+  background: transparent;
+  border: var(--hud-border) solid var(--border-subtle);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-default), border-color var(--duration-fast) var(--ease-default);
+}
+.add-game-toggle:hover {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.add-game-form {
+  margin-top: var(--space-2);
+}
+
+.add-game-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.add-game-name-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-game-num {
+  width: 56px;
+  text-align: center;
+  padding: var(--space-3) var(--space-2);
+}
+
+.add-game-submit {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--accent-primary);
+  background: transparent;
+  border: var(--hud-border) solid var(--accent-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease-default);
+}
+.add-game-submit:not(:disabled):hover {
+  background: var(--bg-selected);
+}
+.add-game-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 @media (max-width: 480px) {
   .game-grid { grid-template-columns: repeat(2, 1fr); }
   .format-options { flex-direction: column; }
+  .add-game-row { flex-wrap: wrap; }
+  .add-game-name-input { width: 100%; }
 }
 </style>

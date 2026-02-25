@@ -523,6 +523,12 @@
     "inviteDeclineFailed": "Davet reddedilemedi",
     "loadGamesFailed": "Oyunlar yüklenemedi",
     "noGamesAvailable": "Henüz oyun yapılandırılmadı",
+    "addGame": "OYUN EKLE",
+    "gameNamePlaceholder": "örn. Pong",
+    "teamCount": "Takım",
+    "teamSize": "Oyuncu/Takım",
+    "gameAdded": "Oyun oluşturuldu!",
+    "addGameFailed": "Oyun oluşturulamadı",
     "tournamentCreated": "Turnuva başarıyla oluşturuldu!",
     "tournamentCreateFailed": "Turnuva oluşturulamadı"
   },
