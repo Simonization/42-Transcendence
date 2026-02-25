@@ -1,6 +1,7 @@
 import { Team } from "src/modules/team/entities/team.entity";
 import { CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Column } from "typeorm/browser";
+import { TournamentPhase } from "./tournament-phase.entity";
 
 @Entity('tournaments')
 export class Tournament {
