@@ -10,6 +10,33 @@ import AdminCard from '../AdminCard.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { UserRole } from '../../../types'
 
+// Prevent real HTTP calls from child components (ManageUsersTab, CreateTournamentTab)
+vi.mock('../../../api/admin', () => ({
+  adminApi: {
+    getUsers: vi.fn().mockResolvedValue({ users: [], total: 0 }),
+    updateUser: vi.fn().mockResolvedValue({}),
+  },
+}))
+
+vi.mock('../../../api/games', () => ({
+  gamesApi: {
+    getAll: vi.fn().mockResolvedValue([]),
+    getById: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+  },
+}))
+
+vi.mock('../../../api/tournaments', () => ({
+  tournamentsApi: {
+    getAll: vi.fn().mockResolvedValue([]),
+    getById: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue({}),
+    getParticipants: vi.fn().mockResolvedValue([]),
+  },
+}))
+
 describe('AdminCard', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
