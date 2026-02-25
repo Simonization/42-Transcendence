@@ -1,54 +1,218 @@
 <script setup lang="ts">
+/**
+ * Create Tournament Tab
+ * Admin form to create a new tournament with game selection and phase configuration
+ */
+
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { gamesApi } from '../../api/games'
+import { tournamentsApi } from '../../api/tournaments'
+import { useNotificationsStore } from '../../stores/notifications'
+import { PhaseType } from '../../types'
+import type { BackendGame, CreateTournamentDto } from '../../types'
 
 const { t } = useI18n()
+const notifications = useNotificationsStore()
 
-const createTournamentSteps = [
-  { number: 1, title: 'Basic Info', description: 'Tournament name, game, format' },
-  { number: 2, title: 'Registration', description: 'Solo/team, max participants' },
-  { number: 3, title: 'Rules & Schedule', description: 'Match format, check-in window' },
-  { number: 4, title: 'Bracket Config', description: 'Seeding, tiebreakers' },
-  { number: 5, title: 'Review & Publish', description: 'Final review and launch' },
-]
+const games = ref<BackendGame[]>([])
+const isLoadingGames = ref(false)
+const isSubmitting = ref(false)
+
+// Form fields
+const name = ref('')
+const description = ref('')
+const maxParticipants = ref(16)
+const selectedGameId = ref<number | null>(null)
+const phaseType = ref<PhaseType>(PhaseType.SINGLE_ELIMINATION)
+
+const selectedGame = computed(() =>
+  games.value.find(g => g.id === selectedGameId.value) ?? null
+)
+
+const teamInfo = computed(() => {
+  if (!selectedGame.value) return null
+  const g = selectedGame.value
+  return {
+    teamCount: g.teamCount ?? 2,
+    teamSize: g.teamSize ?? 1,
+    label: g.teamSize === 1
+      ? `${g.teamCount} ${t('teams.players')}`
+      : `${g.teamCount} ${t('teams.teams')} × ${g.teamSize} ${t('teams.players')}`,
+  }
+})
+
+const canSubmit = computed(() =>
+  name.value.trim().length >= 3 &&
+  selectedGameId.value !== null &&
+  maxParticipants.value >= 2
+)
+
+onMounted(async () => {
+  isLoadingGames.value = true
+  try {
+    games.value = await gamesApi.getAll()
+  } catch {
+    notifications.error(t('teams.loadGamesFailed'), 3000)
+  } finally {
+    isLoadingGames.value = false
+  }
+})
+
+const handleSubmit = async () => {
+  if (!canSubmit.value || !selectedGameId.value) return
+  isSubmitting.value = true
+
+  const dto: CreateTournamentDto = {
+    name: name.value.trim(),
+    description: description.value.trim() || undefined,
+    max_participants: maxParticipants.value,
+    phases: [{
+      order: 1,
+      type: phaseType.value,
+      game_id: selectedGameId.value,
+    }],
+  }
+
+  try {
+    await tournamentsApi.create(dto)
+    notifications.success(t('teams.tournamentCreated'), 4000)
+    // Reset form
+    name.value = ''
+    description.value = ''
+    maxParticipants.value = 16
+    selectedGameId.value = null
+    phaseType.value = PhaseType.SINGLE_ELIMINATION
+  } catch {
+    notifications.error(t('teams.tournamentCreateFailed'), 4000)
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <template>
   <div class="create-tournament-content">
     <h2 class="section-title">{{ t('admin.createTournamentTitle') }}</h2>
 
-    <div class="v2-overlay">
-      <div class="v2-banner">
-        <span class="v2-banner-icon">🚀</span>
-        <span class="v2-banner-text">{{ t('admin.comingSoonBanner') }}</span>
-        <span class="v2-banner-desc">{{ t('admin.comingSoonWizardDesc') }}</span>
+    <form class="tournament-form" @submit.prevent="handleSubmit">
+      <!-- Name -->
+      <div class="form-group">
+        <label for="t-name" class="form-label">{{ t('tournament.name') }} *</label>
+        <input
+          id="t-name"
+          v-model="name"
+          type="text"
+          class="form-input"
+          :placeholder="t('tournament.namePlaceholder')"
+          maxlength="100"
+          minlength="3"
+          required
+        />
       </div>
 
-      <div class="wizard-preview">
-        <div class="wizard-steps-container">
-          <div v-for="step in createTournamentSteps" :key="step.number" class="wizard-step-preview">
-            <div class="step-number">{{ step.number }}</div>
-            <div class="step-details">
-              <h4 class="step-title-preview">{{ step.title }}</h4>
-              <p class="step-description-preview">{{ step.description }}</p>
-            </div>
-          </div>
-        </div>
+      <!-- Description -->
+      <div class="form-group">
+        <label for="t-desc" class="form-label">{{ t('tournament.description') }}</label>
+        <textarea
+          id="t-desc"
+          v-model="description"
+          class="form-input form-textarea"
+          :placeholder="t('tournament.descriptionPlaceholder')"
+          rows="3"
+        ></textarea>
+      </div>
 
-        <div class="wizard-mockup">
-          <div class="mockup-header">Tournament Creation - Step 1</div>
-          <div class="mockup-content">
-            <div class="mockup-field">Tournament Name: [_________________]</div>
-            <div class="mockup-field">Game: [dropdown]</div>
-            <div class="mockup-field">Format: [radio options]</div>
-            <div class="mockup-footer">[Cancel] [Next →]</div>
-          </div>
+      <!-- Game Selector -->
+      <div class="form-group">
+        <label class="form-label">{{ t('tournament.game') }} *</label>
+        <div v-if="isLoadingGames" class="loading-text">{{ t('common.loading') }}</div>
+        <div v-else-if="games.length === 0" class="empty-text">{{ t('teams.noGamesAvailable') }}</div>
+        <div v-else class="game-grid">
+          <label
+            v-for="game in games"
+            :key="game.id"
+            class="game-card"
+            :class="{ 'game-card-selected': selectedGameId === game.id }"
+          >
+            <input
+              type="radio"
+              name="game"
+              :value="game.id"
+              v-model="selectedGameId"
+              class="visually-hidden"
+            />
+            <span class="game-name">{{ game.name }}</span>
+            <span class="game-info">
+              {{ game.teamSize === 1
+                ? `${game.teamCount ?? 2}P`
+                : `${game.teamCount ?? 2}×${game.teamSize}` }}
+            </span>
+          </label>
+        </div>
+        <!-- Team info -->
+        <div v-if="teamInfo" class="team-info-banner">
+          {{ teamInfo.label }}
         </div>
       </div>
-    </div>
+
+      <!-- Max Participants -->
+      <div class="form-group">
+        <label for="t-max" class="form-label">{{ t('tournament.maxPlayers') }}</label>
+        <input
+          id="t-max"
+          v-model.number="maxParticipants"
+          type="number"
+          class="form-input form-input-narrow"
+          min="2"
+          max="256"
+        />
+      </div>
+
+      <!-- Phase Type -->
+      <div class="form-group">
+        <label class="form-label">{{ t('tournament.format') }}</label>
+        <div class="format-options">
+          <label class="format-option" :class="{ 'format-selected': phaseType === PhaseType.SINGLE_ELIMINATION }">
+            <input type="radio" v-model="phaseType" :value="PhaseType.SINGLE_ELIMINATION" class="visually-hidden" />
+            <span>Single Elimination</span>
+          </label>
+          <label class="format-option" :class="{ 'format-selected': phaseType === PhaseType.DOUBLE_ELIMINATION }">
+            <input type="radio" v-model="phaseType" :value="PhaseType.DOUBLE_ELIMINATION" class="visually-hidden" />
+            <span>Double Elimination</span>
+          </label>
+          <label class="format-option" :class="{ 'format-selected': phaseType === PhaseType.ROUND_ROBIN }">
+            <input type="radio" v-model="phaseType" :value="PhaseType.ROUND_ROBIN" class="visually-hidden" />
+            <span>Round Robin</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button
+        type="submit"
+        class="submit-btn"
+        :disabled="!canSubmit || isSubmitting"
+      >
+        {{ isSubmitting ? t('registration.submitting') : t('admin.createTournamentTitle') }}
+      </button>
+    </form>
   </div>
 </template>
 
 <style scoped>
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 .create-tournament-content {
   display: flex;
   flex-direction: column;
@@ -65,133 +229,167 @@ const createTournamentSteps = [
   border-bottom: var(--hud-border) solid var(--glass-border);
 }
 
-.v2-overlay {
-  position: relative;
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.v2-banner {
+.tournament-form {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  padding: var(--space-8);
-  background: var(--bg-tertiary);
-  border: var(--hud-border) dashed var(--accent-primary);
-  text-align: center;
-  margin-bottom: var(--space-6);
+  gap: var(--space-5);
 }
 
-.v2-banner-icon {
-  font-size: var(--text-4xl);
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.v2-banner-text {
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
+.form-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
   font-weight: var(--font-bold);
-  letter-spacing: var(--tracking-widest);
-  color: var(--accent-primary);
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-primary);
+  text-transform: uppercase;
 }
 
-.v2-banner-desc {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-
-.wizard-preview {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-}
-
-.wizard-steps-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.wizard-step-preview {
-  display: flex;
-  gap: var(--space-3);
+.form-input {
   padding: var(--space-3);
-  background: var(--bg-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  background: var(--bg-tertiary);
   border: var(--hud-border) solid var(--border-subtle);
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast) var(--ease-default);
 }
 
-.step-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--accent-primary);
-  color: white;
-  font-weight: var(--font-bold);
-  flex-shrink: 0;
+.form-input::placeholder { color: var(--text-tertiary); }
+.form-input:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 0;
+  border-color: var(--accent-primary);
 }
 
-.step-details {
+.form-textarea { resize: vertical; min-height: 60px; }
+.form-input-narrow { max-width: 120px; }
+
+.loading-text,
+.empty-text {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  padding: var(--space-3);
+}
+
+/* Game Grid */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-2);
+}
+
+.game-card {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--bg-tertiary);
+  border: var(--hud-border) solid var(--border-subtle);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  text-align: center;
 }
 
-.step-title-preview {
-  margin: 0;
+.game-card:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-hover);
+}
+
+.game-card-selected {
+  border-color: var(--accent-primary);
+  background: var(--bg-selected);
+  box-shadow: 0 0 12px var(--accent-primary-subtle);
+}
+
+.game-name {
   font-size: var(--text-sm);
-  font-weight: var(--font-bold);
+  font-weight: var(--font-semibold);
   color: var(--text-primary);
 }
 
-.step-description-preview {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
-
-.mockup-header {
-  padding: var(--space-3);
-  background: var(--accent-primary);
-  color: white;
-  font-weight: var(--font-bold);
-  text-align: center;
-}
-
-.mockup-content {
-  padding: var(--space-4);
-  background: var(--bg-secondary);
-  border: var(--hud-border) solid var(--border-subtle);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.mockup-field {
+.game-info {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--text-secondary);
-  padding: var(--space-2);
+  color: var(--text-tertiary);
+  letter-spacing: var(--tracking-wider);
+}
+
+.team-info-banner {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-selected);
+  border: var(--hud-border) solid var(--accent-primary-subtle);
+  font-size: var(--text-sm);
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-wider);
+}
+
+/* Format Options */
+.format-options {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.format-option {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-wider);
   background: var(--bg-tertiary);
   border: var(--hud-border) solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
 }
 
-.mockup-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  padding-top: var(--space-2);
-  border-top: var(--hud-border) solid var(--border-subtle);
-  font-family: var(--font-mono);
+.format-option:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.format-selected {
+  border-color: var(--accent-primary);
+  background: var(--bg-selected);
+  color: var(--accent-primary);
+}
+
+/* Submit */
+.submit-btn {
+  align-self: flex-start;
+  padding: var(--space-3) var(--space-8);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
-  color: var(--text-tertiary);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background: transparent;
+  border: var(--hud-border) solid var(--accent-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
 }
 
-@media (max-width: 768px) {
-  .wizard-preview {
-    grid-template-columns: 1fr;
-  }
+.submit-btn:not(:disabled):hover {
+  background: var(--bg-selected);
+  color: var(--accent-primary);
+  box-shadow: 0 0 12px var(--accent-primary-subtle);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .game-grid { grid-template-columns: repeat(2, 1fr); }
+  .format-options { flex-direction: column; }
 }
 </style>

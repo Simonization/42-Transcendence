@@ -162,39 +162,37 @@ describe('AdminCard', () => {
       expect(wrapper.text()).toContain('CREATE TOURNAMENT')
     })
 
-    it('should show all 5 creation steps', async () => {
-      const wrapper = mount(AdminCard)
-
-      const tabs = wrapper.findAll('.tab-btn')
-      await tabs[1].trigger('click')
-
-      // Check for step indicators using numbers and steps text pattern
-      expect(wrapper.text()).toContain('1')
-      expect(wrapper.text()).toContain('Step')
-      expect(wrapper.text()).toContain('Tournament Creation')
-    })
-
-    it('should display step descriptions', async () => {
-      const wrapper = mount(AdminCard)
-
-      const tabs = wrapper.findAll('.tab-btn')
-      await tabs[1].trigger('click')
-
-      expect(wrapper.text()).toContain('Tournament name, game, format')
-      expect(wrapper.text()).toContain('Solo/team, max participants')
-      expect(wrapper.text()).toContain('Match format, check-in window')
-    })
-
-    it('should mark first step as current', async () => {
+    it('should show tournament creation form with name input', async () => {
       const wrapper = mount(AdminCard)
 
       const tabs = wrapper.findAll('.tab-btn')
       await tabs[1].trigger('click')
       await wrapper.vm.$nextTick()
 
-      // Check that tournament creation content is visible and contains expected elements
-      expect(wrapper.text()).toContain('Tournament Creation - Step 1')
-      expect(wrapper.text()).toContain('Tournament Name')
+      // The form should have a name input field
+      const inputs = wrapper.findAll('input')
+      expect(inputs.length).toBeGreaterThan(0)
+    })
+
+    it('should display format options', async () => {
+      const wrapper = mount(AdminCard)
+
+      const tabs = wrapper.findAll('.tab-btn')
+      await tabs[1].trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.text()).toContain('Single Elimination')
+    })
+
+    it('should have a submit button', async () => {
+      const wrapper = mount(AdminCard)
+
+      const tabs = wrapper.findAll('.tab-btn')
+      await tabs[1].trigger('click')
+      await wrapper.vm.$nextTick()
+
+      const submitBtn = wrapper.find('.submit-btn')
+      expect(submitBtn.exists()).toBe(true)
     })
   })
 

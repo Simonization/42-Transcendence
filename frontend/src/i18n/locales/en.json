@@ -208,7 +208,10 @@
     "ratingAndSeed": "Rating: {rating} | Seed: #{seed}",
     "matchStatus": "STATUS",
     "matchCompleted": "COMPLETED",
-    "matchScheduled": "SCHEDULED"
+    "matchScheduled": "SCHEDULED",
+    "name": "Tournament Name",
+    "namePlaceholder": "Enter tournament name",
+    "descriptionPlaceholder": "Optional description..."
   },
   "friends": {
     "title": "FRIENDS",
@@ -495,5 +498,32 @@
     "noMembers": "No members yet",
     "removeMember": "REMOVE MEMBER",
     "confirmRemoveMember": "Remove {name} from this organization?"
+  },
+  "teams": {
+    "captain": "CAPTAIN",
+    "players": "players",
+    "teams": "teams",
+    "nameYourTeam": "Name Your Team",
+    "requiredSize": "Required team size:",
+    "inviteFriends": "Invite Friends",
+    "inviteDescription": "Select up to {count} friends to invite to your team",
+    "soloAutoRegister": "This is a solo game ({game}). You'll be registered automatically.",
+    "noRules": "No specific rules for this tournament.",
+    "created": "Team created! Invitations sent to selected friends.",
+    "createFailed": "Failed to create team",
+    "lockFailed": "Failed to lock team",
+    "pendingInvitations": "TEAM INVITATIONS",
+    "unknownTeam": "Unknown Team",
+    "invitedBy": "Invited by {name}",
+    "acceptInvite": "Accept",
+    "declineInvite": "Decline",
+    "inviteAccepted": "You joined the team!",
+    "inviteAcceptFailed": "Failed to accept invitation",
+    "inviteDeclined": "Invitation declined",
+    "inviteDeclineFailed": "Failed to decline invitation",
+    "loadGamesFailed": "Failed to load games",
+    "noGamesAvailable": "No games configured yet",
+    "tournamentCreated": "Tournament created successfully!",
+    "tournamentCreateFailed": "Failed to create tournament"
   }
 }

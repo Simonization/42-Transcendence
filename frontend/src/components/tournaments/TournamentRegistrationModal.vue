@@ -1,498 +1,372 @@
 <script setup lang="ts">
 /**
- * Tournament Registration Modal - 3-Step Wizard
- * Step 1: Participation type (solo/team)
- * Step 2: Details (conditional based on type)
- * Step 3: Rules acceptance
+ * Tournament Registration Modal
+ * Creates a team via the backend Teams API.
+ * - Solo games (teamSize=1): auto-creates and locks a team of 1
+ * - Team games (teamSize>1): draft team, invite friends, lock when full
  */
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useFriendsStore } from '../../stores/friends'
-
-type Step = 1 | 2 | 3
-type ParticipationType = 'solo' | 'team'
-
-interface FormData {
-  participationType: ParticipationType | null
-  displayName: string
-  email: string
-  inGameUsername: string
-  teamName: string
-  teamMembers: string[]
-  acceptRules: boolean
-}
+import { useTeams } from '../../composables/useTeams'
+import { useNotificationsStore } from '../../stores/notifications'
+import { TeamStatus } from '../../types'
 
 const props = defineProps<{
+  tournamentId: number
   tournamentName: string
   rules: string
   isOpen: boolean
+  /** Team size required by the game (1 = solo) */
+  teamSize: number
+  /** Game name for display */
+  gameName: string
 }>()
 
 const emit = defineEmits<{
   close: []
-  submit: [data: FormData]
+  registered: []
 }>()
 
-const currentStep = ref<Step>(1)
-const formData = ref<FormData>({
-  participationType: null,
-  displayName: 'Player Alpha', // Mock auto-fill
-  email: 'player@example.com', // Mock auto-fill
-  inGameUsername: '',
-  teamName: '',
-  teamMembers: [],
-  acceptRules: false,
-})
-
-const errors = ref<Record<string, string>>({})
-
 const { t } = useI18n()
-
-// API Integration for friends
 const authStore = useAuthStore()
 const friendsStore = useFriendsStore()
-const searchQuery = ref('')
+const notifications = useNotificationsStore()
+const { myTeam, isLoading, error: teamError, createTeam, invitePlayer, lockTeam } = useTeams()
 
-// Fetch friends when modal opens
+const isSolo = computed(() => props.teamSize <= 1)
+
+// Form state
+type Step = 'team' | 'invite' | 'rules'
+const currentStep = ref<Step>(isSolo.value ? 'rules' : 'team')
+const teamName = ref('')
+const selectedFriends = ref<number[]>([])
+const acceptRules = ref(false)
+const isSubmitting = ref(false)
+const searchQuery = ref('')
+const invitedPlayerIds = ref<Set<number>>(new Set())
+
+// Max team members to invite = teamSize - 1 (captain is already on the team)
+const maxInvites = computed(() => Math.max(0, props.teamSize - 1))
+
+// Fetch friends when modal opens (for team games)
 watch(() => props.isOpen, (open) => {
-  if (open && authStore.user) {
-    friendsStore.fetchFriends(authStore.user.id)
+  if (open) {
+    resetForm()
+    if (!isSolo.value && authStore.user) {
+      friendsStore.fetchFriends(authStore.user.id)
+    }
   }
 })
 
-// Helper to get initials from friend data
+const filteredFriends = computed(() => {
+  const accepted = friendsStore.acceptedFriends
+  if (!searchQuery.value) return accepted
+  const q = searchQuery.value.toLowerCase()
+  return accepted.filter(f =>
+    f.username.toLowerCase().includes(q) ||
+    f.profile.displayName?.toLowerCase().includes(q)
+  )
+})
+
 const getInitials = (username: string, displayName?: string | null): string => {
   const name = displayName ?? username
   return name.slice(0, 2).toUpperCase()
 }
 
-// Check if friend is selected
-const isSelected = (friendId: number): boolean => {
-  return formData.value.teamMembers.includes(friendId.toString())
-}
+const isSelected = (friendId: number): boolean => selectedFriends.value.includes(friendId)
 
-// Filter friends by search query
-const filteredFriends = computed(() => {
-  const accepted = friendsStore.acceptedFriends
-  if (!searchQuery.value) return accepted
-
-  const query = searchQuery.value.toLowerCase()
-  return accepted.filter(
-    friend =>
-      friend.username.toLowerCase().includes(query) ||
-      friend.profile.displayName?.toLowerCase().includes(query)
-  )
-})
-
-const isSolo = computed(() => formData.value.participationType === 'solo')
-const isTeam = computed(() => formData.value.participationType === 'team')
-
-const canProceedStep1 = computed(() => formData.value.participationType !== null)
-
-const canProceedStep2 = computed(() => {
-  if (!formData.value.participationType) return false
-
-  if (isSolo.value) {
-    return (
-      formData.value.displayName.trim() !== '' &&
-      formData.value.email.trim() !== '' &&
-      formData.value.inGameUsername.trim() !== ''
-    )
-  }
-
-  if (isTeam.value) {
-    return (
-      formData.value.teamName.trim() !== '' &&
-      formData.value.teamMembers.length >= 1 &&
-      formData.value.teamMembers.length <= 4
-    )
-  }
-
-  return false
-})
-
-const canSubmit = computed(() => formData.value.acceptRules)
-
-const validateStep = (step: Step): boolean => {
-  errors.value = {}
-
-  if (step === 1) {
-    if (!formData.value.participationType) {
-      errors.value.type = t('registration.selectType')
-      return false
-    }
-    return true
-  }
-
-  if (step === 2) {
-    if (isSolo.value) {
-      if (!formData.value.displayName.trim()) {
-        errors.value.displayName = t('registration.displayNameRequired')
-      }
-      if (!formData.value.email.trim()) {
-        errors.value.email = t('registration.emailRequired')
-      }
-      if (!formData.value.inGameUsername.trim()) {
-        errors.value.inGameUsername = t('registration.inGameRequired')
-      }
-    }
-
-    if (isTeam.value) {
-      if (!formData.value.teamName.trim()) {
-        errors.value.teamName = t('registration.teamNameRequired')
-      }
-      if (formData.value.teamMembers.length === 0) {
-        errors.value.teamMembers = t('registration.selectTeammate')
-      }
-      if (formData.value.teamMembers.length > 4) {
-        errors.value.teamMembers = t('registration.maxTeammates')
-      }
-    }
-
-    return Object.keys(errors.value).length === 0
-  }
-
-  if (step === 3) {
-    if (!formData.value.acceptRules) {
-      errors.value.rules = t('registration.acceptRules')
-      return false
-    }
-    return true
-  }
-
-  return false
-}
-
-const goToStep = (step: Step) => {
-  if (step < currentStep.value) {
-    currentStep.value = step
-  } else if (step > currentStep.value && validateStep(currentStep.value)) {
-    currentStep.value = step
+const toggleFriend = (friendId: number) => {
+  const idx = selectedFriends.value.indexOf(friendId)
+  if (idx > -1) {
+    selectedFriends.value.splice(idx, 1)
+  } else if (selectedFriends.value.length < maxInvites.value) {
+    selectedFriends.value.push(friendId)
   }
 }
 
-const handleNext = () => {
-  if (validateStep(currentStep.value)) {
-    if (currentStep.value < 3) {
-      currentStep.value = (currentStep.value + 1) as Step
-    }
+const canProceedTeam = computed(() => teamName.value.trim().length >= 3)
+const canProceedInvite = computed(() => selectedFriends.value.length > 0)
+const canSubmit = computed(() => acceptRules.value)
+
+const handleNext = async () => {
+  if (currentStep.value === 'team') {
+    currentStep.value = 'invite'
+  } else if (currentStep.value === 'invite') {
+    currentStep.value = 'rules'
   }
 }
 
 const handleBack = () => {
-  if (currentStep.value > 1) {
-    currentStep.value = (currentStep.value - 1) as Step
+  if (currentStep.value === 'rules' && !isSolo.value) {
+    currentStep.value = 'invite'
+  } else if (currentStep.value === 'invite') {
+    currentStep.value = 'team'
   }
 }
 
-const handleSubmit = () => {
-  if (validateStep(currentStep.value)) {
-    emit('submit', { ...formData.value })
+/**
+ * Submit registration:
+ * 1. Create team (POST /teams)
+ * 2. For team games: invite selected friends
+ * 3. For solo: auto-lock the team
+ */
+const handleSubmit = async () => {
+  if (!canSubmit.value) return
+  isSubmitting.value = true
+
+  try {
+    // Step 1: Create team
+    const name = isSolo.value
+      ? (authStore.user?.username ?? 'Solo') + ' Team'
+      : teamName.value.trim()
+
+    const team = await createTeam({
+      name,
+      tournament_id: props.tournamentId,
+    })
+
+    if (!team) {
+      notifications.error(teamError.value || t('teams.createFailed'), 4000)
+      return
+    }
+
+    if (isSolo.value) {
+      // Solo: lock immediately
+      const locked = await lockTeam(team.id)
+      if (!locked) {
+        notifications.error(teamError.value || t('teams.lockFailed'), 4000)
+        return
+      }
+      notifications.success(t('tournament.registrationSuccess'), 4000)
+      emit('registered')
+      emit('close')
+    } else {
+      // Team: invite selected friends
+      for (const friendId of selectedFriends.value) {
+        const invite = await invitePlayer(team.id, friendId)
+        if (invite) {
+          invitedPlayerIds.value.add(friendId)
+        }
+      }
+      notifications.success(t('teams.created'), 4000)
+      emit('registered')
+      emit('close')
+    }
+  } finally {
+    isSubmitting.value = false
   }
 }
 
-const handleCancel = () => {
-  emit('close')
+const resetForm = () => {
+  currentStep.value = isSolo.value ? 'rules' : 'team'
+  teamName.value = ''
+  selectedFriends.value = []
+  acceptRules.value = false
+  isSubmitting.value = false
+  searchQuery.value = ''
+  invitedPlayerIds.value.clear()
 }
 
-const toggleTeamMember = (memberId: string) => {
-  const idx = formData.value.teamMembers.indexOf(memberId)
-  if (idx > -1) {
-    formData.value.teamMembers.splice(idx, 1)
-  } else if (formData.value.teamMembers.length < 4) {
-    formData.value.teamMembers.push(memberId)
-  }
+const handleEscape = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') emit('close')
 }
+
+onMounted(() => document.addEventListener('keydown', handleEscape))
+onUnmounted(() => document.removeEventListener('keydown', handleEscape))
+
+const stepNumber = computed(() => {
+  if (isSolo.value) return 1
+  if (currentStep.value === 'team') return 1
+  if (currentStep.value === 'invite') return 2
+  return isSolo.value ? 1 : 3
+})
+
+const totalSteps = computed(() => isSolo.value ? 1 : 3)
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="modal-fade">
-      <div v-if="isOpen" class="modal-overlay">
-        <div class="modal-container glass-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-description">
-          <!-- Modal Header -->
+      <div v-if="isOpen" class="modal-overlay" @click.self="emit('close')">
+        <div class="modal-container glass-panel" role="dialog" aria-modal="true" :aria-label="$t('registration.title')">
+          <!-- Header -->
           <header class="modal-header">
-            <h2 id="modal-title" class="modal-title">{{ $t('registration.title') }}</h2>
-            <p id="modal-description" class="visually-hidden">{{ $t('registration.step1Of3') }}</p>
-            <button class="modal-close-btn" @click="handleCancel" aria-label="Close registration modal and return to tournament page">
+            <div>
+              <h2 class="modal-title">{{ $t('registration.title') }}</h2>
+              <p class="modal-subtitle">{{ tournamentName }} — {{ gameName }}</p>
+            </div>
+            <button class="modal-close-btn" @click="emit('close')" :aria-label="$t('common.close')">
               ✕
             </button>
           </header>
 
-          <!-- Progress Indicator -->
-          <div class="progress-indicator">
-            <div v-for="step in [1, 2, 3]" :key="step" class="progress-step">
-              <button
+          <!-- Progress -->
+          <div v-if="!isSolo" class="progress-indicator">
+            <div v-for="step in totalSteps" :key="step" class="progress-step">
+              <div
                 class="progress-dot"
-                :class="{ 'progress-dot-active': step === currentStep, 'progress-dot-complete': step < currentStep }"
-                @click="goToStep(step as Step)"
+                :class="{ 'progress-dot-active': step === stepNumber, 'progress-dot-complete': step < stepNumber }"
               >
-                {{ step < currentStep ? '✓' : step }}
-              </button>
-              <span v-if="step < 3" class="progress-line"></span>
+                {{ step < stepNumber ? '✓' : step }}
+              </div>
+              <span v-if="step < totalSteps" class="progress-line"></span>
             </div>
           </div>
 
-          <!-- Modal Content -->
+          <!-- Content -->
           <div class="modal-content">
-            <!-- Step 1: Participation Type -->
-            <section v-show="currentStep === 1" class="step-pane">
-              <fieldset>
-                <legend class="step-title">{{ $t('registration.step1Of3') }}</legend>
+            <!-- Solo info banner -->
+            <div v-if="isSolo" class="solo-banner">
+              <span class="solo-icon">👤</span>
+              <p>{{ $t('teams.soloAutoRegister', { game: gameName }) }}</p>
+            </div>
 
-                <div class="radio-group">
-                  <label class="radio-option">
-                    <input
-                      v-model="formData.participationType"
-                      type="radio"
-                      name="participation-type"
-                      value="solo"
-                      aria-describedby="solo-description"
-                    />
-                    <span class="radio-label">{{ $t('registration.soloRegistration') }}</span>
-                    <span id="solo-description" class="radio-description">{{ $t('registration.soloDescription') }}</span>
-                  </label>
-
-                  <label class="radio-option">
-                    <input
-                      v-model="formData.participationType"
-                      type="radio"
-                      name="participation-type"
-                      value="team"
-                      aria-describedby="team-description"
-                    />
-                    <span class="radio-label">{{ $t('registration.teamRegistration') }}</span>
-                    <span id="team-description" class="radio-description">{{ $t('registration.teamDescription') }}</span>
-                  </label>
-                </div>
-              </fieldset>
-
-              <div v-if="errors.type" class="error-message">
-                {{ errors.type }}
-              </div>
-            </section>
-
-            <!-- Step 2: Details (Solo) -->
-            <section v-show="currentStep === 2 && isSolo" class="step-pane">
-              <h3 class="step-title">{{ $t('registration.step2SoloOf3') }}</h3>
-
-              <div class="form-group">
-                <label for="display-name" class="form-label">{{ $t('registration.displayName') }} *</label>
-                <input
-                  id="display-name"
-                  v-model="formData.displayName"
-                  type="text"
-                  class="form-input"
-                  :placeholder="$t('registration.displayNamePlaceholder')"
-                  required
-                  aria-required="true"
-                  :aria-invalid="!!errors.displayName"
-                  :aria-describedby="errors.displayName ? 'display-name-error' : undefined"
-                />
-                <span v-if="errors.displayName" id="display-name-error" role="alert" class="error-message">
-                  {{ errors.displayName }}
-                </span>
-              </div>
-
-              <div class="form-group">
-                <label for="email" class="form-label">{{ $t('registration.emailLabel') }} *</label>
-                <input
-                  id="email"
-                  v-model="formData.email"
-                  type="email"
-                  class="form-input"
-                  :placeholder="$t('registration.emailPlaceholder')"
-                  required
-                  aria-required="true"
-                  :aria-invalid="!!errors.email"
-                  :aria-describedby="errors.email ? 'email-error' : undefined"
-                />
-                <span v-if="errors.email" id="email-error" role="alert" class="error-message">
-                  {{ errors.email }}
-                </span>
-              </div>
-
-              <div class="form-group">
-                <label for="in-game-username" class="form-label">{{ $t('registration.inGameUsername') }} *</label>
-                <input
-                  id="in-game-username"
-                  v-model="formData.inGameUsername"
-                  type="text"
-                  class="form-input"
-                  :placeholder="$t('registration.inGamePlaceholder')"
-                  required
-                  aria-required="true"
-                  :aria-invalid="!!errors.inGameUsername"
-                  :aria-describedby="errors.inGameUsername ? 'in-game-username-error' : undefined"
-                />
-                <span v-if="errors.inGameUsername" id="in-game-username-error" role="alert" class="error-message">
-                  {{ errors.inGameUsername }}
-                </span>
-              </div>
-            </section>
-
-            <!-- Step 2: Details (Team) -->
-            <section v-show="currentStep === 2 && isTeam" class="step-pane">
-              <h3 class="step-title">{{ $t('registration.step2TeamOf3') }}</h3>
-
+            <!-- Step: Team Name -->
+            <section v-if="currentStep === 'team'" class="step-pane">
+              <h3 class="step-title">{{ $t('teams.nameYourTeam') }}</h3>
               <div class="form-group">
                 <label for="team-name" class="form-label">{{ $t('registration.teamName') }} *</label>
                 <input
                   id="team-name"
-                  v-model="formData.teamName"
+                  v-model="teamName"
                   type="text"
                   class="form-input"
                   :placeholder="$t('registration.teamNamePlaceholder')"
+                  maxlength="32"
+                  minlength="3"
                   required
-                  aria-required="true"
-                  :aria-invalid="!!errors.teamName"
-                  :aria-describedby="errors.teamName ? 'team-name-error' : undefined"
                 />
-                <span v-if="errors.teamName" id="team-name-error" role="alert" class="error-message">
-                  {{ errors.teamName }}
-                </span>
+              </div>
+              <div class="team-size-info">
+                <span class="info-label">{{ $t('teams.requiredSize') }}</span>
+                <span class="info-value">{{ teamSize }} {{ $t('teams.players') }}</span>
+              </div>
+            </section>
+
+            <!-- Step: Invite Friends -->
+            <section v-if="currentStep === 'invite'" class="step-pane">
+              <h3 class="step-title">{{ $t('teams.inviteFriends') }}</h3>
+              <p class="step-description">
+                {{ $t('teams.inviteDescription', { count: maxInvites }) }}
+              </p>
+
+              <!-- Search -->
+              <div class="member-search">
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  class="search-input"
+                  :placeholder="$t('registration.searchFriends')"
+                />
               </div>
 
-              <fieldset class="form-group">
-                <legend class="form-label">{{ $t('registration.selectMembers') }}</legend>
+              <!-- Loading -->
+              <div v-if="friendsStore.isLoading" class="member-loading">
+                <p>{{ $t('registration.loadingFriends') }}</p>
+              </div>
 
-                <!-- Search Input -->
-                <div class="member-search">
-                  <label for="member-search-input" class="visually-hidden">Search friends</label>
+              <!-- Empty -->
+              <div v-else-if="friendsStore.acceptedFriends.length === 0" class="member-empty">
+                <p class="empty-text">{{ $t('registration.noFriends') }}</p>
+                <p class="empty-subtext">{{ $t('registration.noFriendsHint') }}</p>
+              </div>
+
+              <!-- No search results -->
+              <div v-else-if="filteredFriends.length === 0 && searchQuery" class="member-empty">
+                <p>{{ $t('registration.noResults', { query: searchQuery }) }}</p>
+              </div>
+
+              <!-- Friends grid -->
+              <div v-else class="members-grid">
+                <label
+                  v-for="friend in filteredFriends"
+                  :key="friend.id"
+                  class="member-card"
+                  :class="{ 'member-card-selected': isSelected(friend.id) }"
+                >
                   <input
-                    id="member-search-input"
-                    v-model="searchQuery"
-                    type="text"
-                    class="search-input"
-                    :placeholder="$t('registration.searchFriends')"
-                    :aria-label="$t('registration.searchFriends')"
+                    type="checkbox"
+                    class="visually-hidden"
+                    :checked="isSelected(friend.id)"
+                    @change="toggleFriend(friend.id)"
+                    :disabled="selectedFriends.length >= maxInvites && !isSelected(friend.id)"
                   />
-                  <span class="search-icon" aria-hidden="true">🔍</span>
-                </div>
-
-                <!-- Loading State -->
-                <div v-if="friendsStore.isLoading" class="member-loading">
-                  <span class="loading-spinner">⏳</span>
-                  <p>{{ $t('registration.loadingFriends') }}</p>
-                </div>
-
-                <!-- Empty State -->
-                <div v-else-if="friendsStore.acceptedFriends.length === 0" class="member-empty">
-                  <span class="empty-icon">👥</span>
-                  <p class="empty-text">{{ $t('registration.noFriends') }}</p>
-                  <p class="empty-subtext">{{ $t('registration.noFriendsHint') }}</p>
-                </div>
-
-                <!-- No Search Results -->
-                <div v-else-if="filteredFriends.length === 0 && searchQuery" class="member-no-results">
-                  <span class="no-results-icon">🔍</span>
-                  <p>{{ $t('registration.noResults', { query: searchQuery }) }}</p>
-                </div>
-
-                <!-- Member Grid -->
-                <div v-else class="members-grid">
-                  <label
-                    v-for="friend in filteredFriends"
-                    :key="friend.id"
-                    class="member-card"
-                    :class="{ 'member-card-selected': isSelected(friend.id) }"
-                  >
-                    <input
-                      type="checkbox"
-                      class="visually-hidden"
-                      :checked="isSelected(friend.id)"
-                      @change="toggleTeamMember(friend.id.toString())"
-                      :disabled="formData.teamMembers.length >= 4 && !isSelected(friend.id)"
-                      :aria-label="`Select ${friend.profile.displayName ?? friend.username} as team member`"
-                    />
-
-                    <div class="member-avatar">
-                      <img v-if="friend.profile.avatarUrl" :src="friend.profile.avatarUrl" :alt="`${friend.username}'s avatar`" />
-                      <span v-else class="member-initials">{{ getInitials(friend.username, friend.profile.displayName) }}</span>
-                    </div>
-
-                    <div class="member-info">
-                      <span class="member-name">{{ friend.profile.displayName ?? friend.username }}</span>
-                      <span v-if="friend.profile.displayName" class="member-username">@{{ friend.username }}</span>
-                    </div>
-
-                    <div class="member-check" aria-hidden="true">
-                      <span v-if="isSelected(friend.id)">✓</span>
-                    </div>
-                  </label>
-                </div>
-
-                <span v-if="errors.teamMembers" id="team-members-error" role="alert" class="error-message">
-                  {{ errors.teamMembers }}
-                </span>
-              </fieldset>
+                  <div class="member-avatar">
+                    <img v-if="friend.profile.avatarUrl" :src="friend.profile.avatarUrl" :alt="friend.username" />
+                    <span v-else class="member-initials">{{ getInitials(friend.username, friend.profile.displayName) }}</span>
+                  </div>
+                  <div class="member-info">
+                    <span class="member-name">{{ friend.profile.displayName ?? friend.username }}</span>
+                    <span v-if="friend.profile.displayName" class="member-username">@{{ friend.username }}</span>
+                  </div>
+                  <div class="member-check" aria-hidden="true">
+                    <span v-if="isSelected(friend.id)">✓</span>
+                  </div>
+                </label>
+              </div>
 
               <div class="team-summary">
                 <span class="summary-label">{{ $t('registration.selected') }}</span>
-                <span class="summary-value">{{ formData.teamMembers.length }}/4</span>
+                <span class="summary-value">{{ selectedFriends.length }}/{{ maxInvites }}</span>
               </div>
             </section>
 
-            <!-- Step 3: Rules -->
-            <section v-show="currentStep === 3" class="step-pane">
-              <h3 class="step-title">{{ $t('registration.step3Of3') }}</h3>
-
-              <div class="rules-container" role="region" aria-label="Tournament rules">
-                <pre class="rules-text">{{ rules }}</pre>
+            <!-- Step: Rules -->
+            <section v-if="currentStep === 'rules'" class="step-pane">
+              <h3 v-if="!isSolo" class="step-title">{{ $t('registration.step3Of3') }}</h3>
+              <div class="rules-container" role="region" :aria-label="$t('tournament.rules')">
+                <pre class="rules-text">{{ rules || $t('teams.noRules') }}</pre>
               </div>
-
               <label class="checkbox-accept">
-                <input
-                  id="accept-rules"
-                  v-model="formData.acceptRules"
-                  type="checkbox"
-                  required
-                  aria-required="true"
-                  :aria-invalid="!!errors.rules"
-                  :aria-describedby="errors.rules ? 'rules-error' : undefined"
-                />
+                <input v-model="acceptRules" type="checkbox" required />
                 <span class="checkbox-text">{{ $t('registration.rulesAcceptRequired') }}</span>
               </label>
-
-              <span v-if="errors.rules" id="rules-error" role="alert" class="error-message">
-                {{ errors.rules }}
-              </span>
             </section>
           </div>
 
-          <!-- Modal Footer -->
+          <!-- Footer -->
           <footer class="modal-footer">
-            <button class="modal-btn modal-btn-secondary" @click="handleCancel">
+            <button class="modal-btn modal-btn-secondary" @click="emit('close')">
               {{ $t('registration.cancel') }}
             </button>
-
             <div class="modal-btn-group">
               <button
-                v-if="currentStep > 1"
+                v-if="!isSolo && currentStep !== 'team'"
                 class="modal-btn modal-btn-secondary"
                 @click="handleBack"
               >
                 ← {{ $t('registration.backBtn') }}
               </button>
 
+              <!-- Next button (team flow) -->
               <button
-                v-if="currentStep < 3"
+                v-if="currentStep === 'team'"
                 class="modal-btn modal-btn-primary"
-                :disabled="!canProceedStep2 && currentStep === 2"
+                :disabled="!canProceedTeam"
+                @click="handleNext"
+              >
+                {{ $t('registration.nextBtn') }} →
+              </button>
+              <button
+                v-else-if="currentStep === 'invite'"
+                class="modal-btn modal-btn-primary"
+                :disabled="!canProceedInvite"
                 @click="handleNext"
               >
                 {{ $t('registration.nextBtn') }} →
               </button>
 
+              <!-- Submit button -->
               <button
-                v-else
+                v-else-if="currentStep === 'rules'"
                 class="modal-btn modal-btn-primary"
-                :disabled="!canSubmit"
+                :disabled="!canSubmit || isSubmitting"
                 @click="handleSubmit"
               >
-                {{ $t('registration.register') }}
+                {{ isSubmitting ? $t('registration.submitting') : $t('registration.register') }}
               </button>
             </div>
           </footer>
@@ -503,7 +377,6 @@ const toggleTeamMember = (memberId: string) => {
 </template>
 
 <style scoped>
-/* Visually Hidden */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -514,18 +387,6 @@ const toggleTeamMember = (memberId: string) => {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
-}
-
-/* Fieldset Reset */
-fieldset {
-  border: none;
-  padding: 0;
-  margin: 0;
-}
-
-legend {
-  padding: 0;
-  margin: 0;
 }
 
 .modal-overlay {
@@ -549,15 +410,13 @@ legend {
   -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    0 0 40px var(--accent-primary-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 40px var(--accent-primary-glow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
 }
 
 .modal-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: var(--space-6);
   border-bottom: var(--hud-border) solid var(--glass-border);
@@ -569,6 +428,14 @@ legend {
   font-weight: var(--font-bold);
   letter-spacing: var(--tracking-widest);
   color: var(--text-primary);
+}
+
+.modal-subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-wider);
 }
 
 .modal-close-btn {
@@ -588,7 +455,7 @@ legend {
   color: var(--accent-primary);
 }
 
-/* Progress Indicator */
+/* Progress */
 .progress-indicator {
   display: flex;
   align-items: center;
@@ -606,25 +473,17 @@ legend {
 }
 
 .progress-dot {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-  background: transparent;
-  border: var(--hud-border) solid var(--border-default);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-default);
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.progress-dot:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  border: var(--hud-border) solid var(--border-default);
+  color: var(--text-secondary);
+  background: transparent;
 }
 
 .progress-dot-active {
@@ -645,19 +504,34 @@ legend {
   background: var(--border-subtle);
 }
 
-/* Modal Content */
+/* Content */
 .modal-content {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-6);
+}
+
+.solo-banner {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-selected);
+  border: var(--hud-border) solid var(--accent-primary-subtle);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.solo-icon {
+  font-size: var(--text-2xl);
+  flex-shrink: 0;
 }
 
 .step-pane {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
 .step-title {
@@ -668,50 +542,13 @@ legend {
   color: var(--text-primary);
 }
 
-/* Radio Group */
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.radio-option {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  background: var(--bg-tertiary);
-  border: var(--hud-border) solid var(--border-subtle);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-default);
-}
-
-.radio-option:hover {
-  background: var(--bg-selected);
-  border-color: var(--accent-primary-subtle);
-}
-
-.radio-option input {
-  margin-top: var(--space-1);
-  cursor: pointer;
-  accent-color: var(--accent-primary);
-}
-
-.radio-label {
-  display: block;
+.step-description {
+  margin: 0;
   font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-}
-
-.radio-description {
-  display: block;
-  font-size: var(--text-xs);
   color: var(--text-tertiary);
-  margin-top: var(--space-1);
 }
 
-/* Form Group */
+/* Form */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -737,57 +574,72 @@ legend {
   transition: all var(--duration-fast) var(--ease-default);
 }
 
-.form-input::placeholder {
-  color: var(--text-tertiary);
-}
-
+.form-input::placeholder { color: var(--text-tertiary); }
 .form-input:focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 0;
   border-color: var(--accent-primary);
 }
 
-/* Search Input */
+.team-size-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--bg-tertiary);
+  border: var(--hud-border) solid var(--border-subtle);
+  font-size: var(--text-sm);
+}
+
+.info-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  letter-spacing: var(--tracking-wider);
+}
+
+.info-value {
+  font-weight: var(--font-bold);
+  color: var(--accent-primary);
+}
+
+/* Member search + grid */
 .member-search {
   position: relative;
-  margin-bottom: var(--space-4);
 }
 
 .search-input {
   width: 100%;
-  padding: var(--space-2) var(--space-10) var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   background: var(--bg-tertiary);
   border: var(--hud-border) solid var(--border-subtle);
   color: var(--text-primary);
-  transition: border-color var(--duration-fast) var(--ease-default);
 }
 
-.search-input::placeholder {
+.search-input::placeholder { color: var(--text-tertiary); }
+.search-input:focus-visible { border-color: var(--accent-primary); outline: none; }
+
+.member-loading,
+.member-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-6);
+  text-align: center;
   color: var(--text-tertiary);
+  font-size: var(--text-sm);
 }
 
-.search-input:focus-visible {
-  border-color: var(--accent-primary);
-  outline: none;
-}
+.empty-text { margin: 0; color: var(--text-secondary); }
+.empty-subtext { margin: 0; font-size: var(--text-xs); color: var(--text-tertiary); }
 
-.member-search .search-icon {
-  position: absolute;
-  right: var(--space-3);
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-/* Member Grid */
 .members-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-3);
-  max-height: 300px;
+  gap: var(--space-2);
+  max-height: 250px;
   overflow-y: auto;
   padding: var(--space-2);
   border: var(--hud-border) solid var(--border-subtle);
@@ -795,28 +647,21 @@ legend {
 }
 
 @media (min-width: 640px) {
-  .members-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .members-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* Member Card */
 .member-card {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3);
   background: var(--bg-tertiary);
   border: var(--hud-border) solid var(--border-subtle);
-  border-radius: 4px;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-default);
 }
 
-.member-card:hover {
-  background: var(--bg-selected);
-  border-color: var(--accent-primary);
-}
+.member-card:hover { background: var(--bg-selected); border-color: var(--accent-primary); }
 
 .member-card-selected {
   background: var(--bg-selected);
@@ -824,15 +669,9 @@ legend {
   box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
-.member-card:focus-within {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
-}
-
-/* Avatar */
 .member-avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -843,30 +682,24 @@ legend {
   overflow: hidden;
 }
 
-.member-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+.member-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .member-initials {
   font-family: var(--font-display);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: var(--font-bold);
   color: var(--accent-primary);
 }
 
-/* Member Info */
 .member-info {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 1px;
   flex: 1;
   min-width: 0;
 }
 
 .member-name {
-  font-family: var(--font-display);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
@@ -879,13 +712,8 @@ legend {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--text-tertiary);
-  letter-spacing: var(--tracking-wider);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-/* Check Indicator */
 .member-check {
   width: 20px;
   height: 20px;
@@ -895,63 +723,6 @@ legend {
   font-size: var(--text-sm);
   color: var(--accent-primary);
   flex-shrink: 0;
-}
-
-/* Loading State */
-.member-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-8);
-  text-align: center;
-  gap: var(--space-2);
-  min-height: 150px;
-}
-
-.loading-spinner {
-  font-size: var(--text-3xl);
-  animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Empty States */
-.member-empty,
-.member-no-results {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-8);
-  text-align: center;
-  gap: var(--space-2);
-  min-height: 150px;
-}
-
-.empty-icon,
-.no-results-icon {
-  font-size: var(--text-4xl);
-  opacity: 0.5;
-}
-
-.empty-text {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.empty-subtext {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  margin: 0;
 }
 
 .team-summary {
@@ -976,14 +747,13 @@ legend {
   color: var(--accent-primary);
 }
 
-/* Rules Section */
+/* Rules */
 .rules-container {
-  max-height: 300px;
+  max-height: 200px;
   overflow-y: auto;
   padding: var(--space-4);
   background: var(--bg-tertiary);
   border: var(--hud-border) solid var(--border-subtle);
-  margin-bottom: var(--space-4);
 }
 
 .rules-text {
@@ -1006,27 +776,14 @@ legend {
   cursor: pointer;
 }
 
-.checkbox-accept input {
-  cursor: pointer;
-  accent-color: var(--accent-primary);
-}
+.checkbox-accept input { cursor: pointer; accent-color: var(--accent-primary); }
 
 .checkbox-text {
   font-size: var(--text-sm);
   color: var(--text-primary);
 }
 
-/* Error Message */
-.error-message {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-error);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-error-bg);
-  border-left: 2px solid var(--color-error);
-}
-
-/* Modal Footer */
+/* Footer */
 .modal-footer {
   display: flex;
   align-items: center;
@@ -1067,10 +824,7 @@ legend {
   box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
-.modal-btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.modal-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .modal-btn-secondary {
   color: var(--text-secondary);
@@ -1078,86 +832,22 @@ legend {
   border: var(--hud-border) solid var(--border-default);
 }
 
-.modal-btn-secondary:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-}
+.modal-btn-secondary:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
 
-.modal-btn:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
-}
-
-/* Animations */
+/* Transitions */
 .modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: all 200ms ease-out;
-}
-
+.modal-fade-leave-active { transition: all 200ms ease-out; }
 .modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-
-.modal-fade-enter-from .modal-container {
-  transform: scale(0.95);
-}
-
-.modal-fade-leave-to .modal-container {
-  transform: scale(0.95);
-}
+.modal-fade-leave-to { opacity: 0; }
+.modal-fade-enter-from .modal-container { transform: scale(0.95); }
+.modal-fade-leave-to .modal-container { transform: scale(0.95); }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .modal-container {
-    max-width: 95vw;
-    max-height: 95vh;
-  }
-
-  .modal-header {
-    padding: var(--space-4);
-  }
-
-  .modal-content {
-    padding: var(--space-4);
-  }
-
-  .modal-footer {
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
-  .modal-btn-group {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .modal-btn {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .progress-indicator {
-    gap: 0;
-  }
-
-  .progress-line {
-    width: 20px;
-  }
-
-  .progress-dot {
-    width: 36px;
-    height: 36px;
-    font-size: var(--text-xs);
-  }
-
-  .step-title {
-    font-size: var(--text-sm);
-  }
-
-  .modal-title {
-    font-size: var(--text-base);
-  }
+  .modal-container { max-width: 95vw; max-height: 95vh; }
+  .modal-header, .modal-content { padding: var(--space-4); }
+  .modal-footer { flex-direction: column; gap: var(--space-3); }
+  .modal-btn-group { width: 100%; flex-direction: column; }
+  .modal-btn { width: 100%; }
 }
 </style>

@@ -47,6 +47,12 @@ const bracketData = computed((): TournamentBracket | null => {
   const bt = currentTournament.value
   if (!bt?.phases?.length) return null
 
+  // Build team name lookup from tournament teams
+  const teamNameMap = new Map<number, string>()
+  for (const team of bt.teams ?? []) {
+    teamNameMap.set(team.id, team.name)
+  }
+
   const rounds: BracketRound[] = []
   for (const phase of bt.phases) {
     if (!phase.matches?.length) continue
@@ -64,8 +70,8 @@ const bracketData = computed((): TournamentBracket | null => {
           id: String(m.id),
           roundIndex: roundNum - 1,
           matchIndex: idx,
-          player1: m.team1_id ? { id: String(m.team1_id), username: `Team ${m.team1_id}`, avatar: '👤', rating: 0, seed: 0 } : null,
-          player2: m.team2_id ? { id: String(m.team2_id), username: `Team ${m.team2_id}`, avatar: '👤', rating: 0, seed: 0 } : null,
+          player1: m.team1_id ? { id: String(m.team1_id), username: teamNameMap.get(m.team1_id) ?? `Team ${m.team1_id}`, avatar: '👤', rating: 0, seed: 0 } : null,
+          player2: m.team2_id ? { id: String(m.team2_id), username: teamNameMap.get(m.team2_id) ?? `Team ${m.team2_id}`, avatar: '👤', rating: 0, seed: 0 } : null,
           score1: m.team1_score,
           score2: m.team2_score,
           status: m.status === 'completed' ? 'completed' as const : m.status === 'live' ? 'live' as const : 'upcoming' as const,
@@ -85,27 +91,31 @@ const bracketData = computed((): TournamentBracket | null => {
   }
 })
 
-// Participants derived from teams
-const participants = computed(() => {
+// Teams for participants tab (show teams, not flat members)
+const teamsList = computed(() => {
   const bt = currentTournament.value
   if (!bt?.teams?.length) return []
-  return bt.teams.flatMap(team =>
-    team.members.map(member => ({
-      id: String(member.id),
-      username: `@${member.username}`,
-      avatar: '👤',
-      status: team.status === 'confirmed' ? 'confirmed' : 'pending',
-    }))
-  )
+  return bt.teams
 })
+
+// Total participant count across all teams
+const totalParticipants = computed(() =>
+  teamsList.value.reduce((sum, team) => sum + (team.members?.length ?? 0), 0)
+)
+
+// Required team size from game
+const requiredTeamSize = computed(() => gameInfo.value.teamSize)
 
 const searchParticipant = ref('')
 
-const filteredParticipants = computed(() =>
-  participants.value.filter(p =>
-    p.username.toLowerCase().includes(searchParticipant.value.toLowerCase())
+const filteredTeams = computed(() => {
+  if (!searchParticipant.value) return teamsList.value
+  const q = searchParticipant.value.toLowerCase()
+  return teamsList.value.filter(team =>
+    team.name.toLowerCase().includes(q) ||
+    team.members.some(m => m.username.toLowerCase().includes(q))
   )
-)
+})
 
 const isRegistered = ref(false)
 
@@ -113,16 +123,23 @@ const handleRegister = () => {
   registrationModalOpen.value = true
 }
 
-const handleRegistrationSubmit = async (_data: Record<string, unknown>) => {
-  const success = await register(tournamentId.value)
-  if (success) {
-    isRegistered.value = true
-    registrationModalOpen.value = false
-    showSuccess(t('tournament.registrationSuccess'), 4000)
-  } else {
-    showError(error.value || t('tournament.registrationFailed'), 4000)
-  }
+const handleRegistered = () => {
+  isRegistered.value = true
+  registrationModalOpen.value = false
+  // Refresh to get updated teams list
+  fetchTournament(tournamentId.value)
 }
+
+/** Get game info from the first phase */
+const gameInfo = computed(() => {
+  const bt = currentTournament.value
+  if (!bt?.phases?.[0]?.game) return { teamSize: 1, gameName: 'Pong' }
+  const game = bt.phases[0].game
+  return {
+    teamSize: game.teamSize ?? 1,
+    gameName: game.name ?? 'Unknown',
+  }
+})
 
 const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() => [
   { id: 'overview', label: t('tournament.overview'), icon: '📋' },
@@ -283,23 +300,46 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
             <span class="search-icon" aria-hidden="true">🔍</span>
           </div>
 
-          <!-- Participants List -->
+          <!-- Teams List -->
           <div class="participants-list">
             <div
-              v-for="participant in filteredParticipants"
-              :key="participant.id"
-              class="participant-item"
+              v-for="team in filteredTeams"
+              :key="team.id"
+              class="team-card"
             >
-              <span class="participant-avatar">{{ participant.avatar }}</span>
-              <div class="participant-info">
-                <span class="participant-name">{{ participant.username }}</span>
-                <span class="participant-status" :class="`status-${participant.status}`">
-                  {{ participant.status }}
+              <div class="team-header">
+                <span class="team-name">{{ team.name }}</span>
+                <span
+                  class="team-status-badge"
+                  :class="`status-${team.status.toLowerCase()}`"
+                >
+                  {{ team.status }}
                 </span>
+              </div>
+              <div class="team-members">
+                <div
+                  v-for="member in team.members"
+                  :key="member.id"
+                  class="participant-item"
+                >
+                  <span class="participant-avatar">
+                    <img v-if="member.avatarUrl" :src="member.avatarUrl" :alt="member.username" class="avatar-img" />
+                    <span v-else>👤</span>
+                  </span>
+                  <div class="participant-info">
+                    <span class="participant-name">
+                      @{{ member.username }}
+                      <span v-if="member.id === team.captain_id" class="captain-badge">{{ $t('teams.captain') }}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="team-member-count">
+                {{ team.members?.length ?? 0 }}/{{ requiredTeamSize }} {{ $t('teams.players') }}
               </div>
             </div>
 
-            <div v-if="filteredParticipants.length === 0" class="no-participants">
+            <div v-if="filteredTeams.length === 0" class="no-participants">
               <span class="no-participants-icon">🔍</span>
               <p class="no-participants-text">{{ $t('tournament.noParticipants') }}</p>
             </div>
@@ -307,7 +347,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 
           <div class="participants-summary">
             <span class="summary-label">{{ $t('tournament.totalRegistered') }}</span>
-            <span class="summary-value">{{ participants.length }} / {{ tournament.maxParticipants }}</span>
+            <span class="summary-value">{{ teamsList.length }} {{ $t('teams.teams') }} ({{ totalParticipants }} {{ $t('teams.players') }})</span>
           </div>
         </div>
       </section>
@@ -343,12 +383,15 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 
   <!-- Registration Modal -->
   <TournamentRegistrationModal
-    v-if="tournament"
+    v-if="tournament && currentTournament"
+    :tournament-id="currentTournament.id"
     :tournament-name="tournament.name"
     :rules="tournament.rules"
     :is-open="registrationModalOpen"
+    :team-size="gameInfo.teamSize"
+    :game-name="gameInfo.gameName"
     @close="registrationModalOpen = false"
-    @submit="handleRegistrationSubmit"
+    @registered="handleRegistered"
   />
 </template>
 
@@ -755,22 +798,80 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   letter-spacing: var(--tracking-wide);
 }
 
-.participant-status {
+.team-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--bg-tertiary);
+  border: var(--hud-border) solid var(--border-subtle);
+}
+
+.team-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.team-name {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-wider);
+}
+
+.team-status-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-wider);
+  padding: var(--space-1) var(--space-2);
+  text-transform: uppercase;
+}
+
+.status-locked {
+  background: var(--color-success);
+  color: white;
+}
+
+.status-draft {
+  background: var(--color-warning);
+  color: white;
+}
+
+.status-archived {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+.team-members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-2);
+}
+
+.team-member-count {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  color: var(--text-tertiary);
   letter-spacing: var(--tracking-wider);
-  width: fit-content;
-  padding: var(--space-1) var(--space-2);
 }
 
-.status-confirmed {
-  background: var(--color-success-dark);
-  color: white;
+.captain-badge {
+  font-size: 10px;
+  font-weight: var(--font-bold);
+  color: var(--accent-primary);
+  margin-left: var(--space-1);
+  letter-spacing: var(--tracking-wider);
 }
 
-.status-pending {
-  background: var(--color-warning-dark);
-  color: white;
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .no-participants {

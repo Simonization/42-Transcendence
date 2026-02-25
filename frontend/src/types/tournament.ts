@@ -16,9 +16,24 @@ export enum PhaseType {
   ROUND_ROBIN = 'ROUND_ROBIN',
 }
 
+export enum TeamStatus {
+  DRAFT = 'DRAFT',
+  LOCKED = 'LOCKED',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export enum TeamInvitationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+}
+
 export interface BackendGame {
   id: number
   name: string
+  teamCount: number
+  teamSize: number
+  createdAt?: string
 }
 
 export interface BackendMatch {
@@ -55,11 +70,22 @@ export interface BackendTeamMember {
 export interface BackendTeam {
   id: number
   name: string
-  status: string
+  status: TeamStatus | string
   captain_id: number
   captain?: BackendTeamMember
   members: BackendTeamMember[]
   tournament?: BackendTournament
+}
+
+export interface TeamInvitation {
+  id: number
+  team_id: number
+  team?: BackendTeam
+  sender_id: number
+  sender?: BackendTeamMember
+  receiver_id: number
+  receiver?: BackendTeamMember
+  status: TeamInvitationStatus | string
 }
 
 export interface BackendTournament {
@@ -96,4 +122,19 @@ export interface UpdateTournamentDto {
 export interface RegisterTournamentDto {
   teamName?: string
   memberIds?: number[]
+}
+
+export interface CreateTeamDto {
+  name: string
+  tournament_id: number
+}
+
+export interface InvitePlayerDto {
+  userId: number
+}
+
+export interface CreateGameDto {
+  name: string
+  team_count: number
+  team_size: number
 }
