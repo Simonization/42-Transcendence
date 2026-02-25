@@ -25,6 +25,18 @@ export const usersApi = {
   },
 
   /**
+   * Search users by query string
+   * @param q - Search query (matches username)
+   * @param limit - Max results to return (default 50)
+   */
+  search: (q?: string, limit = 50): Promise<User[]> => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    params.set('limit', String(limit));
+    return api<User[]>(`/users?${params.toString()}`);
+  },
+
+  /**
    * Update user profile (display name, bio, avatar)
    * @param userId - User ID
    * @param data - Profile update data

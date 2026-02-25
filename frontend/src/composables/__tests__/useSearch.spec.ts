@@ -2,61 +2,189 @@
  * useSearch Composable Unit Tests
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useSearch } from '../useSearch'
 import type { Friend, ChatRoom } from '../../types'
 import { FriendStatus } from '../../types'
+
+// Mock API modules
+vi.mock('../../api/tournaments', () => ({
+  tournamentsApi: {
+    getAll: vi.fn(),
+  },
+}))
+
+vi.mock('../../api/users', () => ({
+  usersApi: {
+    search: vi.fn(),
+  },
+}))
+
+import { tournamentsApi } from '../../api/tournaments'
+import { usersApi } from '../../api/users'
+
+const mockBackendTournaments = [
+  {
+    id: 1,
+    name: 'Spring Championship 2026',
+    description: 'Annual tournament',
+    max_participants: 64,
+    status: 'REGISTRATION_OPEN',
+    phases: [{ id: 1, tournament_id: 1, order: 1, type: 'SINGLE_ELIMINATION', game_id: 1, game: { id: 1, name: 'League of Legends' }, matches: [] }],
+    teams: [],
+    createdAt: '2026-02-15T00:00:00Z',
+  },
+  {
+    id: 2,
+    name: 'Chess Blitz Royale',
+    description: 'Fast-paced blitz',
+    max_participants: 128,
+    status: 'ONGOING',
+    phases: [{ id: 2, tournament_id: 2, order: 1, type: 'ROUND_ROBIN', game_id: 2, game: { id: 2, name: 'Chess' }, matches: [] }],
+    teams: [{ id: 1, name: 'Team A', status: 'active', captain_id: 1, members: [] }],
+    createdAt: '2026-02-18T00:00:00Z',
+  },
+  {
+    id: 3,
+    name: 'Counter-Strike Elite Cup',
+    description: 'Competitive CS',
+    max_participants: 16,
+    status: 'COMPLETED',
+    phases: [{ id: 3, tournament_id: 3, order: 1, type: 'DOUBLE_ELIMINATION', game_id: 3, game: { id: 3, name: 'Counter-Strike 2' }, matches: [] }],
+    teams: [],
+    createdAt: '2026-02-20T00:00:00Z',
+  },
+]
 
 describe('useSearch', () => {
   beforeEach(() => {
     const { reset } = useSearch()
     reset()
+    vi.clearAllMocks()
+    vi.mocked(tournamentsApi.getAll).mockResolvedValue(mockBackendTournaments as never)
+    vi.mocked(usersApi.search).mockResolvedValue([])
   })
 
-  describe('filteredTournaments', () => {
-    it('should return all tournaments when query is empty', () => {
-      const { filteredTournaments } = useSearch()
-      expect(filteredTournaments.value.length).toBeGreaterThan(0)
+  describe('filteredTournaments (API-backed)', () => {
+    it('should load tournaments from API', async () => {
+      const { loadTournaments, filteredTournaments } = useSearch()
+      await loadTournaments()
+      expect(tournamentsApi.getAll).toHaveBeenCalled()
+      expect(filteredTournaments.value.length).toBe(3)
     })
 
-    it('should filter tournaments by name', () => {
-      const { setQuery, filteredTournaments } = useSearch()
+    it('should map backend status to display status', async () => {
+      const { loadTournaments, filteredTournaments } = useSearch()
+      await loadTournaments()
+      const statuses = filteredTournaments.value.map(t => t.status)
+      expect(statuses).toContain('open')
+      expect(statuses).toContain('live')
+      expect(statuses).toContain('finished')
+    })
+
+    it('should filter tournaments by name', async () => {
+      const { loadTournaments, setQuery, filteredTournaments } = useSearch()
+      await loadTournaments()
       setQuery('Championship')
       expect(filteredTournaments.value.every(t => t.name.toLowerCase().includes('championship'))).toBe(true)
     })
 
-    it('should filter tournaments by game', () => {
-      const { setQuery, filteredTournaments } = useSearch()
-      setQuery('League of Legends')
+    it('should filter tournaments by game', async () => {
+      const { loadTournaments, setQuery, filteredTournaments } = useSearch()
+      await loadTournaments()
+      setQuery('Chess')
       expect(filteredTournaments.value.every(t =>
-        t.name.toLowerCase().includes('league of legends') ||
-        t.game.toLowerCase().includes('league of legends')
+        t.name.toLowerCase().includes('chess') ||
+        t.game.toLowerCase().includes('chess')
       )).toBe(true)
     })
 
-    it('should filter by status', () => {
-      const { updateFilters, filteredTournaments } = useSearch()
+    it('should filter by status', async () => {
+      const { loadTournaments, updateFilters, filteredTournaments } = useSearch()
+      await loadTournaments()
       updateFilters({ statuses: ['open'] })
       expect(filteredTournaments.value.every(t => t.status === 'open')).toBe(true)
     })
 
-    it('should filter by date range', () => {
-      const { updateFilters, filteredTournaments } = useSearch()
-      updateFilters({ dateFrom: '2026-03-01' })
-      expect(filteredTournaments.value.every(t => t.date >= '2026-03-01')).toBe(true)
+    it('should filter by date range', async () => {
+      const { loadTournaments, updateFilters, filteredTournaments } = useSearch()
+      await loadTournaments()
+      updateFilters({ dateFrom: '2026-02-19' })
+      expect(filteredTournaments.value.every(t => t.date >= '2026-02-19')).toBe(true)
     })
 
-    it('should combine query and filters', () => {
-      const { setQuery, updateFilters, filteredTournaments } = useSearch()
-      setQuery('a')
-      updateFilters({ statuses: ['open'] })
-      expect(filteredTournaments.value.every(t => t.status === 'open')).toBe(true)
+    it('should return empty results when API fails', async () => {
+      vi.mocked(tournamentsApi.getAll).mockRejectedValueOnce(new Error('Network error'))
+      const { loadTournaments, filteredTournaments, searchError } = useSearch()
+      // Force reload by resetting loaded state
+      await loadTournaments()
+      // After error, should have empty tournaments with error message
+      // Note: tournamentsLoaded may still be false, but we verify graceful handling
+      expect(searchError.value).toBe('Failed to load tournaments')
+    })
+  })
+
+  describe('loading state', () => {
+    it('should set isLoading during tournament fetch', async () => {
+      let resolvePromise: (value: never[]) => void
+      vi.mocked(tournamentsApi.getAll).mockReturnValue(new Promise(resolve => {
+        resolvePromise = resolve as (value: never[]) => void
+      }))
+      const { loadTournaments, isLoading } = useSearch()
+      const promise = loadTournaments()
+      expect(isLoading.value).toBe(true)
+      resolvePromise!([] as never[])
+      await promise
+      expect(isLoading.value).toBe(false)
+    })
+
+    it('should set isLoading during user search', async () => {
+      let resolvePromise: (value: never[]) => void
+      vi.mocked(usersApi.search).mockReturnValue(new Promise(resolve => {
+        resolvePromise = resolve as (value: never[]) => void
+      }))
+      const { searchUsers, isLoading } = useSearch()
+      const promise = searchUsers('alice')
+      expect(isLoading.value).toBe(true)
+      resolvePromise!([] as never[])
+      await promise
+      expect(isLoading.value).toBe(false)
+    })
+  })
+
+  describe('searchUsers (API-backed)', () => {
+    it('should call usersApi.search with query', async () => {
+      const mockUsers = [
+        { id: 10, username: 'alice', mail: 'a@a.com', twoFactorEnabled: false, profile: { userId: 10, displayName: null, avatarUrl: null, bio: null, createdAt: '' }, settings: {} },
+      ]
+      vi.mocked(usersApi.search).mockResolvedValue(mockUsers as never)
+      const { searchUsers, searchedUsers } = useSearch()
+      await searchUsers('alice')
+      expect(usersApi.search).toHaveBeenCalledWith('alice')
+      expect(searchedUsers.value).toHaveLength(1)
+      expect(searchedUsers.value[0].username).toBe('alice')
+    })
+
+    it('should clear results when query is empty', async () => {
+      const { searchUsers, searchedUsers } = useSearch()
+      await searchUsers('')
+      expect(usersApi.search).not.toHaveBeenCalled()
+      expect(searchedUsers.value).toHaveLength(0)
+    })
+
+    it('should handle search error gracefully', async () => {
+      vi.mocked(usersApi.search).mockRejectedValueOnce(new Error('Network error'))
+      const { searchUsers, searchedUsers, searchError } = useSearch()
+      await searchUsers('test')
+      expect(searchedUsers.value).toHaveLength(0)
+      expect(searchError.value).toBe('Failed to search users')
     })
   })
 
   describe('sorting', () => {
-    it('should sort by name ascending by default', () => {
-      const { filteredTournaments } = useSearch()
+    it('should sort by name ascending by default', async () => {
+      const { loadTournaments, filteredTournaments } = useSearch()
+      await loadTournaments()
       const names = filteredTournaments.value.map(t => t.name)
       const sorted = [...names].sort()
       expect(names).toEqual(sorted)

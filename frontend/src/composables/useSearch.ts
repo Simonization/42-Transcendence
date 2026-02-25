@@ -1,6 +1,9 @@
 import { ref, computed } from 'vue'
-import { mockTournaments, type Tournament } from '../data/mockTournaments'
-import type { Friend, ChatRoom } from '../types'
+import { tournamentsApi } from '../api/tournaments'
+import { usersApi } from '../api/users'
+import type { BackendTournament } from '../types'
+import type { Tournament } from '../data/mockTournaments'
+import type { Friend, ChatRoom, User } from '../types'
 
 export type SearchTab = 'tournaments' | 'users' | 'rooms'
 export type SortDirection = 'asc' | 'desc'
@@ -25,10 +28,90 @@ const filters = ref<SearchFilters>({
   dateTo: '',
 })
 const isOpen = ref(false)
+const isLoading = ref(false)
+const searchError = ref<string | null>(null)
+
+/** API-fetched tournaments mapped to display format */
+const tournaments = ref<Tournament[]>([])
+/** API-fetched users from search */
+const searchedUsers = ref<User[]>([])
+
+let tournamentsLoaded = false
+
+/**
+ * Map backend tournament to display format used by the search UI
+ */
+function toDisplayTournament(bt: BackendTournament): Tournament {
+  const statusMap: Record<string, Tournament['status']> = {
+    DRAFT: 'open',
+    REGISTRATION_OPEN: 'open',
+    ONGOING: 'live',
+    COMPLETED: 'finished',
+  }
+
+  const formatMap: Record<string, Tournament['format']> = {
+    SINGLE_ELIMINATION: 'single-elimination',
+    DOUBLE_ELIMINATION: 'double-elimination',
+    ROUND_ROBIN: 'round-robin',
+  }
+
+  const firstPhase = bt.phases?.[0]
+  const gameName = firstPhase?.game?.name ?? 'Pong'
+  const phaseType = firstPhase?.type ?? 'SINGLE_ELIMINATION'
+
+  return {
+    id: String(bt.id),
+    name: bt.name,
+    game: gameName,
+    date: bt.createdAt?.split('T')[0] ?? '',
+    endDate: bt.updatedAt?.split('T')[0] ?? bt.createdAt?.split('T')[0] ?? '',
+    status: statusMap[bt.status] ?? 'open',
+    maxParticipants: bt.max_participants,
+    currentParticipants: bt.teams?.length ?? 0,
+    format: formatMap[phaseType] ?? 'single-elimination',
+    description: bt.description ?? '',
+    rules: '',
+    prize: '',
+    organizer: { name: 'Organizer', avatar: '' },
+  }
+}
 
 export function useSearch() {
+  const loadTournaments = async () => {
+    if (tournamentsLoaded) return
+    isLoading.value = true
+    searchError.value = null
+    try {
+      const data = await tournamentsApi.getAll()
+      tournaments.value = data.map(toDisplayTournament)
+      tournamentsLoaded = true
+    } catch {
+      searchError.value = 'Failed to load tournaments'
+      tournaments.value = []
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const searchUsers = async (q: string) => {
+    if (!q.trim()) {
+      searchedUsers.value = []
+      return
+    }
+    isLoading.value = true
+    searchError.value = null
+    try {
+      searchedUsers.value = await usersApi.search(q)
+    } catch {
+      searchError.value = 'Failed to search users'
+      searchedUsers.value = []
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const filteredTournaments = computed(() => {
-    let result = [...mockTournaments]
+    let result = [...tournaments.value]
 
     // Query filter
     if (query.value.trim()) {
@@ -136,10 +219,15 @@ export function useSearch() {
     sortField.value = 'name'
     sortDir.value = 'asc'
     filters.value = { games: [], statuses: [], dateFrom: '', dateTo: '' }
+    searchedUsers.value = []
+    searchError.value = null
+    tournaments.value = []
+    tournamentsLoaded = false
   }
 
   const openSearch = () => {
     isOpen.value = true
+    loadTournaments()
   }
 
   const closeSearch = () => {
@@ -156,6 +244,10 @@ export function useSearch() {
     sortDir,
     filters,
     isOpen,
+    isLoading,
+    searchError,
+    tournaments,
+    searchedUsers,
     filteredTournaments,
     filterUsers,
     filterRooms,
@@ -169,5 +261,7 @@ export function useSearch() {
     reset,
     openSearch,
     closeSearch,
+    loadTournaments,
+    searchUsers,
   }
 }

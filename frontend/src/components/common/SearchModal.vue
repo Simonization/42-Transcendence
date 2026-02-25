@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useSearch, type SearchTab } from '../../composables/useSearch'
 import type { Friend, ChatRoom } from '../../types'
 
@@ -22,6 +22,9 @@ const {
   sortField,
   sortDir,
   filters,
+  isLoading,
+  searchError,
+  searchedUsers,
   filteredTournaments,
   filterUsers,
   filterRooms,
@@ -32,19 +35,43 @@ const {
   setPage,
   setSortField,
   updateFilters,
+  loadTournaments,
+  searchUsers,
 } = useSearch()
 
 const searchInput = ref<HTMLInputElement | null>(null)
+let userSearchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const filteredUsers = computed(() => filterUsers(props.friends))
+/** Combine friends filter with API search results */
+const allUsers = computed(() => {
+  if (!query.value.trim()) return filteredUsers.value
+  // Merge local friends + API results, deduplicate by id
+  const localMatches = filteredUsers.value
+  const apiMatches = searchedUsers.value.map(u => ({
+    id: u.id,
+    username: u.username,
+    profile: u.profile ?? { userId: u.id, displayName: null, avatarUrl: null, bio: null, createdAt: '' },
+    status: u.status ?? 0,
+    since: '',
+  }))
+  const seen = new Set(localMatches.map(f => f.id))
+  const merged = [...localMatches]
+  for (const u of apiMatches) {
+    if (!seen.has(u.id)) {
+      merged.push(u as Friend)
+    }
+  }
+  return merged
+})
 const filteredChatRooms = computed(() => filterRooms(props.rooms, props.currentUserId))
 
 const tournamentResults = computed(() => paginatedItems(filteredTournaments.value))
-const userResults = computed(() => paginatedItems(filteredUsers.value))
+const userResults = computed(() => paginatedItems(allUsers.value))
 const roomResults = computed(() => paginatedItems(filteredChatRooms.value))
 
 const tournamentPages = computed(() => totalPages(filteredTournaments.value.length))
-const userPages = computed(() => totalPages(filteredUsers.value.length))
+const userPages = computed(() => totalPages(allUsers.value.length))
 const roomPages = computed(() => totalPages(filteredChatRooms.value.length))
 
 const currentTotalPages = computed(() => {
@@ -55,13 +82,21 @@ const currentTotalPages = computed(() => {
 
 const tabs: { key: SearchTab; labelKey: string; countGetter: () => number }[] = [
   { key: 'tournaments', labelKey: 'search.tabTournaments', countGetter: () => filteredTournaments.value.length },
-  { key: 'users', labelKey: 'search.tabUsers', countGetter: () => filteredUsers.value.length },
+  { key: 'users', labelKey: 'search.tabUsers', countGetter: () => allUsers.value.length },
   { key: 'rooms', labelKey: 'search.tabRooms', countGetter: () => filteredChatRooms.value.length },
 ]
 
 const availableGames = computed(() => {
   const games = new Set(filteredTournaments.value.map(t => t.game))
   return [...games].sort()
+})
+
+/** Debounced user search when query changes on users tab */
+watch([query, activeTab], ([q, tab]) => {
+  if (userSearchTimeout) clearTimeout(userSearchTimeout)
+  if (tab === 'users' && q.trim()) {
+    userSearchTimeout = setTimeout(() => searchUsers(q), 300)
+  }
 })
 
 const handleEscape = (e: KeyboardEvent) => {
@@ -77,10 +112,12 @@ const getRoomDisplayName = (room: ChatRoom): string => {
 onMounted(() => {
   searchInput.value?.focus()
   document.addEventListener('keydown', handleEscape)
+  loadTournaments()
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscape)
+  if (userSearchTimeout) clearTimeout(userSearchTimeout)
 })
 </script>
 
@@ -179,8 +216,16 @@ onUnmounted(() => {
 
         <!-- Results -->
         <div class="search-results">
+          <!-- Loading / Error -->
+          <div v-if="isLoading" class="no-results loading-indicator">
+            {{ $t('common.loading') ?? 'Loading...' }}
+          </div>
+          <div v-else-if="searchError" class="no-results search-error">
+            {{ searchError }}
+          </div>
+
           <!-- Tournament results -->
-          <template v-if="activeTab === 'tournaments'">
+          <template v-else-if="activeTab === 'tournaments'">
             <div v-if="tournamentResults.length === 0" class="no-results">
               {{ $t('search.noResults') }}
             </div>
@@ -202,7 +247,7 @@ onUnmounted(() => {
           </template>
 
           <!-- User results -->
-          <template v-if="activeTab === 'users'">
+          <template v-else-if="activeTab === 'users'">
             <div v-if="userResults.length === 0" class="no-results">
               {{ $t('search.noResults') }}
             </div>
@@ -221,7 +266,7 @@ onUnmounted(() => {
           </template>
 
           <!-- Room results -->
-          <template v-if="activeTab === 'rooms'">
+          <template v-else-if="activeTab === 'rooms'">
             <div v-if="roomResults.length === 0" class="no-results">
               {{ $t('search.noResults') }}
             </div>
@@ -435,6 +480,14 @@ onUnmounted(() => {
   text-align: center;
   color: var(--text-tertiary);
   font-size: var(--text-sm);
+}
+
+.loading-indicator {
+  color: var(--accent-primary);
+}
+
+.search-error {
+  color: var(--color-error, var(--text-tertiary));
 }
 
 .result-row {
