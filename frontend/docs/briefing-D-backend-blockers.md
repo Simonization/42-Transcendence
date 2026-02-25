@@ -1,8 +1,8 @@
 # Briefing D — Backend Blockers & What They Unlock
 
-## Status as of Feb 25 (evening) — UPDATED
+## Status as of Feb 25 (evening)
 
-**Big news:** Louis created `test_merge_perm_+_front` — a test merge of `permissions` + `simon/frontend` + `backend_nico`. This is the closest thing to a "working" combined branch. Key finding: `/users/me` now returns `role` and `status` correctly (Blocker L2 resolved on that branch).
+ Louis created `test_merge_perm_+_front` — a test merge of `permissions` + `simon/frontend` + `backend_nico`. This is the closest thing to a "working" combined branch. Key finding: `/users/me` now returns `role` and `status` correctly (Blocker L2 resolved on that branch).
 
 ---
 
@@ -80,25 +80,3 @@ simon/frontend ─┘
 2. **Louis merges `test_merge_perm_+_front` → `main`**
 3. **Ahmet tests `make up`** on the merged main
 4. **Simon tests the full flow** end-to-end
-
----
-
-## Messages to Send Today (Feb 26)
-
-### To Nicolas (CRITICAL):
-> "Hey Nicolas, two 2-line fixes needed on backend_nico:
-> 1. Add `TeamsModule` to imports in `app.module.ts` (all /teams endpoints 404 otherwise)
-> 2. Add `TournamentsModule` to imports too (same issue)
-> These are the only things blocking the tournament registration demo.
-> Then we need backend_nico → main merged."
-
-### To Louis:
-> "Hey Louis, `test_merge_perm_+_front` looks good — great that `/users/me` now returns role+status!
-> Two questions:
-> 1. Can you merge that branch → main when Nicolas fixes the TeamsModule import?
-> 2. Does `avatarUrl` come back from GET /users/me? Our frontend uses it for avatar display."
-
-### To Ahmet:
-> "Hey Ahmet, can you test if `make up` works on the current main branch?
-> The corrector will run this immediately. We need to know if there are Docker/Nginx issues before Saturday.
-> Also please don't merge your `amt` branch — it would overwrite the frontend."
