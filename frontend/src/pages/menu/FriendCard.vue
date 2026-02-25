@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useFriendsStore } from '../../stores/friends'
 import MessageAlert from '../../components/common/MessageAlert.vue'
@@ -10,6 +11,7 @@ import FriendRequests from '../../components/friends/FriendRequests.vue'
 import BlockedUsers from '../../components/friends/BlockedUsers.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 const authStore = useAuthStore()
 const friendsStore = useFriendsStore()
 
@@ -122,6 +124,10 @@ const handleDecline = async (friendId: number) => {
     isUpdating.value = false
   }
 }
+
+const handleChat = (friendId: number) => {
+  router.push({ path: '/menu/chat', query: { openWith: String(friendId) } })
+}
 </script>
 
 <template>
@@ -160,6 +166,7 @@ const handleDecline = async (friendId: number) => {
           :is-updating="isUpdating"
           @remove="handleRemove"
           @block="handleBlock"
+          @chat="handleChat"
         />
 
         <FriendRequests

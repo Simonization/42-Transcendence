@@ -8,6 +8,16 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import FriendCard from '../FriendCard.vue'
 
+vi.mock('vue-router', () => ({
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+  })),
+  useRoute: vi.fn(() => ({
+    query: {},
+  })),
+}))
+
 // Mock child components
 vi.mock('../../../components/friends/AddFriendInput.vue', () => ({
   default: {
@@ -22,7 +32,7 @@ vi.mock('../../../components/friends/FriendList.vue', () => ({
     name: 'FriendList',
     template: '<div class="mock-friend-list"><slot></slot></div>',
     props: ['friends'],
-    emits: ['remove', 'block'],
+    emits: ['remove', 'block', 'chat'],
   },
 }))
 

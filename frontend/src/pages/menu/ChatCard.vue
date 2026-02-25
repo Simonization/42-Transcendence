@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useChatStore } from '../../stores/chat'
 import ChatRoomList from '../../components/chat/ChatRoomList.vue'
@@ -9,6 +9,8 @@ import MessageInput from '../../components/chat/MessageInput.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import UserProfilePopup from '../../components/chat/UserProfilePopup.vue'
 import { storeToRefs } from 'pinia'
+import { usersApi } from '../../api/users'
+import type { User } from '../../types'
 
 const authStore = useAuthStore()
 const { user } = authStore
@@ -41,11 +43,44 @@ const {
 } = chatStore
 
 const router = useRouter()
+const route = useRoute()
 
-const newChatUserId = ref('')
 const showNewChat = ref(false)
 const showBlockConfirm = ref(false)
 const profilePopupUser = ref<{ id: number; username: string } | null>(null)
+
+// Username search for new chat
+const newChatQuery = ref('')
+const newChatResults = ref<User[]>([])
+let newChatSearchTimer: ReturnType<typeof setTimeout> | null = null
+
+const handleNewChatInput = () => {
+  if (newChatSearchTimer) clearTimeout(newChatSearchTimer)
+  if (!newChatQuery.value.trim()) {
+    newChatResults.value = []
+    return
+  }
+  newChatSearchTimer = setTimeout(async () => {
+    try {
+      newChatResults.value = await usersApi.search(newChatQuery.value, 10)
+    } catch {
+      newChatResults.value = []
+    }
+  }, 300)
+}
+
+const handleNewChatSelect = async (selectedUser: User) => {
+  newChatQuery.value = ''
+  newChatResults.value = []
+  showNewChat.value = false
+  await createRoom([selectedUser.id])
+}
+
+const cancelNewChat = () => {
+  newChatQuery.value = ''
+  newChatResults.value = []
+  showNewChat.value = false
+}
 
 const activeRoomTitle = computed(() => {
   if (!activeRoom.value) return 'Chat'
@@ -61,25 +96,46 @@ const dmPartnerId = computed(() => {
 
 const blockedIdsArray = computed(() => [...blockedUserIds.value])
 
-onMounted(() => {
+onMounted(async () => {
   if (user.value?.id) {
     setCurrentUser(user.value.id)
     loadBlockedUsers(user.value.id)
   }
-  fetchRooms()
+  await fetchRooms()
+
+  // openRoom: select an existing room (from search)
+  const openRoomId = route.query.openRoom
+  if (openRoomId) {
+    const roomId = parseInt(String(openRoomId), 10)
+    if (!isNaN(roomId) && roomId > 0) {
+      selectRoom(roomId)
+    }
+    router.replace({ path: '/menu/chat' })
+  }
+
+  // openWith: auto-open or create DM (from friends list or user search)
+  const openWithId = route.query.openWith
+  if (openWithId) {
+    const targetId = parseInt(String(openWithId), 10)
+    if (!isNaN(targetId) && targetId > 0) {
+      // Check if a DM with this user already exists
+      const existing = rooms.value.find(r =>
+        r.type === 0 && r.participants.some(p => p.id === targetId)
+      )
+      if (existing) {
+        selectRoom(existing.id)
+      } else {
+        await createRoom([targetId])
+      }
+    }
+    // Remove query param without adding to history
+    router.replace({ path: '/menu/chat' })
+  }
 })
 
 
 const handleSend = (content: string) => {
   sendMessage(content)
-}
-
-const handleNewChat = async () => {
-  const id = parseInt(newChatUserId.value, 10)
-  if (isNaN(id) || id <= 0) return
-  await createRoom([id])
-  newChatUserId.value = ''
-  showNewChat.value = false
 }
 
 const handleBlockConfirm = async () => {
@@ -143,18 +199,30 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- New chat input -->
+      <!-- New chat: username search -->
       <div v-if="showNewChat" class="new-chat-form">
-        <input
-          v-model="newChatUserId"
-          type="text"
-          class="input"
-          :placeholder="$t('chat.userIdPlaceholder')"
-          inputmode="numeric"
-          aria-label="User ID to start chat with"
-          @keydown.enter.prevent="handleNewChat"
-        />
-        <button class="btn btn-primary btn-sm" @click="handleNewChat">{{ $t('common.start') }}</button>
+        <div class="new-chat-search">
+          <input
+            v-model="newChatQuery"
+            type="text"
+            class="input new-chat-input"
+            :placeholder="$t('chat.searchUser')"
+            autocomplete="off"
+            @input="handleNewChatInput"
+          />
+          <button class="btn btn-ghost btn-sm" @click="cancelNewChat">&times;</button>
+        </div>
+        <ul v-if="newChatResults.length" class="new-chat-results">
+          <li
+            v-for="u in newChatResults"
+            :key="u.id"
+            class="new-chat-result"
+            @click="handleNewChatSelect(u)"
+          >
+            <span class="result-username">{{ u.username }}</span>
+            <span v-if="u.profile?.displayName" class="result-display">{{ u.profile.displayName }}</span>
+          </li>
+        </ul>
       </div>
 
       <div v-if="isLoadingRooms" class="loading-text">{{ $t('common.loading') }}</div>
@@ -328,16 +396,54 @@ onUnmounted(() => {
 
 .new-chat-form {
   display: flex;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  flex-direction: column;
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.new-chat-form .input {
+.new-chat-search {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.new-chat-input {
   flex: 1;
   min-width: 0;
   padding: var(--space-2);
   font-size: var(--text-xs);
+}
+
+.new-chat-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.new-chat-result {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-default);
+}
+
+.new-chat-result:hover {
+  background: var(--bg-hover);
+}
+
+.result-username {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.result-display {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 /* Main */

@@ -7,6 +7,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import ChatCard from '../ChatCard.vue'
 
+// Mock vue-router to provide useRoute with empty query
+vi.mock('vue-router', () => ({
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+  })),
+  useRoute: vi.fn(() => ({
+    query: {},
+  })),
+}))
+
 // Mock child components
 vi.mock('../../../components/chat/ChatRoomList.vue', () => ({
   default: {
@@ -230,7 +241,7 @@ describe('ChatCard', () => {
   })
 
   describe('New Chat Input', () => {
-    it('should show/hide new chat form when button is clicked', async () => {
+    it('should show new chat form when + button is clicked', async () => {
       const wrapper = mountWithPinia(ChatCard)
 
       expect(wrapper.find('.new-chat-form').exists()).toBe(false)
@@ -239,113 +250,31 @@ describe('ChatCard', () => {
       await toggleBtn.trigger('click')
 
       expect(wrapper.find('.new-chat-form').exists()).toBe(true)
+    })
 
+    it('should render username search input in new chat form', async () => {
+      const wrapper = mountWithPinia(ChatCard)
+
+      const toggleBtn = wrapper.find('.btn-ghost')
       await toggleBtn.trigger('click')
+
+      const input = wrapper.find('.new-chat-input')
+      expect(input.exists()).toBe(true)
+    })
+
+    it('should close form when × button is clicked', async () => {
+      const wrapper = mountWithPinia(ChatCard)
+
+      const toggleBtn = wrapper.find('.btn-ghost')
+      await toggleBtn.trigger('click')
+
+      expect(wrapper.find('.new-chat-form').exists()).toBe(true)
+
+      // Click the × close button inside the form
+      const closeBtn = wrapper.find('.new-chat-search .btn-ghost')
+      await closeBtn.trigger('click')
 
       expect(wrapper.find('.new-chat-form').exists()).toBe(false)
-    })
-
-    it('should create room with entered user ID', async () => {
-      const wrapper = mountWithPinia(ChatCard)
-      const chatStore = getMockChatStore()
-
-      const toggleBtn = wrapper.find('.btn-ghost')
-      await toggleBtn.trigger('click')
-
-      const input = wrapper.find('.new-chat-form input')
-      await input.setValue('123')
-
-      const startBtn = wrapper.find('.new-chat-form .btn-primary')
-      await startBtn.trigger('click')
-
-      // Verify createRoom was called
-      expect(chatStore.createRoom).toHaveBeenCalled()
-    })
-
-    it('should clear input after creating room', async () => {
-      const wrapper = mountWithPinia(ChatCard)
-
-      const toggleBtn = wrapper.find('.btn-ghost')
-      await toggleBtn.trigger('click')
-
-      const input = wrapper.find('.new-chat-form input') as any
-      await input.setValue('123')
-
-      expect(input.element.value).toBe('123')
-
-      const startBtn = wrapper.find('.new-chat-form .btn-primary')
-      await startBtn.trigger('click')
-      await flushPromises()
-      await wrapper.vm.$nextTick()
-
-      // Form should be closed after creating room
-      expect(wrapper.find('.new-chat-form').exists()).toBe(false)
-    })
-
-    it('should close form after creating room', async () => {
-      const wrapper = mountWithPinia(ChatCard)
-
-      const toggleBtn = wrapper.find('.btn-ghost')
-      await toggleBtn.trigger('click')
-
-      const input = wrapper.find('.new-chat-form input')
-      await input.setValue('123')
-
-      const startBtn = wrapper.find('.new-chat-form .btn-primary')
-      await startBtn.trigger('click')
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.find('.new-chat-form').exists()).toBe(false)
-    })
-
-    it('should handle enter key to create room', async () => {
-      const wrapper = mountWithPinia(ChatCard)
-      const chatStore = getMockChatStore()
-      vi.spyOn(chatStore, 'createRoom')
-
-      const toggleBtn = wrapper.find('.btn-ghost')
-      await toggleBtn.trigger('click')
-
-      const input = wrapper.find('.new-chat-form input')
-      await input.setValue('123')
-      await input.trigger('keydown.enter')
-      await flushPromises()
-
-      expect(chatStore.createRoom).toHaveBeenCalledWith([123])
-    })
-
-    it('should not create room with invalid user ID', async () => {
-      const wrapper = mountWithPinia(ChatCard)
-      const chatStore = getMockChatStore()
-      vi.spyOn(chatStore, 'createRoom')
-
-      const toggleBtn = wrapper.find('.btn-ghost')
-      await toggleBtn.trigger('click')
-
-      const input = wrapper.find('.new-chat-form input')
-      await input.setValue('invalid')
-
-      const startBtn = wrapper.find('.new-chat-form .btn-primary')
-      await startBtn.trigger('click')
-
-      expect(chatStore.createRoom).not.toHaveBeenCalled()
-    })
-
-    it('should not create room with negative user ID', async () => {
-      const wrapper = mountWithPinia(ChatCard)
-      const chatStore = getMockChatStore()
-      vi.spyOn(chatStore, 'createRoom')
-
-      const toggleBtn = wrapper.find('.btn-ghost')
-      await toggleBtn.trigger('click')
-
-      const input = wrapper.find('.new-chat-form input')
-      await input.setValue('-1')
-
-      const startBtn = wrapper.find('.new-chat-form .btn-primary')
-      await startBtn.trigger('click')
-
-      expect(chatStore.createRoom).not.toHaveBeenCalled()
     })
   })
 

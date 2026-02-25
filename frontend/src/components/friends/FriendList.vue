@@ -9,6 +9,7 @@ defineProps<{
 const emit = defineEmits<{
   remove: [friendId: number]
   block: [friendId: number]
+  chat: [friendId: number]
 }>()
 </script>
 
@@ -37,6 +38,13 @@ const emit = defineEmits<{
       </div>
 
       <div class="friend-actions">
+        <button
+          class="btn btn-ghost btn-sm"
+          @click="emit('chat', friend.id)"
+          :title="$t('friends.chat')"
+        >
+          {{ $t('friends.chat') }}
+        </button>
         <button
           class="btn btn-ghost btn-sm"
           :disabled="isUpdating"

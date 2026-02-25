@@ -114,8 +114,9 @@ const navItems = computed(() => {
       :rooms="chatRooms"
       :current-user-id="authStore.user?.id || 0"
       @close="closeSearch"
-      @select-room="closeSearch(); router.push('/menu/chat')"
+      @select-room="(id) => { closeSearch(); router.push({ path: '/menu/chat', query: { openRoom: String(id) } }) }"
       @select-tournament="(id) => { closeSearch(); router.push(`/menu/tournaments/${id}`) }"
+      @select-user="(id) => { closeSearch(); router.push({ path: '/menu/chat', query: { openWith: String(id) } }) }"
     />
   </div>
 </template>

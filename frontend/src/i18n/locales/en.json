@@ -230,12 +230,13 @@
     "remove": "REMOVE",
     "block": "BLOCK",
     "unblock": "UNBLOCK",
+    "chat": "CHAT",
     "online": "Online",
     "offline": "Offline"
   },
   "chat": {
     "title": "CHATS",
-    "userIdPlaceholder": "User ID",
+    "searchUser": "Search by username...",
     "selectConversation": "Select a conversation or start a new one",
     "typeMessage": "Type a message...",
     "noMessages": "No messages yet",
@@ -469,6 +470,7 @@
     "tabUsers": "PLAYERS",
     "tabRooms": "CONVERSATIONS",
     "noResults": "No results found",
+    "messageUser": "Click to message this player",
     "sortBy": "SORT BY",
     "sortName": "Name",
     "sortDate": "Date",

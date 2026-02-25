@@ -230,12 +230,13 @@
     "remove": "KALDIR",
     "block": "ENGELLE",
     "unblock": "ENGELİ KALDIR",
+    "chat": "SOHBET",
     "online": "Çevrimiçi",
     "offline": "Çevrimdışı"
   },
   "chat": {
     "title": "SOHBETLER",
-    "userIdPlaceholder": "Kullanıcı ID",
+    "searchUser": "Kullanıcı adıyla ara...",
     "selectConversation": "Bir sohbet seçin veya yeni bir sohbet başlatın",
     "typeMessage": "Bir mesaj yazın...",
     "noMessages": "Henüz mesaj yok",
@@ -469,6 +470,7 @@
     "tabUsers": "OYUNCULAR",
     "tabRooms": "SOHBETLER",
     "noResults": "Sonuç bulunamadı",
+    "messageUser": "Mesaj göndermek için tıklayın",
     "sortBy": "SIRALA",
     "sortName": "Ad",
     "sortDate": "Tarih",

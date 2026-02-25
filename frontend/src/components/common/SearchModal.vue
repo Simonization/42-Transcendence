@@ -13,6 +13,7 @@ const emit = defineEmits<{
   close: []
   selectRoom: [id: number]
   selectTournament: [id: string]
+  selectUser: [id: number]
 }>()
 
 const {
@@ -255,6 +256,8 @@ onUnmounted(() => {
               v-for="f in userResults"
               :key="f.id"
               class="result-row"
+              :title="$t('search.messageUser')"
+              @click="emit('selectUser', f.id)"
             >
               <div class="result-main">
                 <span class="result-name">{{ f.username }}</span>
@@ -262,6 +265,7 @@ onUnmounted(() => {
                   {{ f.status === 1 ? $t('friends.online') : $t('friends.offline') }}
                 </span>
               </div>
+              <span class="result-action">{{ $t('chat.title') }} →</span>
             </div>
           </template>
 
@@ -552,6 +556,18 @@ onUnmounted(() => {
 
 .result-status.online {
   color: var(--color-success);
+}
+
+.result-action {
+  font-size: var(--text-xs);
+  color: var(--accent-primary);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-default);
+  flex-shrink: 0;
+}
+
+.result-row:hover .result-action {
+  opacity: 1;
 }
 
 .result-unread {

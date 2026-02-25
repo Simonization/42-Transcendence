@@ -230,12 +230,13 @@
     "remove": "RETIRER",
     "block": "BLOQUER",
     "unblock": "DÉBLOQUER",
+    "chat": "CHAT",
     "online": "En ligne",
     "offline": "Hors ligne"
   },
   "chat": {
     "title": "DISCUSSIONS",
-    "userIdPlaceholder": "ID utilisateur",
+    "searchUser": "Rechercher par pseudo...",
     "selectConversation": "Sélectionnez une conversation ou commencez-en une nouvelle",
     "typeMessage": "Écrivez un message...",
     "noMessages": "Aucun message pour l'instant",
@@ -469,6 +470,7 @@
     "tabUsers": "JOUEURS",
     "tabRooms": "CONVERSATIONS",
     "noResults": "Aucun résultat trouvé",
+    "messageUser": "Cliquer pour envoyer un message",
     "sortBy": "TRIER PAR",
     "sortName": "Nom",
     "sortDate": "Date",
