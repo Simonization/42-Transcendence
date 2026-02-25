@@ -1,30 +1,45 @@
 // src/modules/matches/entities/match.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { 
+    Entity, 
+    PrimaryGeneratedColumn, 
+    Column, 
+    CreateDateColumn, 
+    OneToMany, 
+    ManyToOne, 
+    JoinColumn 
+} from 'typeorm';
 import { UserMatch } from './user-match.entity';
-
-export enum GameType {
-    CHESS = 1,
-    LEAGUE = 2,
-}
+import { Game } from '../../games/entities/game.entity'; // Path to your new Game entity
+import { TournamentPhase } from 'src/modules/tournaments/entities/tournament-phase.entity';
+import { Team } from 'src/modules/team/entities/team.entity';
 
 @Entity('matches')
 export class Match {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: 'smallint' })
-    game_type: GameType;
+    @ManyToOne(() => TournamentPhase, (phase) => phase.matches)
+    phase: TournamentPhase;
 
-    @Column()
-    game_match_id: number;
-
+    // For Brackets: Where does the winner go?
     @Column({ nullable: true })
-    tournament_id: number;
+    winner_next_match_id: number;
 
-    @CreateDateColumn({ name: 'created_at' })
-    created_at: Date;
+    // Which "slot" in the next match (e.g., Team A or Team B)
+    @Column({ nullable: true })
+    winner_next_match_slot: number;
 
-    // New relationship replacing ManyToMany
-    @OneToMany(() => UserMatch, (userMatch) => userMatch.match)
-    userMatches: UserMatch[];
+    // For Brackets: Where does the winner go?
+    @Column({ nullable: true })
+    loser_next_match_id: number;
+
+    // Which "slot" in the next match (e.g., Team A or Team B)
+    @Column({ nullable: true })
+    loser_next_match_slot: number
+
+    @Column({ default: 'WAITING' })
+    status: string; // WAITING, READY, LIVE, FINISHED
+
+    @OneToMany(() => Team, (team) => team.match)
+    teams: Team[];
 }
