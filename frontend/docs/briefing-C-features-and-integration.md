@@ -1,5 +1,9 @@
 # Briefing C — Integration Testing & Feature Status
 
+## Status as of Feb 25 (evening) — UPDATED
+
+---
+
 ## Part 1: What are "auth, chat, tournament flows" and how would we test them?
 
 ### Auth Flow (what it does)
@@ -16,6 +20,10 @@ When you open the app, you either log in or sign up. The app sends your email/pa
 
 **What could go wrong:** Backend not starting, database not initialized, CORS errors, SSL certificate issues, Google OAuth redirect misconfigured.
 
+**Current status:** Louis merged `simon/frontend` into `test_merge_perm_+_front` (see Briefing D). `/users/me` now returns `role` and `status` properly. Auth should work end-to-end once Docker is tested.
+
+---
+
 ### Chat Flow (what it does)
 Two users can send messages to each other in real-time. Messages appear instantly (via WebSocket, not page refresh). You can also block users, see typing indicators, and get read receipts.
 
@@ -28,6 +36,10 @@ Two users can send messages to each other in real-time. Messages appear instantl
 
 **What could go wrong:** WebSocket connection failing, messages not persisted to database, blocking not enforced on backend.
 
+**Current status:** Chat module is complete on backend (was on main since earlier). WebSocket store is fully implemented. Should work once Docker is tested.
+
+---
+
 ### Tournament Flow (what it does)
 An admin creates a tournament for a specific game (like Pong). Players browse tournaments and register. For team games, you create a team, invite friends, and lock your roster. When all teams are ready, the tournament starts and a bracket is generated.
 
@@ -39,74 +51,49 @@ An admin creates a tournament for a specific game (like Pong). Players browse to
 5. Admin starts tournament → bracket should generate
 6. Check bracket visualization shows both players
 
-**What could go wrong:** TeamsModule not imported (known blocker), match generation not implemented (known blocker), tournament status transitions missing.
+**What could go wrong:** TeamsModule not imported (Blocker N1 — still open), TournamentsModule not imported (Blocker N2 — still open), match generation not implemented (Blocker N3 — still open).
 
 ---
 
-## Part 2: The four Option C features — are they necessary?
+## Part 2: Feature status
 
 ### 1. Team Management Page
-
-**What it would be:** A dedicated page at `/menu/teams` where you see all your teams across all tournaments. You could view members, leave a team, or see your pending invitations.
-
-**Current status:** There is NO standalone "My Teams" page. Teams are managed inline:
-- During tournament registration (create team + invite)
-- In `TeamInvitationsPanel` (accept/decline invitations)
-- In the organization system (separate concept, already implemented)
-
-**Is it necessary?**
-**No.** The corrector checks for tournament registration and team functionality, not for a dedicated team management page. The inline flows (register → create team → invite) cover what's needed. The `TeamInvitationsPanel` handles the accept/decline flow.
-
-**Blocked by backend?** Partially — needs TeamsModule imported (Blocker N1).
+**Status:** No standalone "My Teams" page — and that's fine.
+Teams are managed inline: registration modal (create+invite), `TeamInvitationsPanel` (accept/decline).
+**Verdict: SKIP — not needed for corrector points.**
 
 ---
 
 ### 2. Game Admin CRUD
 
-**What it would be:** An admin panel where you can create, edit, and delete games (e.g., "Pong — 2 teams of 1", "League of Legends — 2 teams of 5"). Currently the admin can only *select* from existing games when creating a tournament.
+**Status:** `CreateTournamentTab.vue` fetches games with `gamesApi.getAll()` and shows them as selectable grid. No "create game" UI yet.
 
-**Current status:** `CreateTournamentTab.vue` fetches games with `gamesApi.getAll()` and shows them as selectable cards. But there's no UI to *create* a new game. Games would need to be added via the backend directly (API call or database seed).
+**Risk:** If the database starts empty, admin can't create tournaments. Needs either:
+- A simple "Add Game" button in admin panel (15 min of work) — **recommended**
+- Or ask Nicolas for a database seed script
 
-**Is it necessary?**
-**Somewhat.** If the database starts empty, the admin can't create tournaments because there are no games to pick. You need at least a seed script or a quick "add game" form. But a full CRUD (edit, delete) is overkill.
-
-**Quick alternative:** Ask Nicolas to add a database seed that creates 3-4 default games (Pong, Chess, League of Legends). Then you don't need a game CRUD UI at all. Or I add a simple "Add Game" button to the admin panel (15 minutes of work).
-
-**Blocked by backend?** No — `POST /games` endpoint already works on `backend_nico`.
+**Verdict: Add the "Add Game" button — quick win, unblocks the demo.**
+`POST /games` endpoint is already implemented on `backend_nico`.
 
 ---
 
 ### 3. Match Result Display
 
-**What it would be:** After a match is played, showing who won, the scores, and updating the bracket accordingly.
-
-**Current status: Already implemented.** `BracketVisualization.vue` already displays:
+**Status: Already built.** `BracketVisualization.vue` shows:
 - Match scores (`score1` / `score2`)
-- Winner highlighting (CSS class on the winning team)
+- Winner highlighting
 - Match status badges (completed / live / upcoming)
-- Champion banner for the tournament winner
+- Champion banner
 
-**Is it necessary?**
-**It's already done.** No work needed on the frontend side.
-
-**Blocked by backend?** Yes — there's no match auto-generation (Blocker N3) and no endpoint to record match results (Blocker N5). So the bracket will show empty even though the visualization code is ready.
+**Verdict: No frontend work needed. Waiting on N3 + N5 (Nicolas).**
 
 ---
 
-### 4. Tournament Status
+### 4. Tournament Status Badges
 
-**What it would be:** Showing whether a tournament is in REGISTRATION_OPEN, ONGOING, or COMPLETED state, with visual badges and filters.
+**Status: Already built.** `TournamentCard.vue`, `TournamentFilters.vue`, `TournamentDetailCard.vue` all display and filter by status.
 
-**Current status: Already implemented.** Multiple components display tournament status:
-- `TournamentCard.vue` — status badge with color coding
-- `TournamentFilters.vue` — filter tournaments by status
-- `TournamentDetailCard.vue` — status shown in overview tab
-- CSS classes: `status-draft`, `status-registration-open`, `status-ongoing`, `status-completed`
-
-**Is it necessary?**
-**It's already done.** No work needed.
-
-**Blocked by backend?** Yes — no endpoint to *change* a tournament's status (Blocker N4). So all tournaments will stay at whatever status they were created with. The frontend visualization works, but you can't demo the lifecycle.
+**Verdict: No frontend work needed. Waiting on N4 (Nicolas) for lifecycle transitions.**
 
 ---
 
@@ -114,13 +101,12 @@ An admin creates a tournament for a specific game (like Pong). Players browse to
 
 | Feature | Built? | Needed for points? | Blocked by backend? | Action |
 |---------|--------|-------------------|---------------------|--------|
-| Team Management Page | No | No | Partially (N1) | Skip — inline flows are enough |
-| Game Admin CRUD | No (read-only) | Somewhat | No | Add simple "Add Game" button OR ask Nicolas for DB seed |
-| Match Result Display | **Yes** | Yes | Yes (N3, N5) | No frontend work — waiting on Nicolas |
-| Tournament Status | **Yes** | Yes | Yes (N4) | No frontend work — waiting on Nicolas |
+| Team Management Page | No | No | Partially (N1) | Skip |
+| Game Admin CRUD (create) | Partial (read-only) | Yes | No (POST /games works) | **Add "Add Game" button** |
+| Match Result Display | **Yes** | Yes | Yes (N3, N5) | No frontend work |
+| Tournament Status | **Yes** | Yes | Yes (N4) | No frontend work |
 
 ## Bottom Line
 
-**2 of the 4 features are already built** (match results, tournament status). The team management page isn't needed. The only useful work in Option C is adding a small "Add Game" form — which takes 15 minutes.
-
-Your time is better spent on **Option D** (unblocking the backend) and then **testing the real flows** once Nicolas and Louis merge their work.
+Only 1 remaining frontend task from Option C: **Add "Add Game" form** to admin panel.
+Everything else is built — it's all waiting on backend blockers.

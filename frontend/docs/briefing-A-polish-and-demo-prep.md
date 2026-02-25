@@ -1,64 +1,57 @@
 # Briefing A — Polish & Demo Prep
 
-## What this option is about
+## Status as of Feb 25 (evening) — MAJOR UPDATE
 
-Option A means: stop building new features, and instead make sure everything we already built looks clean, works reliably, and is easy to demonstrate to the corrector.
-
----
-
-## What I would do
-
-### 1. Commit + push the uncommitted teams work
-Right now you have ~15 changed/new files sitting uncommitted (teams API, games API, rewritten registration modal, team invitations panel, etc.). This needs to be committed and pushed to `simon/frontend` so it's safe.
-
-**Time: 2 minutes.**
-
-### 2. Add tests for new composables
-`useTeams.ts` was just created but has no unit tests. I'd write tests covering:
-- `createTeam()` success and error paths
-- `invitePlayer()` and `lockTeam()`
-- `fetchMyInvitations()`, `acceptInvitation()`, `declineInvitation()`
-
-**Time: ~20 minutes.**
-
-### 3. TypeScript strictness pass
-Run `npx tsc --noEmit` and fix any type errors. Make sure there are no sneaky `any` types or missing imports that could cause runtime crashes during demo.
-
-**Time: ~15 minutes depending on how many issues.**
-
-### 4. Error UX / graceful degradation
-When the backend is down (which it might be during correction if Docker has issues), the app currently just silently fails. I would add:
-- A small banner or toast when API calls fail repeatedly ("Connection lost")
-- Empty-state messages in tournament lists, team panels, etc. instead of blank screens
-
-**Time: ~30 minutes.**
-
-### 5. Demo script document
-Write a markdown file that walks you through: "Open the app → here's how to show auth → here's how to show chat → here's how to show tournaments → etc." One section per corrector point, with screenshots or descriptions of what the corrector should see.
-
-**Time: ~20 minutes.**
-
-### 6. Privacy/ToS pages review
-These already exist and are routed (`/privacy`, `/terms`). I'd quickly check they render correctly and the links from footer/signup page work.
-
-**Time: 5 minutes.**
+Most of Option A is now DONE. Here is the current state of every item:
 
 ---
 
-## Is this necessary NOW, or can it wait?
+## Completed Items ✅
 
-### Can wait until next week:
-- **Demo script** — You can write this Sunday night or even Monday morning. It's just a document.
-- **Privacy/ToS review** — Already working, quick check anytime.
-- **TypeScript strictness** — Nice-to-have, not blocking anything.
+### 1. Commit + push
+Teams API, games API, rewritten registration modal, team invitations panel, all i18n keys.
+**Done.** Pushed to `simon/frontend` as `e2f5bc3`.
 
-### Better to do now:
-- **Commit + push** — Yes, do this NOW. Uncommitted work = risk of losing it.
-- **Tests for useTeams** — Better to write while the code is fresh. But honestly, the corrector won't run your tests. They check if your app works.
-- **Error UX** — This is the most impactful polish item. If the backend hiccups during demo and the screen just goes blank, that looks bad. A friendly "loading..." or "couldn't connect" message makes the difference.
+### 2. Tests for new composables and APIs
+705 tests across 37 files, all passing, zero ECONNREFUSED errors.
 
-### Verdict
+New test files added this session:
+- `api/teams.spec.ts`, `api/notifications.spec.ts`, `api/admin.spec.ts`
+- `composables/useTeams.spec.ts`, `composables/useNotifications.spec.ts`, `composables/useRegistrationForm.spec.ts`
+- `stores/chat.spec.ts`, `stores/friends.spec.ts`, `stores/notifications.spec.ts`
+- `TournamentRegistrationModal.spec.ts` — 24 real flow tests (step navigation, error paths, solo vs team)
+- `AdminCard.spec.ts` — fixed ECONNREFUSED (was making 176 real HTTP calls per run)
 
-**Most of Option A can wait until Saturday/Sunday polish day.** The only thing that's urgent is committing your work and maybe the error UX. The rest is "nice to have" that you can squeeze in during the final weekend.
+**Done.** Pushed to `simon/frontend` as `7876c5c`.
 
-Don't spend Thursday on polish when you could be building things that earn points or unblocking backend integration.
+### 3. Error UX / graceful degradation
+- Error boundary on App.vue catches backend downtime and shows friendly message
+- Empty-state handling in tournament lists, team panels, chat
+- Toast notifications on all API failures
+
+**Done.** Pushed as `1010038`.
+
+---
+
+## Still To Do ⏳
+
+### 4. Demo script document
+Write a markdown walkthrough: "Open app → show auth → show chat → show tournaments → etc."
+One section per corrector point. Quick to write, valuable for the actual demo.
+**Time: ~20 minutes. Do on Friday or Saturday morning.**
+
+### 5. TypeScript strictness pass
+Run `npx tsc --noEmit` and fix any type errors. Currently clean after the `684356e` pass.
+**Time: 5-10 minutes. Run before each push to verify.**
+
+### 6. Privacy/ToS pages
+Already exist and routed at `/privacy`, `/terms`. Links in footer work.
+**Time: 5 minutes to verify. Do when you first boot Docker.**
+
+---
+
+## Verdict
+
+**Option A is essentially done.** The remaining items (demo script, privacy page check) are weekend tasks.
+
+Now focus on **integration testing** (can Docker boot? do real API flows work?) and **backend coordination** — see Briefing D for what's blocking.

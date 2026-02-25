@@ -1,101 +1,104 @@
 # Briefing D — Backend Blockers & What They Unlock
 
-## The Big Picture
+## Status as of Feb 25 (evening) — UPDATED
 
-Your frontend is basically done (~19-21 corrector points built). But many features can't actually be *demonstrated* unless the backend is working. This briefing lists what each teammate needs to do, and what it unblocks for you.
+**Big news:** Louis created `test_merge_perm_+_front` — a test merge of `permissions` + `simon/frontend` + `backend_nico`. This is the closest thing to a "working" combined branch. Key finding: `/users/me` now returns `role` and `status` correctly (Blocker L2 resolved on that branch).
 
 ---
 
 ## Nicolas — Backend (tournaments, teams, games, matches)
 
-### Blocker N1: TeamsModule not imported in `app.module.ts`
-**What's wrong:** Nicolas built the entire Teams module (controller, service, entities, commands, DTOs) but forgot to add `TeamsModule` to the imports in `app.module.ts`. All `/teams` endpoints return 404.
-**Fix:** 2 lines of code:
+### Blocker N1: TeamsModule not imported in `app.module.ts` ❌ STILL OPEN
+**What's wrong:** Nicolas built the entire Teams module but forgot to add `TeamsModule` to the imports in `app.module.ts`. All `/teams` endpoints return 404.
+**Status:** Still missing even in `test_merge_perm_+_front`.
+**Fix:** 2 lines:
 ```typescript
 import { TeamsModule } from './modules/teams/teams.module';
-// + add TeamsModule to the imports array
+// + TeamsModule in the imports array
 ```
-**Unlocks for you:**
-- Tournament registration (create team, invite friends, lock team)
-- Team invitations panel (accept/decline)
-- Participants tab showing real teams
+**Unlocks:** Tournament registration, team invitations, participants tab.
 
-### Blocker N2: TournamentsModule also missing from `app.module.ts`
-**What's wrong:** Same issue — `TournamentsModule` is not in the imports array. Only `GamesModule` was added.
-**Fix:** Same pattern, 2 lines.
-**Unlocks for you:**
-- Tournament list page loading real data
-- Tournament detail page
-- Admin tournament creation
+### Blocker N2: TournamentsModule not imported in `app.module.ts` ❌ STILL OPEN
+**What's wrong:** Same as N1 — `TournamentsModule` not in imports. Only `GamesModule` is imported.
+**Status:** Still missing in `test_merge_perm_+_front`.
+**Fix:** 2 lines. Same pattern.
+**Unlocks:** Tournament list, tournament detail, admin tournament creation.
 
-### Blocker N3: No match auto-generation
-**What's wrong:** When a tournament starts, there's no code to create the bracket (matches). The `matches` table stays empty.
-**Fix:** Nicolas needs to add a service method that, given locked teams, generates single-elimination bracket matches.
-**Unlocks for you:**
-- Bracket visualization with real data (currently shows mock/empty)
-- Match results display
+### Blocker N3: No match auto-generation ❌ STILL OPEN
+Bracket creation doesn't happen when tournament starts. Matches table stays empty.
+**Unlocks:** Bracket visualization with real data.
 
-### Blocker N4: No tournament status transitions
-**What's wrong:** No endpoint to move a tournament from REGISTRATION_OPEN to ONGOING to COMPLETED. Status is stuck at whatever it was created with.
-**Fix:** Add `PATCH /tournaments/:id/status` or similar.
-**Unlocks for you:**
-- Tournament lifecycle demo (show a tournament going from registration to live to completed)
-- Status badges working with real state
+### Blocker N4: No tournament status transitions ❌ STILL OPEN
+No endpoint to move REGISTRATION_OPEN → ONGOING → COMPLETED.
+**Unlocks:** Tournament lifecycle demo.
 
-### Blocker N5: Match-Team entity bug
-**What's wrong:** `Match.teams` references `team.match` but Team entity has no `match` property. Any query that loads matches with teams will crash.
-**Fix:** Add the `match` relation to Team entity, or change the Match entity relation config.
+### Blocker N5: Match-Team entity bug ❌ STILL OPEN
+`Match.teams` references `team.match` but Team entity has no `match` relation. Queries crash.
 
-### Blocker N6: `backend_nico` not merged to `main`
-**What's wrong:** Nicolas's teams work (2 commits) is on `backend_nico` but not on `main`. The Docker setup uses `main`.
-**Fix:** Nicolas merges `backend_nico` → `main`.
+### Blocker N6: `backend_nico` not merged to `main` ⚠️ PARTIALLY
+`backend_nico` is merged into `test_merge_perm_+_front`, but NOT into `main`.
+The Docker setup uses `main`.
 
 ---
 
 ## Louis — Backend (auth, permissions, notifications)
 
-### Blocker L1: `permissions` branch not merged to `main`
-**What's wrong:** Louis's admin invite system and token generator are on `origin/permissions` but not merged. The RBAC admin features (invite users, manage roles) won't work without this.
-**Fix:** Louis merges `permissions` → `main`.
-**Unlocks for you:**
-- Admin invite system (generate invite links, manage user roles)
-- RBAC enforcement on backend (currently frontend-only guards)
+### Blocker L1: `permissions` branch not merged to `main` ⚠️ PARTIALLY
+**Status:** Louis merged `simon/frontend` + `permissions` + `backend_nico` into `test_merge_perm_+_front` for testing. But `permissions` is not yet merged to `main`.
+**Fix:** Merge `test_merge_perm_+_front` → `main` (or do the individual merges: `permissions` → `main` + `backend_nico` → `main`).
+**Unlocks:** Admin invite system, RBAC enforcement on backend, role/status in `/users/me`.
 
-### Blocker L2: `/users/me` missing role/status/avatarUrl
-**What's wrong:** The `GET /users/me` endpoint doesn't return the user's role, online status, or avatar URL. Frontend has a temporary workaround that patches these in.
-**Fix:** Louis (or Nicolas) updates the users controller to include these fields in the response.
-**Unlocks for you:**
-- Remove the frontend workaround hack
-- Role-based UI working with real data (admin badge, permission checks)
-- Avatar display, online status indicators
+### Blocker L2: `/users/me` missing role/status/avatarUrl ✅ RESOLVED on permissions
+**Status:** `aa532b6` ("BACKEND: add role and status in GET /users/me") is on the `permissions` branch and in `test_merge_perm_+_front`. `role` and `status` are now returned.
+- ⚠️ `avatarUrl` is NOT in Louis's version (only in Simon's temp workaround on `simon/frontend`)
+- The temp workaround in `backend/src/modules/users/users.service.ts` has a `// TEMP WORKAROUND` comment — leave it for now, it will be resolved by the merge.
+**Action:** When `test_merge_perm_+_front` → `main` lands, verify `/users/me` returns `avatarUrl`. If not, ask Louis to add it.
 
 ---
 
 ## Ahmet — DevOps/Backend (Docker, WebSocket)
 
-### Blocker A1: `amt` branch is destructive
-**What's wrong:** Ahmet's branch deletes ~20,000 lines of frontend code. It's 2 weeks old (last commit Feb 11). It removes stores, components, tests — basically everything you built.
-**Action:** Do NOT merge `amt` into any branch that has your frontend work. If Ahmet has useful backend/Docker changes, cherry-pick only the backend files.
+### Blocker A1: `amt` branch is destructive ❌ STILL DANGEROUS
+Ahmet's `amt` branch deletes ~20,000 lines of frontend. Do NOT merge into any branch with frontend work. If Ahmet has Docker/Nginx fixes, cherry-pick backend-only files.
 
-### Blocker A2: Docker/Nginx setup status unknown
-**What's wrong:** We don't know if `make up` (Docker Compose) actually works with the current `main` branch. Ahmet was responsible for Docker/Nginx but hasn't been active.
-**Action:** Someone needs to test `make up` and fix any Docker issues. This is critical — the corrector's first action is `make up`.
-**Unlocks for you:**
-- The entire demo working at all (corrector opens https://localhost)
+### Blocker A2: Docker/Nginx setup not tested ❌ CRITICAL
+**Status:** Unknown. `make up` may or may not work on `main`.
+**Action: Someone MUST test `make up` before Saturday.** This is the corrector's first move.
 
 ---
 
-## Summary: What to message each person
+## The Path to Main — Recommended Merge Order
 
-### Message to Nicolas (URGENT):
-> "Hey Nicolas, 2 quick fixes needed on backend_nico:
-> 1. Add `TeamsModule` to imports in `app.module.ts` (it's not registered, so all /teams endpoints 404)
+```
+backend_nico  ──┐
+permissions  ───┤──► test_merge_perm_+_front ──► main
+simon/frontend ─┘
+```
+
+`test_merge_perm_+_front` exists and contains all three. The remaining steps:
+1. **Nicolas fixes N1 + N2** (TeamsModule + TournamentsModule in app.module.ts)
+2. **Louis merges `test_merge_perm_+_front` → `main`**
+3. **Ahmet tests `make up`** on the merged main
+4. **Simon tests the full flow** end-to-end
+
+---
+
+## Messages to Send Today (Feb 26)
+
+### To Nicolas (CRITICAL):
+> "Hey Nicolas, two 2-line fixes needed on backend_nico:
+> 1. Add `TeamsModule` to imports in `app.module.ts` (all /teams endpoints 404 otherwise)
 > 2. Add `TournamentsModule` to imports too (same issue)
-> 3. Then merge backend_nico → main
-> This unblocks the entire tournament + team registration flow on frontend."
+> These are the only things blocking the tournament registration demo.
+> Then we need backend_nico → main merged."
 
-### Message to Louis:
-> "Hey Louis, can you merge the `permissions` branch to `main`? The admin invite system and role enforcement are ready but not on main. Also, can you add `role`, `status`, and `avatarUrl` to the GET /users/me response? Frontend has a workaround but it should come from backend."
+### To Louis:
+> "Hey Louis, `test_merge_perm_+_front` looks good — great that `/users/me` now returns role+status!
+> Two questions:
+> 1. Can you merge that branch → main when Nicolas fixes the TeamsModule import?
+> 2. Does `avatarUrl` come back from GET /users/me? Our frontend uses it for avatar display."
 
-### Message to Ahmet:
-> "Hey Ahmet, can you check if `make up` works on the current `main` branch? The corrector will run this first. Also heads up — please don't merge your `amt` branch into main, it would delete the frontend. If you have Docker/Nginx fixes, let's cherry-pick just those files."
+### To Ahmet:
+> "Hey Ahmet, can you test if `make up` works on the current main branch?
+> The corrector will run this immediately. We need to know if there are Docker/Nginx issues before Saturday.
+> Also please don't merge your `amt` branch — it would overwrite the frontend."
