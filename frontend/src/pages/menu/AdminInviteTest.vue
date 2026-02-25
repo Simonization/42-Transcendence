@@ -203,7 +203,7 @@ const redeemInvite = async () => {
 }
 
 .field-label {
-  font-size: var(--text-xxs);
+  font-size: var(--text-xs);
   letter-spacing: var(--tracking-widest);
   color: var(--text-tertiary);
 }

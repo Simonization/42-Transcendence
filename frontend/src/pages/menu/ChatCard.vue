@@ -18,6 +18,7 @@ const chatStore = useChatStore()
 const {
   activeRoomId,
   activeRoom,
+  rooms,
   messages,
   isLoadingRooms,
   isLoadingMessages,

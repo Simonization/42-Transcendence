@@ -3,8 +3,9 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useOrganizations } from '../../composables/useOrganizations'
+import { usersApi } from '../../api/users'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
-import type { Organization } from '../../types'
+import type { Organization, User } from '../../types'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -36,7 +37,9 @@ const {
 const showCreateForm = ref(false)
 const newOrgName = ref('')
 const newOrgDescription = ref('')
-const addMemberUserId = ref('')
+const addMemberQuery = ref('')
+const addMemberResults = ref<User[]>([])
+let addMemberTimer: ReturnType<typeof setTimeout> | null = null
 const editingOrg = ref<Organization | null>(null)
 const editName = ref('')
 const editDescription = ref('')
@@ -91,12 +94,26 @@ const handleDeleteConfirm = async () => {
   }
 }
 
-const handleAddMember = async () => {
-  if (!selectedOrg.value || !addMemberUserId.value.trim()) return
-  const id = parseInt(addMemberUserId.value, 10)
-  if (isNaN(id) || id <= 0) return
-  const ok = await addMember(selectedOrg.value.id, id)
-  if (ok) addMemberUserId.value = ''
+const handleAddMemberInput = () => {
+  if (addMemberTimer) clearTimeout(addMemberTimer)
+  if (!addMemberQuery.value.trim()) {
+    addMemberResults.value = []
+    return
+  }
+  addMemberTimer = setTimeout(async () => {
+    try {
+      addMemberResults.value = await usersApi.search(addMemberQuery.value, 10)
+    } catch {
+      addMemberResults.value = []
+    }
+  }, 300)
+}
+
+const handleAddMemberSelect = async (selectedUser: User) => {
+  if (!selectedOrg.value) return
+  addMemberQuery.value = ''
+  addMemberResults.value = []
+  await addMember(selectedOrg.value.id, selectedUser.id)
 }
 
 const handleRemoveMemberConfirm = async () => {
@@ -242,17 +259,25 @@ const getInitials = (name: string) => name.slice(0, 2).toUpperCase()
       <!-- Add member -->
       <section v-if="canManage" class="section">
         <h4 class="form-label">{{ $t('org.addMember') }}</h4>
-        <div class="form-row">
+        <div class="add-member-search">
           <input
-            v-model="addMemberUserId"
+            v-model="addMemberQuery"
             class="input"
-            :placeholder="$t('org.userIdPlaceholder')"
-            inputmode="numeric"
-            @keydown.enter.prevent="handleAddMember"
+            :placeholder="$t('chat.searchUser')"
+            autocomplete="off"
+            @input="handleAddMemberInput"
           />
-          <button class="btn btn-primary btn-sm" :disabled="!addMemberUserId.trim()" @click="handleAddMember">
-            {{ $t('common.add') }}
-          </button>
+          <ul v-if="addMemberResults.length" class="add-member-results">
+            <li
+              v-for="u in addMemberResults"
+              :key="u.id"
+              class="add-member-result"
+              @click="handleAddMemberSelect(u)"
+            >
+              <span class="result-username">{{ u.username }}</span>
+              <span v-if="u.profile?.displayName" class="result-display">{{ u.profile.displayName }}</span>
+            </li>
+          </ul>
         </div>
       </section>
 
@@ -342,7 +367,7 @@ const getInitials = (name: string) => name.slice(0, 2).toUpperCase()
 }
 
 .form-label {
-  font-size: var(--text-xxs);
+  font-size: var(--text-xs);
   font-weight: var(--font-bold);
   letter-spacing: var(--tracking-widest);
   color: var(--text-tertiary);
@@ -599,6 +624,45 @@ const getInitials = (name: string) => name.slice(0, 2).toUpperCase()
 
 .remove-btn:hover {
   color: var(--color-error);
+}
+
+/* Add member typeahead */
+.add-member-search {
+  position: relative;
+}
+
+.add-member-results {
+  list-style: none;
+  margin: var(--space-1) 0 0 0;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.add-member-result {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-default);
+}
+
+.add-member-result:hover {
+  background: var(--bg-hover);
+}
+
+.result-username {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.result-display {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 @media (max-width: 768px) {
