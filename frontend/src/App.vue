@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useChat } from '@/composables/useChat'
 import NotificationContainer from './components/notifications/NotificationContainer.vue'
+import ErrorBoundary from './components/common/ErrorBoundary.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -38,6 +39,7 @@ onMounted(() => {
 
   <RouterView />
   <NotificationContainer />
+  <ErrorBoundary />
 </template>
 
 <style scoped>

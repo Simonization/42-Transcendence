@@ -139,13 +139,8 @@ describe('TournamentRegistrationModal', () => {
 
       await flushPromises()
 
-      const buttons = document.querySelectorAll('button')
-      const hasCloseBtn = Array.from(buttons).some(btn =>
-        btn.getAttribute('aria-label')?.includes('Close') ||
-        btn.textContent?.includes('Close') ||
-        btn.textContent?.includes('×')
-      )
-      expect(buttons.length > 0 || hasCloseBtn).toBe(true)
+      const closeBtn = document.querySelector('.modal-close-btn')
+      expect(closeBtn).not.toBeNull()
     })
   })
 
@@ -187,18 +182,12 @@ describe('TournamentRegistrationModal', () => {
 
       await flushPromises()
 
-      const closeBtn = Array.from(document.querySelectorAll('button')).find(btn =>
-        btn.getAttribute('aria-label')?.includes('Close') ||
-        btn.textContent?.includes('×')
-      )
+      const closeBtn = document.querySelector('.modal-close-btn') as HTMLButtonElement | null
 
-      if (closeBtn) {
-        closeBtn.click()
-        await flushPromises()
-        expect(wrapper.emitted('close')).toBeTruthy()
-      } else {
-        expect(wrapper.emitted).toBeTruthy()
-      }
+      expect(closeBtn).not.toBeNull()
+      closeBtn!.click()
+      await flushPromises()
+      expect(wrapper.emitted('close')).toBeTruthy()
     })
 
     it('should have interactive elements', async () => {

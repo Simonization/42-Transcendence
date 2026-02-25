@@ -3,9 +3,13 @@
  * Centralized fetch wrapper with authentication and error handling
  */
 
+import { ref } from 'vue';
 import { ApiError, TOKEN_KEYS } from '../types';
 import type { RequestOptions, ApiErrorResponse } from '../types';
 import { useApiLogger } from '../composables/useApiLogger';
+
+/** Reactive flag: true when backend is unreachable */
+export const backendDown = ref(false);
 
 const API_BASE = '/api';
 
@@ -190,12 +194,22 @@ export async function api<T>(
   }
 
   const startTime = performance.now();
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...fetchOptions,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...fetchOptions,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (err) {
+    // Network error — backend unreachable
+    backendDown.value = true;
+    throw new ApiError(0, 'NETWORK_ERROR', 'Cannot reach the server');
+  }
   const duration = Math.round(performance.now() - startTime);
+
+  // Backend responded — clear the flag
+  backendDown.value = false;
 
   // Handle successful responses
   if (response.ok) {

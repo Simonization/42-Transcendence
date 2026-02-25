@@ -374,15 +374,16 @@ describe('API Client', () => {
       )
 
       const error = await api('/test').catch((e) => e)
-      expect(error).toBeInstanceOf(Error)
-      expect(error.message).toContain('timeout')
+      expect(error).toBeInstanceOf(ApiError)
+      expect(error.message).toBe('Cannot reach the server')
     })
 
     it('should handle offline scenario', async () => {
       mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
 
       const error = await api('/test').catch((e) => e)
-      expect(error).toBeInstanceOf(TypeError)
+      expect(error).toBeInstanceOf(ApiError)
+      expect(error.code).toBe('NETWORK_ERROR')
     })
 
     it('should handle malformed JSON response', async () => {

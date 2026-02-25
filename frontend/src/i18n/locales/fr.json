@@ -525,5 +525,9 @@
     "noGamesAvailable": "Aucun jeu configuré",
     "tournamentCreated": "Tournoi créé avec succès !",
     "tournamentCreateFailed": "Échec de la création du tournoi"
+  },
+  "errors": {
+    "backendDown": "Serveur inaccessible — vérifiez votre connexion",
+    "retry": "RÉESSAYER"
   }
 }

@@ -525,5 +525,9 @@
     "noGamesAvailable": "Henüz oyun yapılandırılmadı",
     "tournamentCreated": "Turnuva başarıyla oluşturuldu!",
     "tournamentCreateFailed": "Turnuva oluşturulamadı"
+  },
+  "errors": {
+    "backendDown": "Sunucuya ulaşılamıyor — bağlantınızı kontrol edin",
+    "retry": "TEKRAR DENE"
   }
 }

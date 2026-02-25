@@ -159,26 +159,23 @@ describe('ChatCard', () => {
       const wrapper = mountWithPinia(ChatCard)
       const chatStore = getMockChatStore()
 
-      // Verify store methods were set up
-      expect(chatStore.fetchRooms).toBeDefined()
+      // Verify fetchRooms was called on mount
+      expect(chatStore.fetchRooms).toHaveBeenCalled()
     })
 
-    it('should connect WebSocket on mount', () => {
+    it('should have WebSocket connect method available', () => {
       const wrapper = mountWithPinia(ChatCard)
       const chatStore = getMockChatStore()
 
-      // Verify store methods were set up
+      // connectSocket is available on the store for external callers
       expect(chatStore.connectSocket).toBeDefined()
     })
 
-    it('should disconnect WebSocket on unmount', async () => {
+    it('should clean up on unmount without errors', async () => {
       const wrapper = mountWithPinia(ChatCard)
-      const chatStore = getMockChatStore()
 
-      wrapper.unmount()
-
-      // Verify store methods were set up
-      expect(chatStore.disconnectSocket).toBeDefined()
+      // Unmount should not throw
+      expect(() => wrapper.unmount()).not.toThrow()
     })
 
     it('should show WebSocket connection status indicator', () => {
@@ -227,8 +224,8 @@ describe('ChatCard', () => {
       const roomList = wrapper.findComponent({ name: 'ChatRoomList' })
       await roomList.vm.$emit('select', 2)
 
-      // Verify store method exists
-      expect(chatStore.selectRoom).toBeDefined()
+      // Verify selectRoom was called with the emitted room ID
+      expect(chatStore.selectRoom).toHaveBeenCalledWith(2)
     })
   })
 
@@ -261,8 +258,8 @@ describe('ChatCard', () => {
       const startBtn = wrapper.find('.new-chat-form .btn-primary')
       await startBtn.trigger('click')
 
-      // Verify createRoom method exists
-      expect(chatStore.createRoom).toBeDefined()
+      // Verify createRoom was called
+      expect(chatStore.createRoom).toHaveBeenCalled()
     })
 
     it('should clear input after creating room', async () => {
@@ -472,16 +469,16 @@ describe('ChatCard', () => {
     it('should have error handling structure in place', () => {
       const wrapper = mountWithPinia(ChatCard)
 
-      // With default mock (no error), error alert won't show
-      // This tests the structure is in place for error handling
-      expect(wrapper.find('.chat-error').exists() || true).toBe(true)
+      // With default mock (no error), error alert should not show
+      expect(wrapper.find('.chat-error').exists()).toBe(false)
     })
 
-    it('should have error transition component', () => {
+    it('should show error when chat store has error', () => {
+      const chatStore = getMockChatStore()
+      chatStore.$patch({ error: 'Connection failed' })
       const wrapper = mountWithPinia(ChatCard)
 
-      // Check that error transition is in template
-      expect(wrapper.text()).toBeTruthy()
+      expect(wrapper.find('.chat-error').exists()).toBe(true)
     })
   })
 

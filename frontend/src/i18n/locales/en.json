@@ -525,5 +525,9 @@
     "noGamesAvailable": "No games configured yet",
     "tournamentCreated": "Tournament created successfully!",
     "tournamentCreateFailed": "Failed to create tournament"
+  },
+  "errors": {
+    "backendDown": "Server unreachable — check your connection",
+    "retry": "RETRY"
   }
 }
