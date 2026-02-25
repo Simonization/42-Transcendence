@@ -5,6 +5,7 @@
 
 import { ApiError, TOKEN_KEYS } from '../types';
 import type { RequestOptions, ApiErrorResponse } from '../types';
+import { useApiLogger } from '../composables/useApiLogger';
 
 const API_BASE = '/api';
 
@@ -188,24 +189,42 @@ export async function api<T>(
     }
   }
 
+  const startTime = performance.now();
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...fetchOptions,
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
+  const duration = Math.round(performance.now() - startTime);
 
   // Handle successful responses
   if (response.ok) {
     // Handle empty responses (204 No Content)
     const text = await response.text();
+    const parsed = text ? JSON.parse(text) : {};
+    useApiLogger().addRestLog({
+      method: fetchOptions.method || 'GET',
+      endpoint,
+      status: response.status,
+      duration,
+      requestBody: body,
+      responseBody: parsed,
+    });
     if (!text) {
       return {} as T;
     }
-    return JSON.parse(text);
+    return parsed;
   }
 
   // Handle 401 - attempt token refresh
   if (response.status === 401 && auth) {
+    useApiLogger().addRestLog({
+      method: fetchOptions.method || 'GET',
+      endpoint,
+      status: 401,
+      duration,
+      requestBody: body,
+    });
     const retryResult = await handle401<T>(endpoint, options);
     if (retryResult !== null) {
       return retryResult;
@@ -226,6 +245,15 @@ export async function api<T>(
       message: response.statusText || 'An error occurred',
     };
   }
+
+  useApiLogger().addRestLog({
+    method: fetchOptions.method || 'GET',
+    endpoint,
+    status: response.status,
+    duration,
+    requestBody: body,
+    responseBody: errorData,
+  });
 
   throw new ApiError(
     response.status,

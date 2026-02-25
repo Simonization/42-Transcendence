@@ -5,6 +5,7 @@
  */
 
 import { computed } from 'vue'
+import defaultAvatarUrl from '../../assets/default-avatar.svg'
 
 const props = withDefaults(defineProps<{
   src?: string | null
@@ -12,9 +13,11 @@ const props = withDefaults(defineProps<{
   initials?: string
   size?: 'sm' | 'md' | 'lg'
   online?: boolean
+  showDefault?: boolean
 }>(), {
   size: 'md',
   online: false,
+  showDefault: false,
 })
 
 const sizeMap = { sm: 32, md: 40, lg: 64 }
@@ -37,6 +40,7 @@ const displayInitials = computed(() => {
     <!-- Inner hex content -->
     <div class="hex-content">
       <img v-if="src" :src="src" :alt="alt" class="hex-img" />
+      <img v-else-if="showDefault && !initials" :src="defaultAvatarUrl" :alt="alt" class="hex-img hex-default" />
       <span v-else class="hex-initials" :style="{ fontSize: textSize }">{{ displayInitials }}</span>
     </div>
     <!-- Online indicator (diamond shaped) -->
@@ -81,6 +85,12 @@ const displayInitials = computed(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.hex-default {
+  padding: 15%;
+  color: var(--text-tertiary);
+  opacity: 0.6;
 }
 
 .hex-initials {

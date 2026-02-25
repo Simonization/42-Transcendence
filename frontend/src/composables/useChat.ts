@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client'
 import { chatApi } from '../api/chat'
 import { getAccessToken } from '../api'
 import { getErrorMessage } from '../utils/error'
+import { useApiLogger } from './useApiLogger'
 import type { ChatRoom, Message } from '../types'
 
 const rooms = ref<ChatRoom[]>([])
@@ -114,6 +115,7 @@ export function useChat() {
 
 	const connectSocket = () => {
 		const token = getAccessToken()
+		const { addWsLog } = useApiLogger()
 		if (!token || (socket.value && socket.value.connected))
 			return
 		socket.value = io('/', {
@@ -127,13 +129,16 @@ export function useChat() {
 
 		socket.value.on('connect', () => {
 			wsConnected.value = true
+			addWsLog({ method: 'EVENT', endpoint: 'connect', direction: 'in' })
 		})
 
 		socket.value.on('disconnect', () => {
 			wsConnected.value = false
+			addWsLog({ method: 'EVENT', endpoint: 'disconnect', direction: 'in' })
 		})
 
 		socket.value.on('message', (msg: any) => {
+			addWsLog({ method: 'EVENT', endpoint: 'message', direction: 'in', responseBody: msg })
 			if (typeof msg === 'object' && msg !== null && msg.chatId) {
 				if (msg.chatId === activeRoomId.value) {
 					const exists = messages.value.some(m => m.id === msg.id)
@@ -149,13 +154,16 @@ export function useChat() {
 
 		socket.value.on('connect_error', () => {
 			wsConnected.value = false
+			addWsLog({ method: 'EVENT', endpoint: 'connect_error', direction: 'in' })
 		})
 
 		socket.value.on('time-pulse', (serverTime: string) => {
 			uptime.value = serverTime
+			addWsLog({ method: 'EVENT', endpoint: 'time-pulse', direction: 'in', responseBody: serverTime })
 		})
 
 		socket.value.on('announcement', (data: any) => {
+			addWsLog({ method: 'EVENT', endpoint: 'announcement', direction: 'in', responseBody: data })
 			announcements.value.unshift(data)
 
 			if (announcements.value.length > 5) {
@@ -166,6 +174,8 @@ export function useChat() {
 
 	const sendAnnouncement = (text: string) => {
 		if (socket.value && text.trim()) {
+			const { addWsLog } = useApiLogger()
+			addWsLog({ method: 'EMIT', endpoint: 'create-announcement', direction: 'out', requestBody: { message: text } })
 			socket.value.emit('create-announcement', { message: text })
 		}
 	}

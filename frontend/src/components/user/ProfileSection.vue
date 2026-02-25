@@ -5,6 +5,7 @@ import { usersApi } from '../../api/users'
 import { useErrorHandler } from '../../composables/useErrorHandler'
 import { useFormValidation } from '../../composables/useFormValidation'
 import MessageAlert from '../common/MessageAlert.vue'
+import defaultAvatarUrl from '../../assets/default-avatar.svg'
 import type { User } from '../../types'
 
 const props = defineProps<{
@@ -24,22 +25,70 @@ const { validate, errors } = useFormValidation()
 
 const displayName = ref(props.user.profile?.displayName || '')
 const bio = ref(props.user.profile?.bio || '')
+const avatarPreview = ref<string | null>(null)
+const pendingAvatarBase64 = ref<string | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 const initials = computed(() => {
   const name = props.user.profile?.displayName || props.user.username
   return name.slice(0, 2).toUpperCase()
 })
 
+const currentAvatarSrc = computed(() => {
+  if (avatarPreview.value) return avatarPreview.value
+  if (props.user.profile?.avatarUrl) return props.user.profile.avatarUrl
+  return null
+})
+
 const startEdit = () => {
   displayName.value = props.user.profile?.displayName || ''
   bio.value = props.user.profile?.bio || ''
+  avatarPreview.value = null
+  pendingAvatarBase64.value = null
   isEditing.value = true
   clearMessage()
 }
 
 const cancelEdit = () => {
   isEditing.value = false
+  avatarPreview.value = null
+  pendingAvatarBase64.value = null
   clearMessage()
+}
+
+const triggerFileInput = () => {
+  if (isEditing.value) fileInput.value?.click()
+}
+
+const handleFileSelect = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 128
+      canvas.height = 128
+      const ctx = canvas.getContext('2d')!
+
+      // Center-crop to square
+      const size = Math.min(img.width, img.height)
+      const sx = (img.width - size) / 2
+      const sy = (img.height - size) / 2
+
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, 128, 128)
+      const base64 = canvas.toDataURL('image/jpeg', 0.8)
+      avatarPreview.value = base64
+      pendingAvatarBase64.value = base64
+    }
+    img.src = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+  // Reset so the same file can be selected again
+  input.value = ''
 }
 
 const saveProfile = async () => {
@@ -59,9 +108,12 @@ const saveProfile = async () => {
     await usersApi.updateProfile(props.user.id, {
       displayName: displayName.value || undefined,
       bio: bio.value || undefined,
+      avatarUrl: pendingAvatarBase64.value || undefined,
     })
     handleSuccess(t('profile.profileUpdated'))
     isEditing.value = false
+    avatarPreview.value = null
+    pendingAvatarBase64.value = null
     emit('updated')
   } catch (error) {
     handleError(error, t('profile.failedToSave'))
@@ -76,15 +128,37 @@ const saveProfile = async () => {
     <h3 class="section-title">{{ $t('profile.title') }}</h3>
 
     <div class="profile-header">
-      <div class="avatar">
+      <div
+        class="avatar"
+        :class="{ 'avatar-editable': isEditing }"
+        @click="triggerFileInput"
+      >
         <img
-          v-if="user.profile?.avatarUrl"
-          :src="user.profile.avatarUrl"
+          v-if="currentAvatarSrc"
+          :src="currentAvatarSrc"
           :alt="user.username"
           class="avatar-img"
         />
-        <span v-else class="avatar-initials">{{ initials }}</span>
+        <img
+          v-else
+          :src="defaultAvatarUrl"
+          :alt="user.username"
+          class="avatar-img avatar-default"
+        />
+        <div v-if="isEditing" class="avatar-overlay">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </div>
       </div>
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/*"
+        class="file-input-hidden"
+        @change="handleFileSelect"
+      />
 
       <div class="profile-info">
         <template v-if="!isEditing">
@@ -162,12 +236,46 @@ const saveProfile = async () => {
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
+  position: relative;
+}
+
+.avatar-editable {
+  cursor: pointer;
 }
 
 .avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.avatar-default {
+  padding: 15%;
+  opacity: 0.5;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--text-primary);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.avatar-editable:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
 }
 
 .avatar-initials {
