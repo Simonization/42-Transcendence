@@ -7,7 +7,7 @@ export interface Notification {
   type: 'info' | 'bot_message' | 'system' | 'friend_request' | 'match_result';
   title?: string;
   body: string;
-  data?: any;
+  data?: Record<string, unknown>;
   readAt?: string | null;
   deliveredAt?: string | null;
   createdAt: string;
@@ -19,7 +19,7 @@ export interface CreateNotificationDto {
   type: 'info' | 'bot_message' | 'system' | 'friend_request' | 'match_result';
   body: string;
   title?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export interface QueryNotificationsDto {

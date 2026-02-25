@@ -137,7 +137,7 @@ export function useChat() {
 			addWsLog({ method: 'EVENT', endpoint: 'disconnect', direction: 'in' })
 		})
 
-		socket.value.on('message', (msg: any) => {
+		socket.value.on('message', (msg: Message & Record<string, unknown>) => {
 			addWsLog({ method: 'EVENT', endpoint: 'message', direction: 'in', responseBody: msg })
 			if (typeof msg === 'object' && msg !== null && msg.chatId) {
 				if (msg.chatId === activeRoomId.value) {
@@ -162,7 +162,7 @@ export function useChat() {
 			addWsLog({ method: 'EVENT', endpoint: 'time-pulse', direction: 'in', responseBody: serverTime })
 		})
 
-		socket.value.on('announcement', (data: any) => {
+		socket.value.on('announcement', (data: Record<string, unknown>) => {
 			addWsLog({ method: 'EVENT', endpoint: 'announcement', direction: 'in', responseBody: data })
 			announcements.value.unshift(data)
 

@@ -49,7 +49,7 @@ const filteredFriends = computed(() => {
   )
 })
 
-const updateField = (field: keyof FormData, value: any) => {
+const updateField = (field: keyof FormData, value: FormData[keyof FormData]) => {
   emit('update:formData', { ...props.formData, [field]: value })
 }
 

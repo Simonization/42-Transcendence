@@ -77,7 +77,8 @@ export function useShader(options: UseShaderOptions) {
   const isLoaded = ref(false)
   const error = ref<string | null>(null)
   const webglSupported = ref(hasWebGL())
-  let shaderMount: any = null
+  // ShaderMount from @paper-design/shaders — no exported type available
+  let shaderMount: { setSpeed?: (s: number) => void; destroy?: () => void; [k: string]: unknown } | null = null
   let currentSpeed = initialSpeed
 
   const setSpeed = (speed: number) => {
