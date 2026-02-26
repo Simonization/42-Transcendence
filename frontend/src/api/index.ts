@@ -37,23 +37,23 @@ function onRefreshComplete(newToken: string): void {
  * Get the current access token from storage
  */
 export function getAccessToken(): string | null {
-  return localStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
+  return sessionStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
 }
 
 /**
  * Get the current refresh token from storage
  */
 export function getRefreshToken(): string | null {
-  return localStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
+  return sessionStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
 }
 
 /**
- * Store tokens in localStorage
+ * Store tokens in sessionStorage
  */
 export function setTokens(accessToken: string, refreshToken?: string): void {
-  localStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, accessToken);
+  sessionStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, accessToken);
   if (refreshToken) {
-    localStorage.setItem(TOKEN_KEYS.REFRESH_TOKEN, refreshToken);
+    sessionStorage.setItem(TOKEN_KEYS.REFRESH_TOKEN, refreshToken);
   }
 }
 
@@ -61,8 +61,8 @@ export function setTokens(accessToken: string, refreshToken?: string): void {
  * Clear all tokens from storage
  */
 export function clearTokens(): void {
-  localStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN);
-  localStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
+  sessionStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN);
+  sessionStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
 }
 
 /**
