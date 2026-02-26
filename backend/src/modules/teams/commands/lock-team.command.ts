@@ -18,7 +18,7 @@ export class LockTeamCommand {
 
     // Look at Phase 1's game to see required team size
     const phase1 = team.tournament.phases.find(p => p.order === 1);
-    const requiredSize = phase1?.game.team_size ?? 1;
+    const requiredSize = phase1?.game.teamSize ?? 1;
 
     if (team.members.length !== requiredSize) {
       throw new BadRequestException(`Team must have exactly ${requiredSize} players to lock.`);
