@@ -1,6 +1,5 @@
 import { Game } from "src/modules/games/entities/game.entity";
-import { Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Column } from "typeorm/browser";
+import { Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Column } from "typeorm";
 import { Tournament } from "./tournament.entity";
 import { Match } from "src/modules/matches/entities/match.entity";
 
