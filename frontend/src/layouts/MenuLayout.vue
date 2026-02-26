@@ -49,6 +49,7 @@ const navItems = computed(() => {
 
   if (authStore.isAdmin) {
     baseItems.push({ to: '/menu/admin', label: t('nav.admin'), icon: '⚙️' })
+    baseItems.push({ to: '/menu/admin-invite-test', label: 'ADMIN INV', icon: '🧪' })
   }
 
   return baseItems

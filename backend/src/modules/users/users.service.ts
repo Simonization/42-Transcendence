@@ -31,8 +31,6 @@ export class UsersService {
         if (!user) {
             throw new BadRequestException('User not found');
         }
-        // TEMP WORKAROUND: role + status needed for frontend admin check
-        // TODO: Remove once Louis adds these fields to the response (Thursday)
         return {
             id: user.id,
             username: user.username,
