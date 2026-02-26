@@ -7,7 +7,8 @@ import {
     CreateDateColumn, 
     OneToOne, 
     OneToMany, 
-    JoinColumn 
+    JoinColumn, 
+    ManyToMany
 } from 'typeorm';
 
 import { UserProfile } from './user-profile.entity';
@@ -16,6 +17,7 @@ import { UserGameAccount } from './user-game-account.entity';
 import { Friend } from '../../friends/entities/friend.entity';
 import { Block } from '../../friends/entities/block.entity';
 import { RefreshToken } from './refresh-token.entity';
+import { Team } from 'src/modules/teams/entities/team.entity';
 
 @Entity('users')
 export class User {
@@ -89,5 +91,7 @@ export class User {
 
     @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
     refreshTokens: RefreshToken[];
-    teams: any;
+
+    @ManyToMany(() => Team, (team) => team.members)
+    teams: Team[];
 }

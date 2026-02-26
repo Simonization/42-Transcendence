@@ -1,5 +1,6 @@
 import { Tournament } from "src/modules/tournaments/entities/tournament.entity";
 import { User } from "src/modules/users/entities/user.entity";
+import { Match } from "../../matches/entities/match.entity";
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 // src/modules/teams/entities/team.entity.ts
@@ -34,8 +35,15 @@ export class Team {
 
     // Many players can be in the team
     @ManyToMany(() => User, (user) => user.teams)
-    @JoinTable({ name: 'team_members' })
+    @JoinTable({
+        name: 'team_members',
+        joinColumn: { name: 'team_id', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'user_id', referencedColumnName: 'id' }
+    })
     members: User[];
+
+    @ManyToOne(() => Match, (match) => match.teams, { nullable: true })
+    match: Match;
 
     // This links the team to the tournament, not just a single match
     @ManyToOne(() => Tournament, (t) => t.teams, { nullable: true })
