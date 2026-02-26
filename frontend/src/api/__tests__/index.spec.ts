@@ -23,20 +23,20 @@ window.location = { href: '' } as any
 
 describe('Token Management', () => {
   beforeEach(() => {
-    localStorage.clear()
+    sessionStorage.clear()
   })
 
   describe('setTokens', () => {
     it('should store access token only', () => {
       setTokens('access123')
-      expect(localStorage.getItem('accessToken')).toBe('access123')
-      expect(localStorage.getItem('refreshToken')).toBeNull()
+      expect(sessionStorage.getItem('accessToken')).toBe('access123')
+      expect(sessionStorage.getItem('refreshToken')).toBeNull()
     })
 
     it('should store both access and refresh tokens', () => {
       setTokens('access123', 'refresh456')
-      expect(localStorage.getItem('accessToken')).toBe('access123')
-      expect(localStorage.getItem('refreshToken')).toBe('refresh456')
+      expect(sessionStorage.getItem('accessToken')).toBe('access123')
+      expect(sessionStorage.getItem('refreshToken')).toBe('refresh456')
     })
   })
 
@@ -46,7 +46,7 @@ describe('Token Management', () => {
     })
 
     it('should return stored access token', () => {
-      localStorage.setItem('accessToken', 'test-token')
+      sessionStorage.setItem('accessToken', 'test-token')
       expect(getAccessToken()).toBe('test-token')
     })
   })
@@ -57,25 +57,25 @@ describe('Token Management', () => {
     })
 
     it('should return stored refresh token', () => {
-      localStorage.setItem('refreshToken', 'test-refresh')
+      sessionStorage.setItem('refreshToken', 'test-refresh')
       expect(getRefreshToken()).toBe('test-refresh')
     })
   })
 
   describe('clearTokens', () => {
     it('should remove both tokens from storage', () => {
-      localStorage.setItem('accessToken', 'access')
-      localStorage.setItem('refreshToken', 'refresh')
+      sessionStorage.setItem('accessToken', 'access')
+      sessionStorage.setItem('refreshToken', 'refresh')
       clearTokens()
-      expect(localStorage.getItem('accessToken')).toBeNull()
-      expect(localStorage.getItem('refreshToken')).toBeNull()
+      expect(sessionStorage.getItem('accessToken')).toBeNull()
+      expect(sessionStorage.getItem('refreshToken')).toBeNull()
     })
   })
 })
 
 describe('API Client', () => {
   beforeEach(() => {
-    localStorage.clear()
+    sessionStorage.clear()
     mockFetch.mockClear()
     window.location.href = ''
   })
