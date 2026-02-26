@@ -6,3 +6,4 @@ pgadmin-pgpass
 /dist
 .claude/
 CLAUDE.md
+memory/
