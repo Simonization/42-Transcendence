@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
-import { TeamInvitation } from '../entities/team-invitation.entity';
+import { InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
 
 @Injectable()
 export class InvitePlayerCommand {
@@ -40,7 +40,7 @@ export class InvitePlayerCommand {
             where: { 
                 team_id: teamId, 
                 receiver_id: targetUserId, 
-                status: 'PENDING' 
+                status: InvitationStatus.PENDING
             }
         });
 
@@ -53,7 +53,7 @@ export class InvitePlayerCommand {
             team_id: teamId,
             receiver_id: targetUserId,
             sender_id: actorId,
-            status: 'PENDING'
+            status: InvitationStatus.PENDING
         });
 
         return await this.inviteRepo.save(invitation);

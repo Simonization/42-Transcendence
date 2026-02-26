@@ -1,40 +1,63 @@
-import { Type } from 'class-transformer';
 import { 
     IsInt, 
-    IsEnum, 
     IsOptional, 
     IsArray, 
-    ValidateNested, 
     IsObject, 
-    IsString 
+    IsEnum, 
+    ValidateNested, 
+    IsNumber
 } from 'class-validator';
-import { GameType } from "../entities/match.entity";
+import { Type } from 'class-transformer';
 
-export class ParticipantDto {
-    @IsInt()
+export enum UserMatchResult {
+    PENDING = 'PENDING',
+    WIN = 'WIN',
+    LOSS = 'LOSS',
+    DRAW = 'DRAW'
+}
+
+export class MatchParticipantDto {
+    @IsNumber()
     userId: number;
 
     @IsOptional()
-    @IsInt()
-    teamId?: number; 
+    @IsNumber()
+    teamId?: number;
 
-    @IsString()
-    result: 'WIN' | 'LOSS' | 'DRAW' | 'PENDING';
+    @IsOptional()
+    @IsEnum(UserMatchResult)
+    result?: UserMatchResult;
 }
 
 export class CreateMatchDto {
-    @IsEnum(GameType)
-    game_type: GameType;
+    @IsInt()
+    game_id: number;
+
+    @IsInt()
+    tournament_id: number;
+
+    @IsInt()
+    phase_id: number;
 
     @IsOptional()
-    @IsInt() // Added missing validation for the ID itself
-    tournament_id?: number;
+    @IsObject()
+    game_data?: Record<string, any>;
 
     @IsArray()
+    @IsInt({ each: true })
+    teamIds: number[];
+    
+    @IsOptional()
+    @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => ParticipantDto) // Now ParticipantDto is defined and accessible
-    participants: ParticipantDto[];
+    @Type(() => MatchParticipantDto)
+    participants?: MatchParticipantDto[];
 
-    @IsObject()
-    game_data: any; 
+    @IsOptional()
+    @IsInt()
+    winner_next_match_id?: number;
+
+    @IsOptional()
+    @IsInt()
+    winner_next_match_slot?: number;
 }

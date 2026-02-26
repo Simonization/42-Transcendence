@@ -17,8 +17,9 @@ export class UpdateGameCommand {
             throw new NotFoundException(`Game with ID ${id} not found`);
         }
 
-        // Merge the new changes into the existing game entity
-        Object.assign(game, dto);
+        if (dto.name !== undefined) game.name = dto.name;
+        if (dto.team_count !== undefined) game.teamCount = dto.team_count;
+        if (dto.team_size !== undefined) game.teamSize = dto.team_size;
         
         return await this.gameRepo.save(game);
     }

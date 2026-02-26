@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Team } from '../entities/team.entity';
 import { User } from '../../users/entities/user.entity';
-import { TeamInvitation } from '../entities/team-invitation.entity';
+import { InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
 
 @Injectable()
 export class AcceptInvitationCommand {
@@ -19,7 +19,7 @@ export class AcceptInvitationCommand {
 
         try {
             const invite = await queryRunner.manager.findOne(TeamInvitation, {
-                where: { id: invitationId, receiver_id: userId, status: 'PENDING' },
+                where: { id: invitationId, receiver_id: userId, status: InvitationStatus.PENDING },
                 relations: ['team', 'team.members']
             });
 
@@ -27,7 +27,7 @@ export class AcceptInvitationCommand {
 
             const team = invite.team;
 
-            invite.status = 'ACCEPTED';
+            invite.status = InvitationStatus.ACCEPTED;
             await queryRunner.manager.save(invite);
 
             const user = await queryRunner.manager.findOneBy(User, { id: userId });

@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { TournamentPhase } from "../entities/tournament-phase.entity";
-import { Tournament } from "../entities/tournament.entity";
+import { Tournament, TournamentStatus } from "../entities/tournament.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
 import { UpdateTournamentDto } from "../dto/update-tournament.dto";
@@ -26,35 +26,42 @@ export class UpdateTournamentCommand {
 
             if (!tournament) throw new NotFoundException('Tournament not found');
 
-            // 1. Update main fields
+            // 1. Safety Check: Don't allow phase replacement if tournament is live
+            if (dto.phases && tournament.status !== TournamentStatus.REGISTRATION_OPEN && tournament.status !== TournamentStatus.DRAFT) {
+                throw new BadRequestException('Cannot modify phases once the tournament has started.');
+            }
+
+            // 2. Update main fields
             const { phases, ...tournamentData } = dto;
             Object.assign(tournament, tournamentData);
             await queryRunner.manager.save(tournament);
 
-            // 2. If phases are provided, replace the old ones
+            // 3. Handle Phases
             if (phases) {
-               // Delete old phases
-               await queryRunner.manager.delete(TournamentPhase, { tournament_id: id });
-               
-               // Create new phases
-               const newPhases = phases.map(p => this.phaseRepo.create({
-                   ...p,
-                   tournament: tournament
-               }));
-               await queryRunner.manager.save(newPhases);
+                // Better approach: Delete old phases ONLY if tournament isn't live
+                await queryRunner.manager.delete(TournamentPhase, { tournament_id: id });
+                
+                const newPhases = phases.map(p => queryRunner.manager.create(TournamentPhase, {
+                    ...p,
+                    tournament_id: id
+                }));
+                const savedPhases = await queryRunner.manager.save(newPhases);
+
+                // Update pointer if order 1 changed
+                const firstPhase = savedPhases.find(p => p.order === 1);
+                if (firstPhase) {
+                    tournament.active_phase_id = firstPhase.id;
+                    await queryRunner.manager.save(tournament);
+                }
             }
 
             await queryRunner.commitTransaction();
-            const updatedTournament = await this.tournamentRepo.findOne({ 
+
+            return await this.tournamentRepo.findOne({ 
                where: { id }, 
-               relations: ['phases'] 
-            });
+               relations: ['phases', 'phases.game'] 
+            }) as Tournament;
 
-            if (!updatedTournament) {
-               throw new NotFoundException('Tournament was not found after update');
-            }
-
-            return updatedTournament;
         } catch (err) {
             await queryRunner.rollbackTransaction();
             throw err;

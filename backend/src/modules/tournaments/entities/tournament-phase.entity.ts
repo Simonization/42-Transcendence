@@ -12,11 +12,11 @@ export class TournamentPhase {
     tournament_id: number;
 
     @Column()
-    order: number; // 1, 2, 3...
+    order: number;
 
     @Column({
         type: 'enum',
-        enum: ['SINGLE_ELIMINATION', 'DOUBLE_ELIMINATION', 'ROUND_ROBIN'],
+        enum: ['SINGLE_ELIMINATION', 'DOUBLE_ELIMINATION', 'ROUND_ROBIN', 'SWISS', 'GROUP_STAGE'],
         default: 'SINGLE_ELIMINATION'
     })
     type: string;
@@ -32,7 +32,23 @@ export class TournamentPhase {
     @Column()
     game_id: number;
 
-    // This connects the phase to the matches it generates
     @OneToMany(() => Match, (match) => match.phase)
     matches: Match[];
+
+    @Column({ type: 'int', nullable: true })
+    teams_limit_start: number;
+
+    @Column({ type: 'int', nullable: true })
+    teams_limit_end: number;
+
+    // --- New Parameters ---
+    
+    @Column({ type: 'int', nullable: true })
+    swiss_rounds: number;
+
+    @Column({ type: 'int', nullable: true })
+    group_size: number;
+
+    @Column({ type: 'int', nullable: true })
+    group_winners_count: number;
 }

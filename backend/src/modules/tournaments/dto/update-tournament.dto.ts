@@ -1,13 +1,14 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateTournamentDto } from './create-tournament.dto';
-import { IsOptional, IsString, IsArray, ValidateNested } from 'class-validator';
+import { IsOptional, IsString, IsArray, ValidateNested, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreatePhaseDto } from './create-phase.dto';
+import { TournamentStatus } from '../entities/tournament.entity';
 
 export class UpdateTournamentDto extends PartialType(CreateTournamentDto) {
     @IsOptional()
-    @IsString()
-    status?: string;
+    @IsEnum(TournamentStatus)
+    status?: TournamentStatus;
 
     @IsOptional()
     @IsArray()

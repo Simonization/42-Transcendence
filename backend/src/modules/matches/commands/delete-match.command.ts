@@ -1,27 +1,23 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { DataSource } from "typeorm";
-import { GameType, Match } from "../entities/match.entity";
-import { ChessMatch } from "../entities/chess-match.entity";
-import { LeagueMatch } from "../entities/league-match.entity";
+import { Match } from "../entities/match.entity";
 
 @Injectable()
 export class DeleteMatchCommand {
     constructor(private dataSource: DataSource) {}
 
     async execute(id: number): Promise<void> {
+        // 1. Check existence first
         const match = await this.dataSource.getRepository(Match).findOneBy({ id });
-        if (!match) throw new NotFoundException('Match not found');
+        if (!match) throw new NotFoundException(`Match with ID ${id} not found`);
 
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
-            // 1. Delete the specialized game data
-            const gameRepo = match.game_type === GameType.CHESS ? ChessMatch : LeagueMatch;
-            await queryRunner.manager.delete(gameRepo, match.game_match_id);
-
-            // 2. Delete the base match (UserMatches will cascade delete)
+            // 2. Simply delete the Match
+            // Because we use JSONB, there is no external 'game_match' table to clean up
             await queryRunner.manager.delete(Match, id);
 
             await queryRunner.commitTransaction();

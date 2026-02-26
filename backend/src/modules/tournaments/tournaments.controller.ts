@@ -29,6 +29,12 @@ export class TournamentsController {
         return this.tournamentsService.findAll();
     }
 
+    @Post(':id/start')
+    @UseGuards(JwtAuthGuard)
+    start(@Param('id', ParseIntPipe) id: number) {
+        return this.tournamentsService.start(id);
+    }
+
     @Get(':id')
     findOne(@Param('id', ParseIntPipe) id: number) {
         return this.tournamentsService.findOne(id);

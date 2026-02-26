@@ -1,42 +1,31 @@
-import { Injectable } from "@nestjs/common";
-import { DataSource } from "typeorm";
-import { GameType, Match } from "../entities/match.entity";
-import { ChessMatch } from "../entities/chess-match.entity";
-import { LeagueMatch } from "../entities/league-match.entity";
+// src/modules/matches/queries/get-player-history.query.ts
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Match } from '../entities/match.entity';
 
 @Injectable()
 export class GetPlayerHistoryQuery {
-  constructor(private dataSource: DataSource) {}
+    constructor(
+        @InjectRepository(Match)
+        private readonly matchRepo: Repository<Match>,
+    ) {}
 
-  async execute(userId: number) {
-    const matches = await this.dataSource
-      .getRepository(Match)
-      .createQueryBuilder("match")
-      .innerJoinAndSelect("match.userMatches", "um")
-      .innerJoinAndSelect("um.user", "user")          // ← load user on every participant
-      .where(                                          // ← filter matches by user, but keep all participants
-        "match.id IN " +
-          this.dataSource
-            .getRepository(Match)
-            .createQueryBuilder("m")
-            .select("m.id")
-            .innerJoin("m.userMatches", "um2")
-            .where("um2.user_id = :userId")
-            .getQuery()
-      )
-      .setParameter("userId", userId)
-      .orderBy("match.created_at", "DESC")
-      .getMany();
-
-    return Promise.all(
-      matches.map(async (match) => {
-        const repo =
-          match.game_type === GameType.CHESS ? ChessMatch : LeagueMatch;
-        const details = await this.dataSource
-          .getRepository(repo)
-          .findOneBy({ id: match.game_match_id });
-        return { ...match, details };
-      })
-    );
-  }
+    async execute(userId: number): Promise<Match[]> {
+        return await this.matchRepo.find({
+            where: {
+                userMatches: { user_id: userId }
+            },
+            relations: [
+                'teams',
+                'phase',
+                'phase.tournament',
+                'userMatches',
+                'userMatches.user',  // ← THE FIX: load user on every participant
+            ],
+            order: {
+                created_at: 'DESC',
+            },
+        });
+    }
 }

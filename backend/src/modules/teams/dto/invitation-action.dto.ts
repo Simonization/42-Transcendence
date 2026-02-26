@@ -1,10 +1,5 @@
 import { IsEnum } from 'class-validator';
-
-// If you want to use one endpoint for both actions
-export enum InvitationStatus {
-    ACCEPTED = 'ACCEPTED',
-    DECLINED = 'DECLINED'
-}
+import { InvitationStatus } from '../entities/team-invitation.entity';
 
 export class HandleInvitationDto {
     @IsEnum(InvitationStatus)

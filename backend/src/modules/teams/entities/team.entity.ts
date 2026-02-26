@@ -42,8 +42,8 @@ export class Team {
     })
     members: User[];
 
-    @ManyToOne(() => Match, (match) => match.teams, { nullable: true })
-    match: Match;
+    @ManyToMany(() => Match, (match) => match.teams)
+    matches: Match[];
 
     // This links the team to the tournament, not just a single match
     @ManyToOne(() => Tournament, (t) => t.teams, { nullable: true })

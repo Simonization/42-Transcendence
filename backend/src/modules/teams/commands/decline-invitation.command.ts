@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TeamInvitation } from '../entities/team-invitation.entity';
+import { InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
 
 @Injectable()
 export class DeclineInvitationCommand {
@@ -13,12 +13,12 @@ export class DeclineInvitationCommand {
     const invite = await this.inviteRepo.findOneBy({ 
       id: invitationId, 
       receiver_id: userId,
-      status: 'PENDING' 
+      status: InvitationStatus.PENDING 
     });
 
     if (!invite) throw new NotFoundException('Invitation not found');
 
-    invite.status = 'DECLINED';
+    invite.status = InvitationStatus.DECLINED;
     return await this.inviteRepo.save(invite);
   }
 }

@@ -1,8 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Match } from './entities/match.entity';
-import { ChessMatch } from './entities/chess-match.entity';
-import { LeagueMatch } from './entities/league-match.entity';
 import { UserMatch } from './entities/user-match.entity';
 
 import { MatchesService } from './matches.service';
@@ -17,9 +15,13 @@ import { DeleteMatchCommand } from './commands/delete-match.command';
 import { GetPlayerHistoryQuery } from './queries/get-player-history.query';
 import { GetMatchDetailsQuery } from './queries/get-match-details.query';
 
+// External Modules
+import { TournamentsModule } from '../tournaments/tournaments.module';
+
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Match, ChessMatch, LeagueMatch, UserMatch]),
+        TypeOrmModule.forFeature([Match, UserMatch]),
+        forwardRef(() => TournamentsModule),
     ],
     controllers: [MatchesController],
     providers: [
@@ -30,6 +32,6 @@ import { GetMatchDetailsQuery } from './queries/get-match-details.query';
         GetPlayerHistoryQuery,
         GetMatchDetailsQuery,
     ],
-    exports: [MatchesService],
+    exports: [MatchesService, UpdateMatchCommand, CreateMatchCommand], 
 })
 export class MatchesModule {}

@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { CreateTeamDto } from '../dto/create-team.dto';
 import { User } from '../../users/entities/user.entity';
-import { Tournament } from '../../tournaments/entities/tournament.entity';
+import { Tournament, TournamentStatus } from '../../tournaments/entities/tournament.entity';
 
 @Injectable()
 export class CreateTeamCommand {
@@ -18,6 +18,10 @@ export class CreateTeamCommand {
         const tournament = await this.tournamentRepo.findOneBy({ id: dto.tournament_id });
         if (!tournament) throw new NotFoundException('Tournament not found');
 
+        if (tournament.status !== TournamentStatus.REGISTRATION_OPEN) {
+            throw new BadRequestException('Tournament is not open for registration');
+        }
+        
         // 2. Create the team in DRAFT status
         const team = this.teamRepo.create({
             name: dto.name,

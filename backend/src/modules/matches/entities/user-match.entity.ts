@@ -1,7 +1,8 @@
-// src/modules/matches/entities/user-match.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Match } from './match.entity';
+import { Team } from '../../teams/entities/team.entity';
+import { UserMatchResult } from '../dto/create-match.dto';
 
 @Entity('users_matches')
 export class UserMatch {
@@ -9,10 +10,10 @@ export class UserMatch {
     id: number;
 
     @Column({ name: 'user_id' })
-    userId: number;
+    user_id: number;
 
     @Column({ name: 'match_id' })
-    matchId: number;
+    match_id: number;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'user_id' })
@@ -22,9 +23,17 @@ export class UserMatch {
     @JoinColumn({ name: 'match_id' })
     match: Match;
 
-    @Column({ nullable: true })
-    team_id: number; // e.g., 1 for Blue, 2 for Red
+    @Column({ name: 'team_id', nullable: true })
+    team_id: number;
 
-    @Column({ type: 'varchar', length: 10 })
-    result: 'WIN' | 'LOSS' | 'DRAW' | 'PENDING';
+    @ManyToOne(() => Team)
+    @JoinColumn({ name: 'team_id' })
+    team: Team;
+
+    @Column({ 
+        type: 'enum', 
+        enum: UserMatchResult, 
+        default: UserMatchResult.PENDING 
+    })
+    result: UserMatchResult;
 }

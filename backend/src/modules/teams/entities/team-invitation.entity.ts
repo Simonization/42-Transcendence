@@ -1,17 +1,21 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Team } from "./team.entity";
 import { User } from "src/modules/users/entities/user.entity";
+
+export enum InvitationStatus {
+    PENDING = 'PENDING',
+    ACCEPTED = 'ACCEPTED',
+    DECLINED = 'DECLINED'
+}
 
 @Entity('team_invitations')
 export class TeamInvitation {
     @PrimaryGeneratedColumn()
     id: number;
 
-    // Define the raw ID column
     @Column()
     team_id: number;
 
-    // Link it to the relation
     @ManyToOne(() => Team)
     @JoinColumn({ name: 'team_id' })
     team: Team;
@@ -30,6 +34,10 @@ export class TeamInvitation {
     @JoinColumn({ name: 'receiver_id' })
     receiver: User;
 
-    @Column({ default: 'PENDING' })
-    status: string; // 'PENDING' | 'ACCEPTED' | 'DECLINED'
+    @Column({
+        type: 'enum',
+        enum: InvitationStatus,
+        default: InvitationStatus.PENDING
+    })
+    status: InvitationStatus;
 }
