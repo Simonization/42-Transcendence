@@ -20,6 +20,8 @@ import { ChatModule } from './modules/chat/chat.module';
 import { MatchesModule } from './modules/matches/matches.module';
 import { GamesModule } from './modules/games/games.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { TeamsModule } from './modules/teams/teams.module';
+import { TournamentsModule } from './modules/tournaments/tournaments.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     MatchesModule,
     NotificationsModule,
     GamesModule,
+    TeamsModule,
+    TournamentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
