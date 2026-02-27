@@ -25,6 +25,9 @@ export class AdminInvite {
     @Column({ type: 'timestamp', name: 'used_at', nullable: true })
     usedAt?: Date;
 
+    @Column({ name: 'is_bootstrap', default: false })
+    isBootstrap: boolean;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 }

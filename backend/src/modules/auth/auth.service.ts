@@ -12,7 +12,7 @@ import { AdminInvite } from './entities/admin-invite.entity';
 import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { ADMIN_ROLE } from '../users/constants/user-roles';
+import { ADMIN_ROLE, SUPER_ADMIN_ROLE } from '../users/constants/user-roles';
 
 const DEFAULT_ADMIN_INVITE_EXPIRATION_HOURS = 24;
 
@@ -185,6 +185,18 @@ export class AuthService {
     // ====================================
 
     async createAdminInvite(createdByUserId: number, expiresInHours?: number) {
+        const creator = await this.userRepository.findOne({
+            where: { id: createdByUserId }
+        });
+
+        if (!creator) {
+            throw new BadRequestException('Creator user not found');
+        }
+
+        if (creator.role !== SUPER_ADMIN_ROLE) {
+            throw new BadRequestException('Only super admin can create admin invites');
+        }
+
         const token = this.generateAdminToken();
         const expiresAt = this.getAdminInviteExpiration(expiresInHours);
 
@@ -210,8 +222,15 @@ export class AuthService {
             throw new BadRequestException('Invalid bootstrap secret');
         }
 
-        const adminsCount = await this.userRepository.count({ where: { role: ADMIN_ROLE } });
-        if (adminsCount > 0) {
+        // Check if any admin or super admin exists
+        const superAdminsCount = await this.userRepository.count({ 
+            where: { role: SUPER_ADMIN_ROLE } 
+        });
+        const adminsCount = await this.userRepository.count({ 
+            where: { role: ADMIN_ROLE } 
+        });
+
+        if (superAdminsCount > 0 || adminsCount > 0) {
             throw new BadRequestException('Admin bootstrap is already completed');
         }
 
@@ -221,11 +240,13 @@ export class AuthService {
         await this.adminInviteRepository.save({
             tokenHash: this.hashToken(token),
             expiresAt,
+            isBootstrap: true,
         });
 
         return {
             token,
             expiresAt,
+            message: 'Bootstrap admin invite created. This will create a super admin when redeemed.'
         };
     }
 
@@ -254,21 +275,30 @@ export class AuthService {
                 throw new BadRequestException('Admin invite token expired');
             }
 
-            const alreadyAdmin = user.role === ADMIN_ROLE;
+            // Determine role based on bootstrap status
+            const newRole = invite.isBootstrap ? SUPER_ADMIN_ROLE : ADMIN_ROLE;
+            const isAlreadyAdmin = user.role === ADMIN_ROLE || user.role === SUPER_ADMIN_ROLE;
 
             invite.usedAt = new Date();
             invite.usedByUserId = userId;
             await manager.getRepository(AdminInvite).save(invite);
 
-            if (!alreadyAdmin) {
-                user.role = ADMIN_ROLE;
+            if (!isAlreadyAdmin) {
+                user.role = newRole;
+                await manager.getRepository(User).save(user);
+            } else if (user.role === ADMIN_ROLE && invite.isBootstrap && newRole === SUPER_ADMIN_ROLE) {
+                // Promote admin to super admin if using bootstrap invite
+                user.role = SUPER_ADMIN_ROLE;
                 await manager.getRepository(User).save(user);
             }
 
             return {
-                message: alreadyAdmin
-                    ? 'User is already admin. Invite token consumed.'
-                    : 'User promoted to admin successfully.',
+                message: 
+                    invite.isBootstrap 
+                        ? `User promoted to super admin successfully.`
+                        : isAlreadyAdmin
+                            ? 'User is already admin or super admin. Invite token consumed.'
+                            : 'User promoted to admin successfully.',
             };
         });
     }
@@ -379,6 +409,61 @@ export class AuthService {
 
         return {
             message: 'Two-factor authentication has been disabled'
+        };
+    }
+
+    // ====================================
+    // ADMIN MANAGEMENT
+    // ====================================
+
+    async listAdmins() {
+        const admins = await this.userRepository.find({
+            where: [
+                { role: ADMIN_ROLE },
+                { role: SUPER_ADMIN_ROLE }
+            ],
+            select: ['id', 'username', 'mail', 'role', 'createdAt']
+        });
+
+        return {
+            admins: admins.map(admin => ({
+                id: admin.id,
+                username: admin.username,
+                mail: admin.mail,
+                role: admin.role === SUPER_ADMIN_ROLE ? 'super_admin' : 'admin',
+                createdAt: admin.createdAt
+            }))
+        };
+    }
+
+    async revokeAdmin(superAdminId: number, adminId: number) {
+        const user = await this.userRepository.findOne({
+            where: { id: adminId }
+        });
+
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        if (user.role !== ADMIN_ROLE && user.role !== SUPER_ADMIN_ROLE) {
+            throw new BadRequestException('User is not an admin');
+        }
+
+        // Prevent revoking oneself
+        if (superAdminId === adminId) {
+            throw new BadRequestException('You cannot revoke your own admin status');
+        }
+
+        // Prevent super admin from revoking another super admin
+        if (user.role === SUPER_ADMIN_ROLE) {
+            throw new BadRequestException('Super admins can only revoke regular admins');
+        }
+
+        user.role = 0; // USER_ROLE
+        await this.userRepository.save(user);
+
+        return {
+            message: `User ${user.username} has been revoked from admin role`
         };
     }
 

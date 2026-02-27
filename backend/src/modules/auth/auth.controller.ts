@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Query, Delete, Param } from '@nestjs/common';
 import { BadRequestException } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import { AuthService } from './auth.service'
@@ -12,6 +12,7 @@ import { RedeemAdminInviteDto } from './dto/redeem-admin-invite.dto';
 import { OptionalJwtAuthGuard } from './guards/optional-jwt-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AdminGuard } from './guards/admin.guard';
+import { SuperAdminGuard } from './guards/super-admin.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -69,7 +70,7 @@ export class AuthController {
     // ====================================
 
     @Post('admin-invites')
-    @UseGuards(JwtAuthGuard, AdminGuard)
+    @UseGuards(JwtAuthGuard, SuperAdminGuard)
     createAdminInvite(@Request() req, @Body() dto: CreateAdminInviteDto) {
         return this.authService.createAdminInvite(req.user.sub, dto.expiresInHours);
     }
@@ -83,6 +84,18 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     redeemAdminInvite(@Request() req, @Body() dto: RedeemAdminInviteDto) {
         return this.authService.redeemAdminInvite(req.user.sub, dto.token);
+    }
+
+    @Get('admins')
+    @UseGuards(JwtAuthGuard, SuperAdminGuard)
+    listAdmins() {
+        return this.authService.listAdmins();
+    }
+
+    @Delete('admins/:id')
+    @UseGuards(JwtAuthGuard, SuperAdminGuard)
+    revokeAdmin(@Request() req, @Param('id') id: string) {
+        return this.authService.revokeAdmin(req.user.sub, parseInt(id, 10));
     }
 
     // ====================================

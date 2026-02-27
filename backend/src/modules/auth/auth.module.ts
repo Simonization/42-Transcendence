@@ -12,6 +12,7 @@ import { AdminInvite } from './entities/admin-invite.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { AdminGuard } from './guards/admin.guard';
+import { SuperAdminGuard } from './guards/super-admin.guard';
 
 @Module({
     imports: [
@@ -26,7 +27,7 @@ import { AdminGuard } from './guards/admin.guard';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, GoogleStrategy, AdminGuard],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, AdminGuard, SuperAdminGuard],
     exports: [AuthService]
 })
 export class AuthModule {}
