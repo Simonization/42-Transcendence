@@ -58,14 +58,14 @@ export class User {
     createdAt: Date;
 
     // Google OAuth
-    @Column({ nullable: true })
-    firstName: string;
+    @Column({ type: 'varchar', nullable: true })
+    firstName: string | null;
 
-    @Column({ nullable: true })
-    lastName: string;
+    @Column({ type: 'varchar', nullable: true })
+    lastName: string | null;
     
-    @Column({ nullable: true })
-    avatarUrl: string;
+    @Column({ type: 'varchar', nullable: true })
+    avatarUrl: string | null;
 
     // =====================
     // RELATIONSHIPS
