@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import { ADMIN_ROLE } from '../../users/constants/user-roles';
+import { ADMIN_ROLE, SUPER_ADMIN_ROLE } from '../../users/constants/user-roles';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -7,7 +7,7 @@ export class AdminGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const user = request.user;
 
-        if (!user || user.role !== ADMIN_ROLE) {
+        if (!user || (user.role !== ADMIN_ROLE && user.role !== SUPER_ADMIN_ROLE)) {
             throw new ForbiddenException('Admin access required');
         }
 
