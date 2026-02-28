@@ -84,7 +84,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const interval = setInterval(() => {
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             client.emit('time-pulse', elapsed);
-        }, 100); // 100ms or 10 sec
+        }, 10000); // 100ms or 10 sec
         this.activeIntervals.set(client.id, interval);
     }
 

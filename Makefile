@@ -8,7 +8,7 @@ else
     $(error Please install Docker Compose)
 endif
 
-all: setup up
+all: up
 
 setup:
 	@if [ ! -f .env ]; then cp .env.example .env; fi
@@ -18,6 +18,9 @@ re: down up
 
 up: setup
 	$(CMD) -f $(YML_FILE) up
+
+dev: setup
+	$(CMD) -f $(YML_FILE) up --build
 
 down:
 	$(CMD) -f $(YML_FILE) down
