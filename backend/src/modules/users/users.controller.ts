@@ -32,7 +32,7 @@ export class UsersController {
         return await this.usersService.findOne(req.user.sub);
     }
 
-    @UseGuards(JwtAuthGuard, AdminGuard)
+    @UseGuards(JwtAuthGuard)
     @Get()
     async getAllUsers(
         @Query('page') page: string = '1',
@@ -45,6 +45,12 @@ export class UsersController {
             search,
         );
     }
+
+    // @UseGuards(JwtAuthGuard)
+    // @Get('search')
+    // async searchUsers(@Query('q') search: string) {
+    //     return await this.usersService.getAllUsers(1, 10, search);
+    // }
 
     @Post()
     async create(@Body() createUserDto: CreateUserDto) {

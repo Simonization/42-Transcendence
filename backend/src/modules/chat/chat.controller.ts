@@ -1,6 +1,7 @@
 import { 
     Controller, Post, Get, Patch, Delete, 
-    Body, Param, Query, Req, ParseIntPipe 
+    Body, Param, Query, Req, ParseIntPipe,
+    UseGuards 
 } from '@nestjs/common';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -17,8 +18,10 @@ import { LeaveGroupCommand } from './commands/leave-group.command';
 import { MarkReadCommand } from './commands/mark-read.command';
 import { GetConversationsQuery } from './queries/get-conversations.query';
 import { GetChatHistoryQuery } from './queries/get-chat-history.query';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('chat')
+@UseGuards(JwtAuthGuard)
 export class ChatController {
     constructor(
         private readonly startConvCmd: StartConversationCommand,

@@ -36,7 +36,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
     ]),
     JwtModule.register({ secret: process.env.JWT_SECRET, }),
   ],
-  controllers: [],
+  controllers: [ChatController],
   providers: [
     ChatGateway,
     ChatPrivacyService,
