@@ -1,4 +1,3 @@
-# version: '3.8' -> now deprecated, so we can delete
 
 services:
   # --- NGINX ---
@@ -23,7 +22,6 @@ services:
     build: ./backend
     container_name: ft_backend
     # ports:
-    #   - "3000:3000"             WILL DELETE, NOW NGINX HANDLES THIS
     expose:
       - "3000"
     volumes:
@@ -41,7 +39,6 @@ services:
     build: ./frontend
     container_name: ft_frontend
     # ports:
-    #   - "5173:5173"              WILL DELETE, NOW NGINX HANDLES THIS
     volumes:
       - ./frontend:/app
       - /app/node_modules
