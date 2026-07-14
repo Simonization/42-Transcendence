@@ -1,0 +1,52 @@
+# docker-compose.prod.yml — public deployment (transcendence.langerock.xyz)
+#
+# Standalone, NOT an override of docker-compose.yml: that file is the school dev
+# stack and publishes Postgres on 5432 and a passwordless pgAdmin on 5050, which
+# must never happen on a public box. Nothing here is reachable from the internet
+# except through Caddy, which terminates TLS and serves the built frontend.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+name: transcendence
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:?set DB_USERNAME in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      POSTGRES_DB: ${DB_DATABASE:?set DB_DATABASE in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # No ports: — the DB is reachable only from the compose network.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - transcendence-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    depends_on:
+      db:
+        condition: service_healthy
+    # Loopback only: Caddy proxies to it, the public interface never sees it.
+    ports:
+      - '127.0.0.1:3000:3000'
+    networks:
+      - transcendence-net
+
+networks:
+  transcendence-net:
+    driver: bridge
+
+volumes:
+  pgdata:

@@ -14,6 +14,14 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { AdminGuard } from './guards/admin.guard';
 import { SuperAdminGuard } from './guards/super-admin.guard';
 
+// passport-google-oauth20 throws if clientID is empty, which would take the whole
+// app down at boot. Only register the strategy when credentials are configured;
+// without them /auth/google 404s instead and email/password login still works.
+const googleStrategyProviders =
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+        ? [GoogleStrategy]
+        : [];
+
 @Module({
     imports: [
         UsersModule,
@@ -27,7 +35,7 @@ import { SuperAdminGuard } from './guards/super-admin.guard';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, GoogleStrategy, AdminGuard, SuperAdminGuard],
+    providers: [AuthService, JwtStrategy, ...googleStrategyProviders, AdminGuard, SuperAdminGuard],
     exports: [AuthService]
 })
 export class AuthModule {}

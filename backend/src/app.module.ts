@@ -36,7 +36,7 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
       password: process.env.DB_PASSWORD || 'password',
       database: process.env.DB_DATABASE || 'transcendence_db',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: process.env.DB_SYNCHRONIZE === 'true' || true,
+      synchronize: process.env.DB_SYNCHRONIZE === 'true',
     }),
     UsersModule,
     AuthModule,
