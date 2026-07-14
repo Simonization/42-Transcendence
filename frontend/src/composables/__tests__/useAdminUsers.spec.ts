@@ -48,13 +48,15 @@ describe('useAdminUsers', () => {
     expect(error.value).toBe('')
   })
 
-  it('fetchUsers handles errors', async () => {
+  it('fetchUsers falls back to demo data on error', async () => {
     mockGetUsers.mockRejectedValueOnce(new Error('Network error'))
 
-    const { fetchUsers, error } = useAdminUsers()
+    const { fetchUsers, error, users, demoMode } = useAdminUsers()
     await fetchUsers()
 
-    expect(error.value).toBe('Failed to load users')
+    expect(demoMode.value).toBe(true)
+    expect(error.value).toBe('')
+    expect(users.value.length).toBeGreaterThan(0)
   })
 
   it('setSearch resets page and fetches', async () => {

@@ -18,11 +18,11 @@ describe('useRbac', () => {
     const authStore = useAuthStore()
     authStore.user = null
 
-    const { userRole, isAdmin, isModerator } = useRbac()
+    const { userRole, isAdmin, isSuperAdmin } = useRbac()
 
     expect(userRole.value).toBe(UserRole.USER)
     expect(isAdmin.value).toBe(false)
-    expect(isModerator.value).toBe(false)
+    expect(isSuperAdmin.value).toBe(false)
   })
 
   it('defaults to USER role when role is undefined', () => {
@@ -36,11 +36,11 @@ describe('useRbac', () => {
       settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
     }
 
-    const { userRole, isAdmin, isModerator } = useRbac()
+    const { userRole, isAdmin, isSuperAdmin } = useRbac()
 
     expect(userRole.value).toBe(UserRole.USER)
     expect(isAdmin.value).toBe(false)
-    expect(isModerator.value).toBe(false)
+    expect(isSuperAdmin.value).toBe(false)
   })
 
   it('detects regular user role (0)', () => {
@@ -55,11 +55,11 @@ describe('useRbac', () => {
       settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
     }
 
-    const { userRole, isAdmin, isModerator, hasRole, canAccess } = useRbac()
+    const { userRole, isAdmin, isSuperAdmin, hasRole, canAccess } = useRbac()
 
     expect(userRole.value).toBe(UserRole.USER)
     expect(isAdmin.value).toBe(false)
-    expect(isModerator.value).toBe(false)
+    expect(isSuperAdmin.value).toBe(false)
     expect(hasRole(UserRole.USER)).toBe(true)
     expect(hasRole(UserRole.ADMIN)).toBe(false)
     expect(canAccess(UserRole.ADMIN)).toBe(false)
@@ -77,32 +77,32 @@ describe('useRbac', () => {
       settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
     }
 
-    const { userRole, isAdmin, isModerator, hasRole, canAccess } = useRbac()
+    const { userRole, isAdmin, isSuperAdmin, hasRole, canAccess } = useRbac()
 
     expect(userRole.value).toBe(UserRole.ADMIN)
     expect(isAdmin.value).toBe(true)
-    expect(isModerator.value).toBe(false)
+    expect(isSuperAdmin.value).toBe(false)
     expect(hasRole(UserRole.ADMIN)).toBe(true)
     expect(canAccess(UserRole.ADMIN)).toBe(true)
   })
 
-  it('detects moderator role (2)', () => {
+  it('detects super admin role (2)', () => {
     const authStore = useAuthStore()
     authStore.user = {
       id: 1,
-      username: 'mod',
-      mail: 'mod@test.com',
+      username: 'superadmin',
+      mail: 'super@test.com',
       twoFactorEnabled: false,
-      role: UserRole.MODERATOR,
+      role: UserRole.SUPER_ADMIN,
       profile: { userId: 1, displayName: null, avatarUrl: null, bio: null, createdAt: '' },
       settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
     }
 
-    const { userRole, isAdmin, isModerator, hasRole } = useRbac()
+    const { userRole, isAdmin, isSuperAdmin, hasRole } = useRbac()
 
-    expect(userRole.value).toBe(UserRole.MODERATOR)
-    expect(isAdmin.value).toBe(false)
-    expect(isModerator.value).toBe(true)
-    expect(hasRole(UserRole.MODERATOR)).toBe(true)
+    expect(userRole.value).toBe(UserRole.SUPER_ADMIN)
+    expect(isAdmin.value).toBe(true)
+    expect(isSuperAdmin.value).toBe(true)
+    expect(hasRole(UserRole.SUPER_ADMIN)).toBe(true)
   })
 })

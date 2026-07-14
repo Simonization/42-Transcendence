@@ -9,25 +9,50 @@ import { friendsApi } from '../api/friends'
 import { getErrorMessage } from '../utils/error'
 import type { Friend, Block } from '../types'
 
+
 export const useFriendsStore = defineStore('friends', () => {
   const friends = ref<Friend[]>([])
   const blocks = ref<Block[]>([])
   const isLoading = ref(false)
   const error = ref('')
 
+
   const acceptedFriends = computed(() =>
-    friends.value.filter(f => f.status === 1)
+    friends.value.filter(f => {
+      if (!f) return false;
+      const isBlocked = blocks.value.some(b => Number(b.blocked.id) === Number(f.id));
+      if (isBlocked) return false;
+
+      const s = String(f.status).toUpperCase();
+      return s === '1' || s === 'ACCEPTED' || s === 'FRIEND';
+    })
   )
 
   const pendingFriends = computed(() =>
-    friends.value.filter(f => f.status === 0)
+    friends.value.filter(f => {
+      if (!f) return false;
+      const isBlocked = blocks.value.some(b => Number(b.blocked.id) === Number(f.id));
+      if (isBlocked) return false;
+
+      const s = String(f.status).toUpperCase();
+      return s === '0' || s === 'PENDING';
+    })
   )
 
-  const fetchFriends = async (userId: number) => {
+  const incomingRequests = computed(() =>
+    friends.value.filter(f => f.status === 0 && !f.isSender)
+  )
+
+  const outgoingRequests = computed(() =>
+    friends.value.filter(f => f.status === 0 && f.isSender)
+  )
+
+  const fetchFriends = async () => {
     isLoading.value = true
     error.value = ''
     try {
-      friends.value = await friendsApi.getFriends(userId)
+
+      friends.value = await friendsApi.getFriends()
     } catch (e) {
       error.value = getErrorMessage(e, 'Failed to load friends')
     } finally {
@@ -35,9 +60,9 @@ export const useFriendsStore = defineStore('friends', () => {
     }
   }
 
-  const fetchBlocks = async (userId: number) => {
+  const fetchBlocks = async () => {
     try {
-      blocks.value = await friendsApi.getBlocked(userId)
+      blocks.value = await friendsApi.getBlocked()
     } catch (e) {
       error.value = getErrorMessage(e, 'Failed to load blocks')
     }
@@ -71,7 +96,6 @@ export const useFriendsStore = defineStore('friends', () => {
     try {
       const block = await friendsApi.blockUser({ targetId, reason })
       blocks.value.push(block)
-      // Also remove from friends list
       friends.value = friends.value.filter(f => f.id !== targetId)
       return true
     } catch (e) {
@@ -99,6 +123,8 @@ export const useFriendsStore = defineStore('friends', () => {
     error,
     acceptedFriends,
     pendingFriends,
+    incomingRequests,
+    outgoingRequests,
     fetchFriends,
     fetchBlocks,
     addFriend,
@@ -107,3 +133,4 @@ export const useFriendsStore = defineStore('friends', () => {
     unblockUser,
   }
 })
+

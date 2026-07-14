@@ -49,7 +49,7 @@ describe('useMatches', () => {
       const rawMatches: BackendMatch[] = [
         {
           id: 1,
-          game_type: 1,
+          game_type: 'CHESS',
           created_at: '2026-02-07T10:00:00.000Z',
           userMatches: [
             { userId: 42, result: 'WIN', user: { id: 42, username: 'simon' } },
@@ -83,8 +83,8 @@ describe('useMatches', () => {
 
     it('should filter out null (PENDING) matches', async () => {
       mockGetMyHistory.mockResolvedValueOnce([
-        { id: 1, game_type: 1, created_at: '', userMatches: [] },
-        { id: 2, game_type: 1, created_at: '', userMatches: [] },
+        { id: 1, game_type: 'CHESS', created_at: '', userMatches: [] },
+        { id: 2, game_type: 'CHESS', created_at: '', userMatches: [] },
       ] as BackendMatch[])
       mockTransformMatch
         .mockReturnValueOnce({ id: 1, opponent: 'a', game: 'Chess', result: 'win', date: '' })
@@ -96,22 +96,25 @@ describe('useMatches', () => {
       expect(matches.value).toHaveLength(1)
     })
 
-    it('should set error on failure', async () => {
+    it('should fall back to demo data on failure', async () => {
       mockGetMyHistory.mockRejectedValueOnce(new Error('Network error'))
 
-      const { error, isLoading, fetchMyHistory } = useMatches(42)
+      const { error, isLoading, matches, fetchMyHistory, demoMode } = useMatches(42)
       await fetchMyHistory()
 
-      expect(error.value).toBe('Failed to load match history')
+      expect(demoMode.value).toBe(true)
+      expect(error.value).toBe('')
+      expect(matches.value.length).toBeGreaterThan(0)
       expect(isLoading.value).toBe(false)
     })
 
-    it('should clear error on retry', async () => {
+    it('should clear demo state on successful retry', async () => {
       mockGetMyHistory.mockRejectedValueOnce(new Error('fail'))
 
-      const { error, fetchMyHistory } = useMatches(42)
+      const { error, fetchMyHistory, demoMode } = useMatches(42)
       await fetchMyHistory()
-      expect(error.value).not.toBe('')
+      expect(demoMode.value).toBe(true)
+      expect(error.value).toBe('')
 
       mockGetMyHistory.mockResolvedValueOnce([])
       await fetchMyHistory()
@@ -142,9 +145,9 @@ describe('useMatches', () => {
   describe('computed properties', () => {
     it('should compute unique games from matches', async () => {
       mockGetMyHistory.mockResolvedValueOnce([
-        { id: 1, game_type: 1, created_at: '', userMatches: [] },
-        { id: 2, game_type: 2, created_at: '', userMatches: [] },
-        { id: 3, game_type: 1, created_at: '', userMatches: [] },
+        { id: 1, game_type: 'CHESS', created_at: '', userMatches: [] },
+        { id: 2, game_type: 'LEAGUE', created_at: '', userMatches: [] },
+        { id: 3, game_type: 'CHESS', created_at: '', userMatches: [] },
       ] as BackendMatch[])
       mockTransformMatch
         .mockReturnValueOnce({ id: 1, opponent: 'a', game: 'Chess', result: 'win', date: '' })

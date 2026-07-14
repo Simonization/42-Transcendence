@@ -35,7 +35,7 @@ export class FriendsService {
     }
 
     async unblockUser(userId: number, dto: UnblockUserDto) {
-        return this.blockUserCmd.execute(userId, dto);
+        return this.unblockUserCmd.execute(userId, dto);
     }
 
     async getFriends(userId: number) {

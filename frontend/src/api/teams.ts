@@ -11,6 +11,11 @@ import type {
   TeamInvitation,
 } from '../types'
 
+export interface MyTournamentStatus {
+  team: BackendTeam | null
+  invitation: TeamInvitation | null
+}
+
 export const teamsApi = {
   /**
    * Create a new team for a tournament
@@ -76,5 +81,37 @@ export const teamsApi = {
     return api<TeamInvitation>(`/teams/invitations/${invitationId}/decline`, {
       method: 'PATCH',
     })
+  },
+
+  /**
+   * Delete a team (captain only, DRAFT only)
+   */
+  deleteTeam(teamId: number): Promise<{ message: string }> {
+    return api<{ message: string }>(`/teams/${teamId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  /**
+   * Leave a team (non-captain member only, DRAFT only)
+   */
+  leaveTeam(teamId: number): Promise<{ message: string }> {
+    return api<{ message: string }>(`/teams/${teamId}/leave`, {
+      method: 'PATCH',
+    })
+  },
+
+  /**
+   * Get current user's team (or pending invitation) for a tournament
+   */
+  getMyTeam(tournamentId: number): Promise<MyTournamentStatus> {
+    return api<MyTournamentStatus>(`/teams/mine?tournament_id=${tournamentId}`)
+  },
+
+  /**
+   * Get pending invitations sent by the captain for a team
+   */
+  getTeamInvitations(teamId: number): Promise<TeamInvitation[]> {
+    return api<TeamInvitation[]>(`/teams/${teamId}/pending-invitations`)
   },
 }

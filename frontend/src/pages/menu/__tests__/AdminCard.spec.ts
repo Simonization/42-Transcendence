@@ -23,6 +23,8 @@ vi.mock('../../../api/games', () => ({
     getAll: vi.fn().mockResolvedValue([]),
     getById: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue(undefined),
   },
 }))
 
@@ -70,12 +72,13 @@ describe('AdminCard', () => {
       expect(wrapper.text()).toContain('BETA')
     })
 
-    it('should render all 4 tabs', () => {
+    it('should render all tabs', () => {
       const wrapper = mount(AdminCard)
 
       expect(wrapper.text()).toContain('DASHBOARD')
       expect(wrapper.text()).toContain('CREATE')
       expect(wrapper.text()).toContain('TOURNAMENTS')
+      expect(wrapper.text()).toContain('GAMES')
       expect(wrapper.text()).toContain('PARTICIPANTS')
     })
   })
@@ -255,7 +258,7 @@ describe('AdminCard', () => {
       const wrapper = mount(AdminCard)
 
       const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[3]
+      const participantsTab = tabs[4]
 
       await participantsTab.trigger('click')
       await wrapper.vm.$nextTick()
@@ -267,7 +270,7 @@ describe('AdminCard', () => {
       const wrapper = mount(AdminCard)
 
       const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[3]
+      const participantsTab = tabs[4]
 
       await participantsTab.trigger('click')
 
@@ -279,7 +282,7 @@ describe('AdminCard', () => {
       const wrapper = mount(AdminCard)
 
       const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[3]
+      const participantsTab = tabs[4]
 
       await participantsTab.trigger('click')
 
@@ -292,7 +295,7 @@ describe('AdminCard', () => {
       const wrapper = mount(AdminCard)
 
       const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[3]
+      const participantsTab = tabs[4]
 
       await participantsTab.trigger('click')
 
@@ -304,7 +307,7 @@ describe('AdminCard', () => {
       const wrapper = mount(AdminCard)
 
       const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[3]
+      const participantsTab = tabs[4]
 
       await participantsTab.trigger('click')
 
@@ -316,7 +319,7 @@ describe('AdminCard', () => {
       const wrapper = mount(AdminCard)
 
       const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[3]
+      const participantsTab = tabs[4]
 
       await participantsTab.trigger('click')
 
@@ -357,8 +360,13 @@ describe('AdminCard', () => {
       await wrapper.vm.$nextTick()
       expect(wrapper.text()).toContain('MY TOURNAMENTS')
 
-      // Tab 3: Participants
+      // Tab 3: Games
       await tabs[3].trigger('click')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.text()).toContain('MANAGE GAMES')
+
+      // Tab 4: Participants
+      await tabs[4].trigger('click')
       await wrapper.vm.$nextTick()
       expect(wrapper.text()).toContain('PARTICIPANTS')
     })

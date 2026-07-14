@@ -5,12 +5,29 @@
  */
 
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import TournamentCard from '../../components/tournaments/TournamentCard.vue'
 import TournamentFilters from '../../components/tournaments/TournamentFilters.vue'
 import { useTournaments } from '../../composables/useTournaments'
 import { toDisplayTournament } from '../../utils/tournamentMapper'
+import DemoBanner from '../../components/common/DemoBanner.vue'
+import { useAuthStore } from '../../stores/auth'
 
-const { tournaments, isLoading, error, fetchTournaments } = useTournaments()
+const { tournaments, isLoading, error, demoMode, fetchTournaments } = useTournaments()
+const authStore = useAuthStore()
+const router = useRouter()
+
+function handleRegister(tournamentDisplayId: string) {
+  router.push(`/menu/tournaments/${tournamentDisplayId}/team`)
+}
+
+function isUserRegistered(backendId: number): boolean {
+  const userId = authStore.user?.id
+  if (!userId) return false
+  const bt = tournaments.value.find(t => t.id === backendId)
+  if (!bt) return false
+  return bt.teams?.some(team => team.members?.some(m => m.id === userId)) ?? false
+}
 
 onMounted(() => fetchTournaments())
 
@@ -114,6 +131,7 @@ const getPageNumbers = () => {
 
 <template>
   <section class="tournaments-page">
+    <DemoBanner v-if="demoMode" />
     <!-- Header -->
     <header class="tournaments-header glass-header">
       <div class="tournaments-header-content">
@@ -181,6 +199,9 @@ const getPageNumbers = () => {
             v-for="tournament in paginatedTournaments"
             :key="tournament.id"
             :tournament="tournament"
+            :backend-tournament-id="Number(tournament.id)"
+            :is-registered="isUserRegistered(Number(tournament.id))"
+            @register="handleRegister(tournament.id)"
           />
         </div>
 
@@ -228,6 +249,7 @@ const getPageNumbers = () => {
       @click="filtersOpen = false"
     ></div>
   </section>
+
 </template>
 
 <style scoped>

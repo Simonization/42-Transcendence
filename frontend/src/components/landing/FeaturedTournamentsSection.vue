@@ -1,45 +1,86 @@
 <script setup lang="ts">
 /**
  * Featured Tournaments Section - Landing Page
- * Horizontal carousel of featured tournaments with snap-to-grid behavior
+ * Fetches all planned/active tournaments from the backend and displays them in a carousel.
  */
 
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getFeaturedTournaments } from '../../data/mockTournaments'
+import { useI18n } from 'vue-i18n'
+import { tournamentsApi } from '../../api/tournaments'
+import { getAccessToken } from '../../api'
+import { TournamentStatus } from '../../types'
+import type { BackendTournament } from '../../types'
 
+const { t } = useI18n()
 const router = useRouter()
 const scrollContainer = ref<HTMLElement | null>(null)
 
-const featuredTournaments = computed(() => getFeaturedTournaments(3))
+const isLoggedIn = computed(() => !!getAccessToken())
 
-const handleViewDetails = (tournamentId: string) => {
-  router.push(`/menu/tournaments/${tournamentId}`)
+const tournaments = ref<BackendTournament[]>([])
+const isLoading = ref(false)
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    const all = await tournamentsApi.getAll()
+    tournaments.value = all
+      .filter(bt => bt.status !== TournamentStatus.COMPLETED)
+      .sort((a, b) => {
+        if (a.scheduledAt && b.scheduledAt)
+          return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+        if (a.scheduledAt) return -1
+        if (b.scheduledAt) return 1
+        return 0
+      })
+  } catch {
+    tournaments.value = []
+  } finally {
+    isLoading.value = false
+  }
+})
+
+function handleRegister(bt: BackendTournament) {
+  if (!isLoggedIn.value) {
+    router.push('/auth')
+    return
+  }
+  router.push(`/menu/tournaments/${bt.id}/team`)
 }
 
 const scroll = (direction: 'left' | 'right') => {
   if (!scrollContainer.value) return
-
-  const scrollAmount = 300
-  const scrollTo =
-    scrollContainer.value.scrollLeft + (direction === 'right' ? scrollAmount : -scrollAmount)
-
   scrollContainer.value.scrollTo({
-    left: scrollTo,
+    left: scrollContainer.value.scrollLeft + (direction === 'right' ? 320 : -320),
     behavior: 'smooth',
   })
 }
 
-const getStatusBadgeClass = (status: string) => {
+function getStatusBadgeClass(status: TournamentStatus) {
   return {
-    'status-open': status === 'open',
-    'status-live': status === 'live',
-    'status-finished': status === 'finished',
+    'status-open': status === TournamentStatus.REGISTRATION_OPEN,
+    'status-live': status === TournamentStatus.ONGOING,
+    'status-draft': status === TournamentStatus.DRAFT,
   }
 }
 
-const getStatusLabel = (status: string) => {
-  return status.charAt(0).toUpperCase() + status.slice(1)
+function getStatusLabel(status: TournamentStatus): string {
+  const map: Record<string, string> = {
+    [TournamentStatus.DRAFT]: t('tournament.upcoming'),
+    [TournamentStatus.REGISTRATION_OPEN]: t('tournament.open'),
+    [TournamentStatus.ONGOING]: t('tournament.live'),
+  }
+  return map[status] ?? status
+}
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return t('tournament.upcoming')
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function getGameName(bt: BackendTournament): string {
+  return bt.phases[0]?.game?.name ?? t('tournament.game')
 }
 </script>
 
@@ -48,82 +89,84 @@ const getStatusLabel = (status: string) => {
     <header class="featured-header">
       <div class="featured-header-content">
         <h2 class="featured-title">{{ $t('landing.featuredTournaments') }}</h2>
-        <span class="featured-subtitle">{{ $t('landing.tournamentsCount', { count: featuredTournaments.length }) }}</span>
+        <span class="featured-subtitle">{{ $t('landing.tournamentsCount', { count: tournaments.length }) }}</span>
       </div>
       <div class="featured-nav-buttons">
-        <button
-          class="featured-nav-btn"
-          aria-label="Show previous featured tournament"
-          @click="scroll('left')"
-        >
-          ←
-        </button>
-        <button
-          class="featured-nav-btn"
-          aria-label="Show next featured tournament"
-          @click="scroll('right')"
-        >
-          →
-        </button>
+        <button class="featured-nav-btn" aria-label="Previous tournament" @click="scroll('left')">←</button>
+        <button class="featured-nav-btn" aria-label="Next tournament" @click="scroll('right')">→</button>
       </div>
     </header>
 
-    <div class="featured-carousel" role="region" aria-roledescription="carousel" aria-label="Featured tournaments">
-      <div ref="scrollContainer" class="featured-scroll-container" role="group" aria-live="polite" aria-atomic="false">
+    <!-- Loading -->
+    <div v-if="isLoading" class="featured-loading">
+      <span class="loading-text">{{ $t('common.loadingDots') }}</span>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="tournaments.length === 0" class="featured-empty">
+      <span class="featured-empty-icon">🏆</span>
+      <p class="featured-empty-text">{{ $t('tournament.noTournamentsFound') }}</p>
+    </div>
+
+    <!-- Carousel -->
+    <div v-else class="featured-carousel" role="region" aria-roledescription="carousel" aria-label="Featured tournaments">
+      <div ref="scrollContainer" class="featured-scroll-container" role="group">
         <div
-          v-for="(tournament, index) in featuredTournaments"
-          :key="tournament.id"
+          v-for="(bt, index) in tournaments"
+          :key="bt.id"
           class="featured-card glass-panel"
           role="group"
-          :aria-roledescription="`Slide ${index + 1} of ${featuredTournaments.length}`"
-          :aria-label="`${tournament.name} tournament card`"
+          :aria-label="`${bt.name} tournament, slide ${index + 1} of ${tournaments.length}`"
         >
           <!-- Card Header -->
           <div class="featured-card-header">
-            <span class="featured-game-icon" aria-hidden="true">{{ tournament.organizer.avatar }}</span>
+            <span class="featured-game-icon" aria-hidden="true">🏆</span>
             <div class="featured-game-info">
-              <h3 class="featured-game-name">{{ tournament.game }}</h3>
-              <span class="featured-status" :class="getStatusBadgeClass(tournament.status)">
-                {{ getStatusLabel(tournament.status) }}
+              <h3 class="featured-game-name">{{ getGameName(bt) }}</h3>
+              <span class="featured-status" :class="getStatusBadgeClass(bt.status)">
+                {{ getStatusLabel(bt.status) }}
               </span>
             </div>
           </div>
 
-          <!-- Card Title -->
-          <h4 class="featured-tournament-name">{{ tournament.name }}</h4>
+          <!-- Tournament Name -->
+          <h4 class="featured-tournament-name">{{ bt.name }}</h4>
 
-          <!-- Card Stats -->
+          <!-- Stats -->
           <div class="featured-stats">
             <div class="featured-stat">
               <span class="featured-stat-label">{{ $t('landing.date') }}</span>
-              <span class="featured-stat-value">{{ tournament.date }}</span>
+              <span class="featured-stat-value">{{ formatDate(bt.scheduledAt) }}</span>
             </div>
             <div class="featured-stat">
               <span class="featured-stat-label">{{ $t('landing.players') }}</span>
-              <span class="featured-stat-value">
-                {{ tournament.currentParticipants }}/{{ tournament.maxParticipants }}
-              </span>
+              <span class="featured-stat-value">{{ bt.teams?.length ?? 0 }}/{{ bt.max_participants }}</span>
             </div>
           </div>
 
-          <!-- Prize -->
-          <div class="featured-prize">
-            <span class="featured-prize-label">{{ $t('landing.prizePool') }}</span>
-            <span class="featured-prize-value">{{ tournament.prize }}</span>
+          <!-- Actions -->
+          <div class="featured-actions">
+            <button
+              class="featured-cta"
+              :aria-label="`View details for ${bt.name}`"
+              @click="router.push(`/menu/tournaments/${bt.id}`)"
+            >
+              {{ $t('landing.viewDetails') }}
+            </button>
+            <button
+              v-if="bt.status === TournamentStatus.REGISTRATION_OPEN"
+              class="featured-register"
+              :aria-label="`Register for ${bt.name}`"
+              @click="handleRegister(bt)"
+            >
+              {{ isLoggedIn ? $t('tournament.registerNow') : $t('landing.signIn') }}
+            </button>
           </div>
-
-          <!-- CTA -->
-          <button
-            class="featured-cta"
-            :aria-label="`View details for ${tournament.name}`"
-            @click="handleViewDetails(tournament.id)"
-          >
-            {{ $t('landing.viewDetails') }}
-          </button>
         </div>
       </div>
     </div>
   </section>
+
 </template>
 
 <style scoped>
@@ -172,10 +215,8 @@ const getStatusLabel = (status: string) => {
   width: 40px;
   height: 40px;
   padding: 0;
-  font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
-  letter-spacing: var(--tracking-wide);
   color: var(--text-secondary);
   background: transparent;
   border: var(--hud-border) solid var(--border-subtle);
@@ -194,6 +235,36 @@ const getStatusLabel = (status: string) => {
   outline-offset: 2px;
 }
 
+.featured-loading,
+.featured-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
+  gap: var(--space-4);
+}
+
+.loading-text {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  letter-spacing: var(--tracking-widest);
+}
+
+.featured-empty-icon {
+  font-size: var(--text-4xl);
+  opacity: 0.4;
+}
+
+.featured-empty-text {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  letter-spacing: var(--tracking-wider);
+}
+
 .featured-carousel {
   overflow: hidden;
   padding: 0 var(--space-4);
@@ -206,8 +277,6 @@ const getStatusLabel = (status: string) => {
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
   padding-bottom: var(--space-4);
-
-  /* Hide scrollbar */
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -228,16 +297,12 @@ const getStatusLabel = (status: string) => {
   -webkit-backdrop-filter: var(--backdrop-blur-heavy);
   backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-xl), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all var(--duration-normal) var(--ease-default);
 }
 
 .featured-card:hover {
-  box-shadow:
-    0 0 20px var(--accent-primary-subtle),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 20px var(--accent-primary-subtle), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transform: translateY(-4px);
 }
 
@@ -274,7 +339,6 @@ const getStatusLabel = (status: string) => {
   letter-spacing: var(--tracking-wider);
   padding: var(--space-1) var(--space-2);
   width: fit-content;
-  border-radius: 2px;
 }
 
 .status-open {
@@ -288,9 +352,10 @@ const getStatusLabel = (status: string) => {
   animation: pulse-badge 2s ease-in-out infinite;
 }
 
-.status-finished {
-  background: var(--text-secondary);
-  color: white;
+.status-draft {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: var(--hud-border) solid var(--border-default);
 }
 
 @keyframes pulse-badge {
@@ -310,7 +375,7 @@ const getStatusLabel = (status: string) => {
 .featured-stats {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .featured-stat {
@@ -338,32 +403,15 @@ const getStatusLabel = (status: string) => {
   letter-spacing: var(--tracking-wide);
 }
 
-.featured-prize {
-  padding: var(--space-3) var(--space-4);
-  background: var(--bg-selected);
-  border: var(--hud-border) solid var(--accent-primary-subtle);
+.featured-actions {
   display: flex;
-  align-items: center;
   gap: var(--space-2);
-}
-
-.featured-prize-label {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  letter-spacing: var(--tracking-wide);
-  font-weight: var(--font-semibold);
-}
-
-.featured-prize-value {
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-  color: var(--accent-primary);
-  letter-spacing: var(--tracking-wide);
+  margin-top: auto;
 }
 
 .featured-cta {
-  padding: var(--space-3) var(--space-6);
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
   font-family: var(--font-display);
   font-size: var(--text-xs);
   font-weight: var(--font-bold);
@@ -387,43 +435,46 @@ const getStatusLabel = (status: string) => {
   outline-offset: 2px;
 }
 
-/* Responsive - tablets and down */
-@media (max-width: 768px) {
-  .featured-nav-buttons {
-    display: none;
-  }
-
-  .featured-card {
-    flex: 0 0 calc(85% - var(--space-3));
-  }
-
-  .featured-card:last-child {
-    margin-right: var(--space-4);
-  }
+.featured-register {
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--bg-primary);
+  background: var(--accent-primary);
+  border: var(--hud-border) solid var(--accent-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  white-space: nowrap;
 }
 
-/* Responsive - mobile */
+.featured-register:hover {
+  opacity: 0.85;
+  box-shadow: 0 0 12px var(--accent-primary-subtle);
+}
+
+.featured-register:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .featured-nav-buttons { display: none; }
+  .featured-card { flex: 0 0 calc(85% - var(--space-3)); }
+  .featured-card:last-child { margin-right: var(--space-4); }
+}
+
 @media (max-width: 480px) {
-  .featured-header {
-    padding: 0 var(--space-2);
-  }
-
-  .featured-carousel {
-    padding: 0 var(--space-2);
-  }
-
+  .featured-header { padding: 0 var(--space-2); }
+  .featured-carousel { padding: 0 var(--space-2); }
   .featured-card {
     flex: 0 0 calc(100% - var(--space-3));
     padding: var(--space-4);
   }
-
-  .featured-tournament-name {
-    font-size: var(--text-sm);
-  }
-
-  .featured-prize {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  .featured-tournament-name { font-size: var(--text-sm); }
+  .featured-actions { flex-direction: column; }
 }
 </style>

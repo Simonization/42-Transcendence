@@ -7,16 +7,25 @@ defineProps<{
 
 const emit = defineEmits<{
   send: [content: string]
-  typing: []
+  typing: [isTyping: boolean] 
 }>()
 
 const content = ref('')
 let typingTimeout: ReturnType<typeof setTimeout> | null = null
 
+const stopTyping = () => {
+  if (typingTimeout) {
+    clearTimeout(typingTimeout)
+    typingTimeout = null
+  }
+  emit('typing', false)
+}
+
 const handleSubmit = () => {
   if (!content.value.trim()) return
   emit('send', content.value)
   content.value = ''
+  stopTyping()
 }
 
 const handleKeydown = (e: KeyboardEvent) => {
@@ -27,11 +36,15 @@ const handleKeydown = (e: KeyboardEvent) => {
 }
 
 const handleInput = () => {
-  if (typingTimeout) return
-  emit('typing')
+  if (!typingTimeout) {
+    emit('typing', true)
+  } else {
+    clearTimeout(typingTimeout)
+  }
+  
   typingTimeout = setTimeout(() => {
-    typingTimeout = null
-  }, 300)
+    stopTyping()
+  }, 1500)
 }
 </script>
 

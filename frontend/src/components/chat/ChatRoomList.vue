@@ -16,8 +16,7 @@ const { t } = useI18n()
 
 const getRoomName = (room: ChatRoom, currentUserId: number): string => {
   if (room.title) return room.title
-  // For DMs, show the other participant's name
-  const other = room.participants.find(p => p.id !== currentUserId)
+  const other = room.participants.find(p => Number(p.id) !== Number(currentUserId))
   return other?.username || t('chat.unknownUser')
 }
 

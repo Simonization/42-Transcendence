@@ -25,6 +25,21 @@ const { t } = useI18n()
 const { validate, errors, isValid } = useFormValidation()
 const { message, messageType, handleError, handleSuccess, clearMessage } = useErrorHandler()
 
+const mapAuthErrorMessage = (raw: string): string => {
+  if (raw === 'BANNED_PERMANENT') return t('auth.bannedPermanent')
+
+  if (raw.startsWith('BANNED_UNTIL:')) {
+    const iso = raw.replace('BANNED_UNTIL:', '').trim()
+    const date = new Date(iso)
+    if (!Number.isNaN(date.getTime())) {
+      return t('auth.bannedUntil', { date: date.toLocaleString() })
+    }
+    return t('auth.bannedTemporary')
+  }
+
+  return raw
+}
+
 onMounted(async () => {
   const token = getAccessToken()
   if (!token) return
@@ -65,7 +80,17 @@ const login = async () => {
       router.push('/menu')
     }
   } catch (error) {
-    handleError(error, t('auth.networkError'))
+    if (error instanceof Error) {
+      const mapped = mapAuthErrorMessage(error.message)
+      if (mapped !== error.message) {
+        messageType.value = 'error'
+        message.value = mapped
+      } else {
+        handleError(error, t('auth.networkError'))
+      }
+    } else {
+      handleError(error, t('auth.networkError'))
+    }
   } finally {
     isLoading.value = false
   }

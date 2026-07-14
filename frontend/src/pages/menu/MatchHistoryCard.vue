@@ -8,6 +8,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMatches } from '../../composables/useMatches'
 import { useAuthStore } from '../../stores/auth'
+import DemoBanner from '../../components/common/DemoBanner.vue'
 import type { GameType, MatchResult } from '../../types'
 
 type SortBy = 'date' | 'result'
@@ -15,7 +16,7 @@ type SortBy = 'date' | 'result'
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const { user } = authStore
-const { matches, isLoading, error, stats, uniqueGames, fetchMyHistory } = useMatches(user?.id ?? 0)
+const { matches, isLoading, error, demoMode, stats, uniqueGames, fetchMyHistory } = useMatches(user?.id ?? 0)
 
 const friendlyError = computed(() => {
   if (!error.value) return ''
@@ -121,6 +122,8 @@ const formatDate = (date: string) => {
       <span class="loading-spinner"></span>
       <p class="loading-text">{{ $t('match.loadingHistory') }}</p>
     </div>
+
+    <DemoBanner v-if="demoMode" />
 
     <!-- Error State -->
     <div v-else-if="error" class="error-state glass-panel">

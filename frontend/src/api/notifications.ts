@@ -1,10 +1,20 @@
 import { api } from './index';
 
+export type NotificationType = 
+  | 'info'
+  | 'bot_message'
+  | 'system'
+  | 'friend_request'
+  | 'friend_request_accepted'
+  | 'team_invite'
+  | 'tournament_started'
+  | 'match_result';
+
 export interface Notification {
   id: number;
   userId: number;
   actorId?: number;
-  type: 'info' | 'bot_message' | 'system' | 'friend_request' | 'match_result';
+  type: NotificationType;
   title?: string;
   body: string;
   data?: Record<string, unknown>;
@@ -16,14 +26,14 @@ export interface Notification {
 
 export interface CreateNotificationDto {
   userId: number;
-  type: 'info' | 'bot_message' | 'system' | 'friend_request' | 'match_result';
+  type: NotificationType;
   body: string;
   title?: string;
   data?: Record<string, unknown>;
 }
 
 export interface QueryNotificationsDto {
-  type?: 'info' | 'bot_message' | 'system' | 'friend_request' | 'match_result';
+  type?: NotificationType;
   unreadOnly?: boolean;
   page?: number;
   limit?: number;

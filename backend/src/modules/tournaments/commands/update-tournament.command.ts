@@ -32,8 +32,16 @@ export class UpdateTournamentCommand {
             }
 
             // 2. Update main fields
-            const { phases, ...tournamentData } = dto;
-            Object.assign(tournament, tournamentData);
+            const { phases, scheduled_at, ...tournamentData } = dto;
+            // Only assign fields that are explicitly defined (exclude undefined to avoid overwriting with null)
+            const definedFields = Object.fromEntries(
+                Object.entries(tournamentData).filter(([, v]) => v !== undefined)
+            );
+            Object.assign(tournament, definedFields);
+            // scheduled_at (snake_case DTO) → scheduledAt (camelCase entity)
+            if (scheduled_at !== undefined) {
+                tournament.scheduledAt = scheduled_at ? new Date(scheduled_at) : null;
+            }
             await queryRunner.manager.save(tournament);
 
             // 3. Handle Phases

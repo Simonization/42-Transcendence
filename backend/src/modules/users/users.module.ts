@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ChatModule } from '../chat/chat.module';
 
 // Entities
 import { User } from './entities/user.entity';
@@ -20,6 +21,7 @@ import { UsersController } from './users.controller';
 
 @Module({
     imports: [
+        ChatModule,
         TypeOrmModule.forFeature([
             User, 
             UserProfile, 

@@ -27,7 +27,7 @@ const searchQuery = ref('')
 // Fetch friends when component opens
 watch(() => props.isOpen, (open) => {
   if (open && user.value) {
-    fetchFriends(user.value.id)
+    fetchFriends()
   }
 })
 

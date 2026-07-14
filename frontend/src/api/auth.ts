@@ -160,6 +160,36 @@ export const authApi = {
   handleOAuthCallback: (accessToken: string, refreshToken: string): void => {
     setTokens(accessToken, refreshToken);
   },
+
+  // ============================================
+  // Admin Management (Super Admin only)
+  // ============================================
+
+  /**
+   * List all admins and super admins
+   */
+  listAdmins: (): Promise<{ admins: Array<{ id: number; username: string; mail: string; role: string; createdAt: string }> }> => {
+    return api('/auth/admins');
+  },
+
+  /**
+   * Revoke admin privileges from a user
+   */
+  revokeAdmin: (adminId: number): Promise<MessageResponse> => {
+    return api<MessageResponse>(`/auth/admins/${adminId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Generate admin invite token (super admin only)
+   */
+  createAdminInvite: (expiresInHours?: number): Promise<{ token: string; expiresAt: string }> => {
+    return api('/auth/admin-invites', {
+      method: 'POST',
+      body: expiresInHours ? { expiresInHours } : {},
+    });
+  },
 };
 
 export default authApi;

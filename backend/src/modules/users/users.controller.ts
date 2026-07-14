@@ -1,17 +1,17 @@
 // src/modules/users/users.controller.ts
 
-import { 
-    Controller, 
-    Post, 
-    Body, 
-    Patch, 
-    Param, 
-    Delete, 
+import {
+    Controller,
+    Post,
+    Body,
+    Patch,
+    Param,
+    Delete,
     ParseIntPipe,
     Get,
+    Query,
     UseGuards,
-    Request,
-    Query
+    Request
 } from '@nestjs/common';
 
 import { UsersService } from './users.service';
@@ -20,11 +20,26 @@ import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { UpdateProfileDto} from './dto/update-profile.dto'
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, ILike } from 'typeorm';
+import { User } from './entities/user.entity';
 import { AdminGuard } from '../auth/guards/admin.guard';
 
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) {}
+    constructor(
+        private readonly usersService: UsersService,
+       @InjectRepository(User) private readonly userRepo: Repository<User>
+    ) {}
+
+    @UseGuards(JwtAuthGuard)
+    @Get('search')
+    async search(
+        @Query('q') q?: string,
+        @Query('limit') limit?: string,
+    ) {
+        return await this.usersService.search(q ?? '', parseInt(limit ?? '50', 10));
+    }
 
     @UseGuards(JwtAuthGuard)
     @Get('me')

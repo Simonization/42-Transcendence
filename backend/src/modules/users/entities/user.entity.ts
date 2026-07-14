@@ -40,7 +40,7 @@ export class User {
     status: number;
 
     @Column({ type: 'timestamp', name: 'ban_until', nullable: true })
-    banUntil: Date;
+    banUntil: Date | null;
 
     @Column({ default: false })
     isEmailVerified: boolean;

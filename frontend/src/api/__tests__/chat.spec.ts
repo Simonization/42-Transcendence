@@ -46,11 +46,11 @@ describe('Chat API', () => {
       const mockRoom = { id: 1, type: 0 }
       mockApi.mockResolvedValueOnce(mockRoom)
 
-      const result = await chatApi.createRoom({ userIds: [2] })
+      const result = await chatApi.createRoom({ participantIds: [2] })
 
       expect(mockApi).toHaveBeenCalledWith('/chat/rooms', {
         method: 'POST',
-        body: { userIds: [2] },
+        body: { participantIds: [2] },
       })
       expect(result).toEqual(mockRoom)
     })
@@ -58,11 +58,11 @@ describe('Chat API', () => {
     it('should create a group room with title', async () => {
       mockApi.mockResolvedValueOnce({ id: 2, type: 1, title: 'Team' })
 
-      await chatApi.createRoom({ userIds: [2, 3], title: 'Team' })
+      await chatApi.createRoom({ participantIds: [2, 3], title: 'Team' })
 
       expect(mockApi).toHaveBeenCalledWith('/chat/rooms', {
         method: 'POST',
-        body: { userIds: [2, 3], title: 'Team' },
+        body: { participantIds: [2, 3], title: 'Team' },
       })
     })
   })

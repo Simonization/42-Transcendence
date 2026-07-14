@@ -36,12 +36,14 @@ export class ChatController {
 
     @Post('rooms')
     async createRoom(@Req() req, @Body() dto: CreateChatDto) {
-        return this.startConvCmd.execute(req.user.id, dto);
+        const userId = req.user.id || req.user.sub;
+        return this.startConvCmd.execute(userId, dto);
     }
 
     @Get('rooms')
     async getInbox(@Req() req, @Query() dto: GetConversationsDto) {
-        return this.getConvQuery.execute(req.user.id, dto.limit);
+        const userId = req.user.id || req.user.sub;
+        return this.getConvQuery.execute(userId, dto.limit);
     }
 
     @Get('rooms/:id/messages')
@@ -54,7 +56,8 @@ export class ChatController {
 
     @Post('messages')
     async sendMessage(@Req() req, @Body() dto: SendMessageDto) {
-        return this.sendMessageCmd.execute(req.user.id, dto);
+        const userId = req.user.id || req.user.sub; 
+        return this.sendMessageCmd.execute(userId, dto);
     }
 
     @Patch('messages/:id')
@@ -63,21 +66,25 @@ export class ChatController {
         @Param('id', ParseIntPipe) messageId: number, 
         @Body() dto: EditMessageDto
     ) {
-        return this.editMessageCmd.execute(req.user.id, messageId, dto);
+        const userId = req.user.id || req.user.sub;
+        return this.editMessageCmd.execute(userId, messageId, dto);
     }
 
     @Delete('messages/:id')
     async deleteMessage(@Req() req, @Param('id', ParseIntPipe) messageId: number) {
-        return this.deleteMessageCmd.execute(req.user.id, messageId);
+        const userId = req.user.id || req.user.sub;
+        return this.deleteMessageCmd.execute(userId, messageId);
     }
 
     @Patch('rooms/:id/read')
     async markAsRead(@Req() req, @Param('id', ParseIntPipe) chatId: number) {
-        return this.markReadCmd.execute(req.user.id, chatId);
+        const userId = req.user.id || req.user.sub;
+        return this.markReadCmd.execute(userId, chatId);
     }
 
     @Delete('rooms/:id/leave')
     async leaveGroup(@Req() req, @Param('id', ParseIntPipe) chatId: number) {
-        return this.leaveGroupCmd.execute(req.user.id, chatId);
+        const userId = req.user.id || req.user.sub;
+        return this.leaveGroupCmd.execute(userId, chatId);
     }
 }

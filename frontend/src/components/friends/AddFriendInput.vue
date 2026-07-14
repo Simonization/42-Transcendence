@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { usersApi } from '../../api/users'
 
 const { t } = useI18n()
 
@@ -8,18 +9,47 @@ const emit = defineEmits<{
   add: [friendId: number]
 }>()
 
-const friendId = ref('')
+const friendId = ref('') 
 const inputError = ref('')
+const isSearching = ref(false)
 
-const handleSubmit = () => {
-  const id = parseInt(friendId.value, 10)
-  if (isNaN(id) || id <= 0) {
+const handleSubmit = async () => {
+  const inputVal = friendId.value.trim()
+  const id = parseInt(inputVal, 10)
+  const isIdInput = Number.isInteger(id) && String(id) === inputVal && id > 0
+
+  if (!inputVal) {
     inputError.value = t('friends.invalidUserId')
     return
   }
+
   inputError.value = ''
-  emit('add', id)
-  friendId.value = ''
+  isSearching.value = true
+
+  try {
+    if (isIdInput) {
+      emit('add', id)
+      friendId.value = ''
+      return
+    }
+
+    const results = await usersApi.search(inputVal, 5)
+    const matchedUser = results.find(
+      (u) => u.username.toLowerCase() === inputVal.toLowerCase(),
+    )
+
+    if (!matchedUser) {
+      inputError.value = t('friends.invalidUserId')
+      return
+    }
+
+    emit('add', matchedUser.id)
+    friendId.value = ''
+  } catch {
+    inputError.value = t('friends.invalidUserId')
+  } finally {
+    isSearching.value = false
+  }
 }
 </script>
 
@@ -31,10 +61,12 @@ const handleSubmit = () => {
         type="text"
         class="input add-friend-input"
         :placeholder="$t('friends.addFriendPlaceholder')"
-        inputmode="numeric"
+        :disabled="isSearching"
         :aria-label="$t('friends.addFriendPlaceholder')"
       />
-      <button type="submit" class="btn btn-primary btn-sm">{{ $t('friends.add') }}</button>
+      <button type="submit" class="btn btn-primary btn-sm" :disabled="isSearching">
+        {{ isSearching ? '...' : $t('friends.add') }}
+      </button>
     </form>
     <p v-if="inputError" class="input-error-text">{{ inputError }}</p>
   </div>

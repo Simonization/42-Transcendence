@@ -12,22 +12,38 @@ import CreateTournamentTab from '../../components/admin/CreateTournamentTab.vue'
 import MyTournamentsTab from '../../components/admin/MyTournamentsTab.vue'
 import ParticipantsTab from '../../components/admin/ParticipantsTab.vue'
 import ManageUsersTab from '../../components/admin/ManageUsersTab.vue'
+import ManageGamesTab from '../../components/admin/ManageGamesTab.vue'
+import SuperAdminTab from '../../components/admin/SuperAdminTab.vue'
 
-type AdminTab = 'dashboard' | 'create' | 'tournaments' | 'participants' | 'users'
+type AdminTab = 'dashboard' | 'create' | 'tournaments' | 'games' | 'participants' | 'users' | 'superadmin'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
 const isAuthorized = computed(() => authStore.isAdmin)
 
 const activeTab = ref<AdminTab>('dashboard')
+// Key incremented on tournament creation to force MyTournamentsTab remount (re-fetch)
+const tournamentsKey = ref(0)
 
-const tabs: Array<{ id: AdminTab; label: string; icon: string }> = [
-  { id: 'dashboard', label: t('admin.dashboard'), icon: '📊' },
-  { id: 'create', label: t('admin.create'), icon: '➕' },
-  { id: 'tournaments', label: t('admin.tournaments'), icon: '🏆' },
-  { id: 'participants', label: t('admin.participantsTab'), icon: '👥' },
-  { id: 'users', label: t('admin.usersTab'), icon: '🛡' },
-]
+function onTournamentCreated() {
+  tournamentsKey.value++
+  activeTab.value = 'tournaments'
+}
+
+const tabs = computed(() => {
+  const base: Array<{ id: AdminTab; label: string; icon: string }> = [
+    { id: 'dashboard', label: t('admin.dashboard'), icon: '📊' },
+    { id: 'create', label: t('admin.create'), icon: '➕' },
+    { id: 'tournaments', label: t('admin.tournaments'), icon: '🏆' },
+    { id: 'games', label: t('admin.gamesTab'), icon: '🎮' },
+    { id: 'participants', label: t('admin.participantsTab'), icon: '👥' },
+    { id: 'users', label: t('admin.usersTab'), icon: '🛡' },
+  ]
+  if (authStore.isSuperAdmin) {
+    base.push({ id: 'superadmin', label: t('admin.superAdminTab'), icon: '⚡' })
+  }
+  return base
+})
 </script>
 
 <template>
@@ -58,10 +74,12 @@ const tabs: Array<{ id: AdminTab; label: string; icon: string }> = [
     <!-- Tab Content -->
     <main class="admin-content">
       <DashboardTab v-show="activeTab === 'dashboard'" class="tab-pane glass-panel" @navigate-tab="(tab: string) => activeTab = tab as AdminTab" />
-      <CreateTournamentTab v-show="activeTab === 'create'" class="tab-pane glass-panel" />
-      <MyTournamentsTab v-show="activeTab === 'tournaments'" class="tab-pane glass-panel" />
+      <CreateTournamentTab v-show="activeTab === 'create'" class="tab-pane glass-panel" @tournament-created="onTournamentCreated" />
+      <MyTournamentsTab :key="tournamentsKey" v-show="activeTab === 'tournaments'" class="tab-pane glass-panel" />
+      <ManageGamesTab v-show="activeTab === 'games'" class="tab-pane glass-panel" />
       <ParticipantsTab v-show="activeTab === 'participants'" class="tab-pane glass-panel" />
       <ManageUsersTab v-show="activeTab === 'users'" class="tab-pane glass-panel" />
+      <SuperAdminTab v-if="authStore.isSuperAdmin" v-show="activeTab === 'superadmin'" class="tab-pane glass-panel" />
     </main>
   </div>
   <div v-else class="access-denied glass-panel">

@@ -19,7 +19,7 @@ const mockApi = vi.mocked(apiModule.api)
 
 const makeBackendMatch = (overrides: Partial<BackendMatch> = {}): BackendMatch => ({
   id: 1,
-  game_type: 1,
+  game_type: 'CHESS',
   created_at: '2026-02-07T10:00:00.000Z',
   userMatches: [
     { userId: 42, result: 'WIN', user: { id: 42, username: 'simon' } },
@@ -127,22 +127,22 @@ describe('Matches API', () => {
       expect(result).toBeNull()
     })
 
-    it('should map game_type 1 to Chess', () => {
-      const raw = makeBackendMatch({ game_type: 1 })
+    it('should map game_type CHESS to Chess', () => {
+      const raw = makeBackendMatch({ game_type: 'CHESS' })
       const result = transformMatch(raw, 42)
 
       expect(result!.game).toBe('Chess')
     })
 
-    it('should map game_type 2 to League of Legends', () => {
-      const raw = makeBackendMatch({ game_type: 2 })
+    it('should map game_type LEAGUE to League of Legends', () => {
+      const raw = makeBackendMatch({ game_type: 'LEAGUE' })
       const result = transformMatch(raw, 42)
 
       expect(result!.game).toBe('League of Legends')
     })
 
     it('should map unknown game_type to Unknown', () => {
-      const raw = makeBackendMatch({ game_type: 99 })
+      const raw = makeBackendMatch({ game_type: 'UNKNOWN_GAME' })
       const result = transformMatch(raw, 42)
 
       expect(result!.game).toBe('Unknown')

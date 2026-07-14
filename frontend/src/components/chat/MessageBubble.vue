@@ -13,10 +13,15 @@ const emit = defineEmits<{
   viewProfile: [userId: number]
 }>()
 
-const isOwn = computed(() => props.message.senderId === props.currentUserId)
+const isOwn = computed(() => Number(props.message.senderId) === Number(props.currentUserId))
 const isDeleted = computed(() => !!props.message.deletedAt)
 const isEdited = computed(() => !!props.message.editedAt && !isDeleted.value)
-const hasReadReceipts = computed(() => (props.message.readBy?.length ?? 0) > 0)
+
+const hasReadReceipts = computed(() => {
+  if (!props.message.readBy) return false;
+  return props.message.readBy.some(id => Number(id) !== Number(props.currentUserId));
+})
+
 const isGameInvite = computed(() => props.message.content.startsWith('\u{1F3AE} Game invitation!'))
 
 const time = computed(() => {

@@ -21,11 +21,15 @@ let nextId = 1
 const MAX_ENTRIES = 50
 
 function truncate(data: unknown): unknown {
-  const json = JSON.stringify(data)
-  if (json && json.length > 2000) {
-    return JSON.parse(json.slice(0, 2000) + '..."')
+  try {
+    const json = JSON.stringify(data)
+    if (json && json.length > 2000) {
+      return json.slice(0, 2000) + '\n... [DATA TRUNCATED: TOO LARGE TO DISPLAY]'
+    }
+    return data
+  } catch (e) {
+    return '[Unserializable Data]'
   }
-  return data
 }
 
 function addRestLog(entry: Omit<LogEntry, 'id' | 'timestamp' | 'type'>): void {

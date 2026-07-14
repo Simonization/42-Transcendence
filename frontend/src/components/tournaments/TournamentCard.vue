@@ -8,8 +8,14 @@ import type { Tournament } from '../../data/mockTournaments'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-defineProps<{
+const props = defineProps<{
   tournament: Tournament
+  backendTournamentId?: number
+  isRegistered?: boolean
+}>()
+
+const emit = defineEmits<{
+  register: []
 }>()
 
 const router = useRouter()
@@ -92,13 +98,25 @@ const getProgressPercentage = (current: number, max: number) => {
       <span class="prize-value">{{ tournament.prize }}</span>
     </div>
 
-    <!-- CTA Button -->
-    <button
-      class="tournament-card-cta"
-      @click="handleViewDetails(tournament.id, $event)"
-    >
-      {{ $t('tournament.viewDetails') }}
-    </button>
+    <!-- Actions -->
+    <div class="tournament-card-actions">
+      <button
+        class="tournament-card-cta"
+        @click="handleViewDetails(tournament.id, $event)"
+      >
+        {{ $t('tournament.viewDetails') }}
+      </button>
+      <span v-if="props.isRegistered" class="tournament-card-registered">
+        {{ $t('tournament.registered') }} ✓
+      </span>
+      <button
+        v-else-if="tournament.status === 'open' && props.backendTournamentId"
+        class="tournament-card-register"
+        @click.stop="emit('register')"
+      >
+        {{ $t('tournament.registerNow') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -293,7 +311,14 @@ const getProgressPercentage = (current: number, max: number) => {
   letter-spacing: var(--tracking-wide);
 }
 
+.tournament-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .tournament-card-cta {
+  flex: 1;
   padding: var(--space-2) var(--space-4);
   font-family: var(--font-display);
   font-size: var(--text-xs);
@@ -316,6 +341,42 @@ const getProgressPercentage = (current: number, max: number) => {
 .tournament-card-cta:focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
+}
+
+.tournament-card-register {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--bg-primary);
+  background: var(--accent-primary);
+  border: var(--hud-border) solid var(--accent-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  white-space: nowrap;
+}
+
+.tournament-card-register:hover {
+  opacity: 0.85;
+  box-shadow: 0 0 12px var(--accent-primary-subtle);
+}
+
+.tournament-card-register:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.tournament-card-registered {
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-success);
+  border: var(--hud-border) solid var(--color-success);
+  white-space: nowrap;
 }
 
 /* Responsive */

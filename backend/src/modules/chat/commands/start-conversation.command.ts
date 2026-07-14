@@ -15,31 +15,42 @@ export class StartConversationCommand {
     ) {}
 
     async execute(creatorId: number, dto: CreateChatDto) {
-       if (!dto.userIds || dto.userIds.length === 0) {
-           throw new BadRequestException('At least one participant is required');
-       }
+        if (!dto.participantIds || dto.participantIds.length === 0) {
+            throw new BadRequestException('At least one participant is required');
+        }
+        for (const targetId of dto.participantIds) {
+            await this.privacyService.validateAccess(creatorId, targetId);
+        }
 
-       for (const targetId of dto.userIds) {
-           await this.privacyService.validateAccess(creatorId, targetId);
-       }
+        const isPrivate = dto.participantIds.length === 1;
+        if (isPrivate) {
+            const targetId = dto.participantIds[0];
+            const existingChat = await this.chatRepo.createQueryBuilder('chat')
+                .innerJoin('chat.participants', 'p1', 'p1.userId = :creatorId', { creatorId })
+                .innerJoin('chat.participants', 'p2', 'p2.userId = :targetId', { targetId })
+                .where('chat.type = 0') 
+                .getOne();
 
-       const isPrivate = dto.userIds.length === 1;
-       const chatType = isPrivate ? 0 : 1;
+            if (existingChat) {
+                return existingChat;
+            }
+        }
 
-       const chat = await this.chatRepo.save(
-           this.chatRepo.create({ 
-              type: chatType,
-              // If it's a DM, title remains null. If it's a group, we use the DTO title.
-              title: isPrivate ? null : (dto.title || 'New Group')
-           })
-       );
+        const chatType = isPrivate ? 0 : 1;
 
-       const allMemberIds = [creatorId, ...dto.userIds];
-       const participants = allMemberIds.map((id) =>
-           this.partRepo.create({ chatId: chat.id, userId: id })
-       );
+        const chat = await this.chatRepo.save(
+            this.chatRepo.create({ 
+               type: chatType,
+               title: isPrivate ? null : (dto.title || 'New Group')
+            })
+        );
 
-       await this.partRepo.save(participants);
-       return chat;
+        const allMemberIds = [creatorId, ...dto.participantIds];
+        const participants = allMemberIds.map((id) =>
+            this.partRepo.create({ chatId: chat.id, userId: id })
+        );
+
+        await this.partRepo.save(participants);
+        return chat;
     }
 }

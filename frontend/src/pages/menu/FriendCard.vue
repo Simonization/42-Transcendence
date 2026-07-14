@@ -4,24 +4,29 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useFriendsStore } from '../../stores/friends'
+import { storeToRefs } from 'pinia'
 import MessageAlert from '../../components/common/MessageAlert.vue'
 import AddFriendInput from '../../components/friends/AddFriendInput.vue'
 import FriendList from '../../components/friends/FriendList.vue'
 import FriendRequests from '../../components/friends/FriendRequests.vue'
 import BlockedUsers from '../../components/friends/BlockedUsers.vue'
 
+
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const friendsStore = useFriendsStore()
 
-const { user } = authStore
+const { user } = storeToRefs(authStore)
 const {
   acceptedFriends,
-  pendingFriends,
+  incomingRequests,
   blocks,
   isLoading,
   error,
+} = storeToRefs(friendsStore)
+
+const {
   fetchFriends,
   fetchBlocks,
   addFriend,
@@ -43,10 +48,9 @@ const tabs: { key: Tab; label: string }[] = [
 ]
 
 onMounted(() => {
-  if (user.value) {
-    fetchFriends(user.value.id)
-    fetchBlocks(user.value.id)
-  }
+
+  fetchFriends()
+  fetchBlocks()
 })
 
 const handleAdd = async (friendId: number) => {
@@ -57,7 +61,7 @@ const handleAdd = async (friendId: number) => {
     if (ok && user.value) {
       message.value = t('friends.friendRequestSent')
       messageType.value = 'success'
-      fetchFriends(user.value.id)
+      fetchFriends()
     }
   } finally {
     isUpdating.value = false
@@ -69,7 +73,7 @@ const handleRemove = async (friendId: number) => {
   try {
     await removeFriend(friendId)
     if (user.value) {
-      fetchFriends(user.value.id)
+      fetchFriends()
     }
   } finally {
     isUpdating.value = false
@@ -81,7 +85,7 @@ const handleBlock = async (targetId: number) => {
   try {
     await blockUser(targetId)
     if (user.value) {
-      fetchBlocks(user.value.id)
+      fetchBlocks()
     }
   } finally {
     isUpdating.value = false
@@ -93,7 +97,7 @@ const handleUnblock = async (targetId: number) => {
   try {
     await unblockUser(targetId)
     if (user.value) {
-      fetchBlocks(user.value.id)
+      fetchBlocks()
     }
   } finally {
     isUpdating.value = false
@@ -106,7 +110,7 @@ const handleAccept = async (friendId: number) => {
     // Accept is the same as addFriend on the backend (creates reciprocal)
     const ok = await addFriend(friendId)
     if (ok && user.value) {
-      fetchFriends(user.value.id)
+      fetchFriends()
     }
   } finally {
     isUpdating.value = false
@@ -118,7 +122,7 @@ const handleDecline = async (friendId: number) => {
   try {
     await removeFriend(friendId)
     if (user.value) {
-      fetchFriends(user.value.id)
+      fetchFriends()
     }
   } finally {
     isUpdating.value = false
@@ -149,8 +153,8 @@ const handleChat = (friendId: number) => {
         @click="activeTab = tab.key"
       >
         {{ tab.label }}
-        <span v-if="tab.key === 'requests' && pendingFriends.length" class="tab-badge">
-          {{ pendingFriends.length }}
+        <span v-if="tab.key === 'requests' && incomingRequests.length" class="tab-badge">
+          {{ incomingRequests.length }}
         </span>
       </button>
     </div>
@@ -171,7 +175,7 @@ const handleChat = (friendId: number) => {
 
         <FriendRequests
           v-if="activeTab === 'requests'"
-          :requests="pendingFriends"
+          :requests="incomingRequests"
           :is-updating="isUpdating"
           @accept="handleAccept"
           @decline="handleDecline"

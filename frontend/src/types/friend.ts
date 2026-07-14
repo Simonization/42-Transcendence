@@ -16,6 +16,7 @@ export interface Friend {
   profile: UserProfile
   status: FriendStatus
   since: string
+  isSender?: boolean
 }
 
 export interface Block {

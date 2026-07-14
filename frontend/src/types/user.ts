@@ -35,6 +35,7 @@ export interface User {
   role?: UserRoleValue;
   /** User status (0 = active) */
   status?: number;
+  banUntil?: string | null;
   /** OAuth fields */
   firstName?: string | null;
   lastName?: string | null;
@@ -67,8 +68,8 @@ export enum Theme {
   Dark = 2,
 }
 
-/** User role constants */
-export const UserRole = { USER: 0, ADMIN: 1, MODERATOR: 2, BOT: 999 } as const
+/** User role constants (matches backend user-roles.ts) */
+export const UserRole = { USER: 0, ADMIN: 1, SUPER_ADMIN: 2, BOT: 999 } as const
 export type UserRoleValue = typeof UserRole[keyof typeof UserRole]
 
 /** Language options */

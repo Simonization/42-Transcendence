@@ -1,6 +1,22 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-export type NotificationType = 'info' | 'bot_message' | 'system' | 'friend_request' | 'match_result';
+// Types de notifications disponibles
+export type NotificationType = 
+  | 'info'
+  | 'bot_message'
+  | 'system'
+  | 'friend_request'
+  | 'friend_request_accepted'
+  | 'team_invite'
+  | 'tournament_started'
+  | 'match_result';
+
+// Destination de la notification
+export enum NotificationDestination {
+  BELL = 'bell',       // Uniquement dans la cloche (NotificationBell)
+  CHAT = 'chat',       // Uniquement dans le chat bot
+  BOTH = 'both'        // Dans la cloche ET le chat bot
+}
 
 @Entity({ name: 'notifications' })
 export class Notification {

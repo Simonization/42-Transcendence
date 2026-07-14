@@ -32,4 +32,7 @@ export class Message {
     @ManyToOne(() => User)
     @JoinColumn({ name: 'sender_id' })
     sender: User;
+
+    @Column({ default: false })
+    isRead: boolean;
 }

@@ -47,6 +47,9 @@ export class Tournament {
     @JoinColumn({ name: 'active_phase_id' })
     activePhase: TournamentPhase;
 
+    @Column({ type: 'timestamp', nullable: true })
+    scheduledAt: Date | null;
+
     @CreateDateColumn()
     createdAt: Date;
 }

@@ -13,7 +13,10 @@ export interface AdminUsersResponse {
 
 export interface AdminUpdateUserDto {
   username?: string
+  displayName?: string
   status?: number
+  banUnit?: 'hours' | 'days' | 'permanent'
+  banValue?: number
   avatarUrl?: string | null
 }
 

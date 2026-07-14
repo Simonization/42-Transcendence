@@ -12,20 +12,27 @@ export class ChatPrivacyService {
     ) {}
 
     async validateAccess(senderId: number, receiverId: number): Promise<void> {
-        // 1. Check friendship (status 1 = accepted)
-        const friendship = await this.friendRepo.findOne({
-            where: [
-                { user1: senderId, user2: receiverId, status: 1 },
-                { user1: receiverId, user2: senderId, status: 1 }
-            ]
-        });
-        if (friendship) return;
+        const sid = Number(senderId);
+        const rid = Number(receiverId);
 
-        // 2. Check "open_message" setting
-        const settings = await this.settingsRepo.findOne({ where: { userId: receiverId } });
+        if (!sid || isNaN(sid)) {
+            console.error('Error: ChatPrivacyService does not have senderId.');
+            throw new ForbiddenException('Authentication error: Sender ID is missing or invalid.');
+        }
+        const [u1, u2] = [sid, rid].sort((a, b) => a - b);
+        const friendship = await this.friendRepo.findOne({
+            where: { user1: u1, user2: u2 }
+        });
+
+        if (friendship) {
+            const s = String(friendship.status).toUpperCase();
+            if (s === '1' || s === 'ACCEPTED' || s === 'FRIEND') {
+                return;
+            }
+        }
+        const settings = await this.settingsRepo.findOne({ where: { userId: rid } });
         if (settings?.openMessage) return;
 
-        // 3. If neither, block the action
-        throw new ForbiddenException(`User ${receiverId} only accepts messages from friends.`);
+        throw new ForbiddenException(`User ${rid} only accepts messages from friends.`);
     }
 }

@@ -10,6 +10,8 @@ An esports companion platform for 42 Belgium, by Ahmet Tamer, Louis Watelle, Nic
 - **Timeline:** Jan 19 - Mar 1, 2026
 - **Status:** Final week — 23/14 points achieved
 
+> 📋 **For jury evaluation:** see [`PROJECT_DETAILS.md`](./PROJECT_DETAILS.md) for project management approach, full module breakdown with justifications, database schema, and individual contributions.
+
 ## Technical Stack
 
 | Layer | Technology |
@@ -70,6 +72,7 @@ npx vitest run             # tests
 
 ## Documentation
 
+- **[`PROJECT_DETAILS.md`](./PROJECT_DETAILS.md)** — Project management, modules, DB schema, individual contributions (jury reference)
 - **`Corrector.md`** — Module scoring reference (23 points)
 - **`frontend/FRONTEND_DOC.md`** — Frontend API contract & integration guide
 - **`docs/backend_architecture.md`** — Backend API endpoints & architecture

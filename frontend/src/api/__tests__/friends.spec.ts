@@ -22,15 +22,15 @@ describe('Friends API', () => {
   })
 
   describe('getFriends', () => {
-    it('should fetch friends for a user', async () => {
+    it('should fetch friends for the authenticated user', async () => {
       const mockFriends = [
         { id: 2, username: 'alice', status: 1, since: '2024-01-01' },
       ]
       mockApi.mockResolvedValueOnce(mockFriends)
 
-      const result = await friendsApi.getFriends(1)
+      const result = await friendsApi.getFriends()
 
-      expect(mockApi).toHaveBeenCalledWith('/social/friends?myId=1')
+      expect(mockApi).toHaveBeenCalledWith('/social/friends')
       expect(result).toEqual(mockFriends)
     })
   })
@@ -64,15 +64,15 @@ describe('Friends API', () => {
   })
 
   describe('getBlocked', () => {
-    it('should fetch blocked users', async () => {
+    it('should fetch blocked users for the authenticated user', async () => {
       const mockBlocks = [
         { id: 1, blocker: { id: 1 }, blocked: { id: 3, username: 'bob' }, reason: null },
       ]
       mockApi.mockResolvedValueOnce(mockBlocks)
 
-      const result = await friendsApi.getBlocked(1)
+      const result = await friendsApi.getBlocked()
 
-      expect(mockApi).toHaveBeenCalledWith('/social/blocks?myId=1')
+      expect(mockApi).toHaveBeenCalledWith('/social/blocks')
       expect(result).toEqual(mockBlocks)
     })
   })

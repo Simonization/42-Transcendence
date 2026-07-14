@@ -16,7 +16,7 @@ export interface BackendUserMatch {
 
 export interface BackendMatch {
   id: number
-  game_type: number
+  game_type: string
   created_at: string
   userMatches: BackendUserMatch[]
   details?: Record<string, unknown>

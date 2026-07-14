@@ -29,6 +29,10 @@ export class AuthService {
         @InjectRepository(AdminInvite)
         private readonly adminInviteRepository: Repository<AdminInvite>,
     ) {}
+
+    private isBannedUser(user: Pick<User, 'status' | 'banUntil'>): boolean {
+        return user.status === 1 || (!!user.banUntil && new Date(user.banUntil) > new Date());
+    }
     
     // create user and send verification email
     async register(dto: RegisterDto) {
@@ -68,10 +72,18 @@ export class AuthService {
     {
         const user = await this.userRepository.findOne({
             where: { username: dto.username },
-            select: ['id', 'username', 'mail', 'passwordHash', 'isEmailVerified', 'twoFactorEnabled']
+            select: ['id', 'username', 'mail', 'passwordHash', 'isEmailVerified', 'twoFactorEnabled', 'status', 'banUntil']
         })
         if (!user)
             throw new BadRequestException('Invalid credentials');
+
+        if (this.isBannedUser(user)) {
+            if (user.banUntil && new Date(user.banUntil) > new Date()) {
+                throw new UnauthorizedException(`BANNED_UNTIL:${new Date(user.banUntil).toISOString()}`);
+            }
+            throw new UnauthorizedException('BANNED_PERMANENT');
+        }
+
         const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
         if (!isPasswordValid)
             throw new BadRequestException('Invalid credentials');
@@ -160,6 +172,19 @@ export class AuthService {
     async refresh(refreshToken: string) {
         try {
             const payload = await this.jwtService.verifyAsync(refreshToken);
+
+            const user = await this.userRepository.findOne({
+                where: { id: payload.sub },
+                select: ['id', 'status', 'banUntil'],
+            });
+
+            if (!user || this.isBannedUser(user)) {
+                await this.refreshTokenRepository.delete({ userId: payload.sub });
+                if (user?.banUntil && new Date(user.banUntil) > new Date()) {
+                    throw new UnauthorizedException(`BANNED_UNTIL:${new Date(user.banUntil).toISOString()}`);
+                }
+                throw new UnauthorizedException('BANNED_PERMANENT');
+            }
             
             const storedToken = await this.refreshTokenRepository.findOne({
                 where: { token: refreshToken, userId: payload.sub },
@@ -175,7 +200,16 @@ export class AuthService {
             return {
                 accessToken: newAccessToken,
             };
-        } catch {
+        } catch (error) {
+            if (error instanceof UnauthorizedException) {
+                const response = error.getResponse();
+                const message = typeof response === 'string'
+                    ? response
+                    : (response as any)?.message;
+                if (typeof message === 'string' && (message === 'BANNED_PERMANENT' || message.startsWith('BANNED_UNTIL:'))) {
+                    throw error;
+                }
+            }
             throw new UnauthorizedException('Invalid refresh token');
         }
     }

@@ -14,6 +14,8 @@ export enum PhaseType {
   SINGLE_ELIMINATION = 'SINGLE_ELIMINATION',
   DOUBLE_ELIMINATION = 'DOUBLE_ELIMINATION',
   ROUND_ROBIN = 'ROUND_ROBIN',
+  SWISS = 'SWISS',
+  GROUP_STAGE = 'GROUP_STAGE',
 }
 
 export enum TeamStatus {
@@ -59,6 +61,11 @@ export interface BackendPhase {
   game_id: number
   game?: BackendGame
   matches: BackendMatch[]
+  teams_limit_start: number
+  teams_limit_end: number
+  swiss_rounds?: number | null
+  group_size?: number | null
+  group_winners_count?: number | null
 }
 
 export interface BackendTeamMember {
@@ -96,6 +103,7 @@ export interface BackendTournament {
   status: TournamentStatus
   phases: BackendPhase[]
   teams: BackendTeam[]
+  scheduledAt?: string | null
   createdAt: string
   updatedAt?: string
 }
@@ -104,12 +112,18 @@ export interface CreatePhaseDto {
   order: number
   type: PhaseType
   game_id: number
+  teams_limit_start: number
+  teams_limit_end: number
+  swiss_rounds?: number
+  group_size?: number
+  group_winners_count?: number
 }
 
 export interface CreateTournamentDto {
   name: string
   description?: string
   max_participants?: number
+  scheduled_at?: string
   phases: CreatePhaseDto[]
 }
 
@@ -117,6 +131,8 @@ export interface UpdateTournamentDto {
   name?: string
   description?: string
   max_participants?: number
+  scheduled_at?: string | null
+  status?: TournamentStatus
 }
 
 export interface RegisterTournamentDto {
@@ -137,4 +153,10 @@ export interface CreateGameDto {
   name: string
   team_count: number
   team_size: number
+}
+
+export interface UpdateGameDto {
+  name?: string
+  team_count?: number
+  team_size?: number
 }

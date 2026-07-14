@@ -50,6 +50,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
     GetConversationsQuery,
     GetChatHistoryQuery,
   ],
-  exports: [CreateSystemChatCommand, ChatGateway] 
+  exports: [CreateSystemChatCommand, ChatGateway]
 })
 export class ChatModule {}

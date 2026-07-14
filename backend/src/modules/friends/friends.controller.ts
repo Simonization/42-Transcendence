@@ -26,7 +26,14 @@ export class FriendsController {
         @Request() req,
         @Body() dto: ActionFriendDto
     ) {
-        return await this.friendsService.addFriend(req.user.id, dto);
+        const userId = req.user.id || req.user.sub;
+        try {
+            const result = await this.friendsService.addFriend(userId, dto);
+            return result;
+        } catch (e) {
+            console.error('[FriendsController] ADD FRIEND ERROR:', e.message);
+            throw e;
+        }
     }
 
     @Delete('friends')
@@ -34,7 +41,8 @@ export class FriendsController {
         @Request() req,
         @Body() dto: ActionFriendDto
     ) {
-        return await this.friendsService.removeFriend(req.user.id, dto);
+        const userId = req.user.id || req.user.sub;
+        return await this.friendsService.removeFriend(userId, dto);
     }
 
     @Post('blocks')
@@ -42,7 +50,8 @@ export class FriendsController {
         @Request() req,
         @Body() dto: BlockUserDto
     ) {
-        return await this.friendsService.blockUser(req.user.id, dto);
+        const userId = req.user.id || req.user.sub;
+        return await this.friendsService.blockUser(userId, dto);
     }
 
     @Delete('blocks')
@@ -50,16 +59,19 @@ export class FriendsController {
         @Request() req,
         @Body() dto: UnblockUserDto
     ) {
-        return await this.friendsService.unblockUser(req.user.id, dto);
+        const userId = req.user.id || req.user.sub;
+        return await this.friendsService.unblockUser(userId, dto);
     }
 
     @Get('friends')
-    async getFriends(@Query('myId', ParseIntPipe) myId: number) {
-        return await this.friendsService.getFriends(myId);
+    async getFriends(@Request() req) {
+        const userId = req.user.id || req.user.sub;
+        return await this.friendsService.getFriends(userId);
     }
 
     @Get('blocks')
-    async getBlocks(@Query('myId', ParseIntPipe) myId: number) {
-        return await this.friendsService.getBlocks(myId);
+    async getBlocks(@Request() req) {
+        const userId = req.user.id || req.user.sub;
+        return await this.friendsService.getBlocks(userId);
     }
 }

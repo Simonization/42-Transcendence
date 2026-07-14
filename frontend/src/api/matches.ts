@@ -6,9 +6,9 @@
 import { api } from './index'
 import type { BackendMatch, Match, MatchStats, GameType, MatchResult } from '../types'
 
-const GAME_TYPE_MAP: Record<number, GameType> = {
-  1: 'Chess',
-  2: 'League of Legends',
+const GAME_TYPE_MAP: Record<string, GameType> = {
+  CHESS: 'Chess',
+  LEAGUE: 'League of Legends',
 }
 
 const RESULT_MAP: Record<string, MatchResult> = {

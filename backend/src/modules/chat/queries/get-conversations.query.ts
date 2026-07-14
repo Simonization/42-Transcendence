@@ -29,6 +29,10 @@ export class GetConversationsQuery {
         return chats.map(chat => {
             const myParticipantData = chat.participants.find(p => p.userId === userId);
             const lastMessageDate = chat['lastMessage']?.createdAt;
+            const lastMessageSenderId = chat['lastMessage']?.senderId;
+            const isUnread = lastMessageSenderId === userId 
+                ? false 
+                : new Date(lastMessageDate || 0) > new Date(myParticipantData?.lastReadAt || 0);
 
             return {
                 id: chat.id,
@@ -39,8 +43,7 @@ export class GetConversationsQuery {
                     username: p.user.username,
                 })),
                 lastMessage: chat['lastMessage'],
-                // Logic for the frontend to "Bold" the chat
-                isUnread: lastMessageDate > (myParticipantData?.lastReadAt || 0),
+                isUnread: isUnread,
             };
         });
     }

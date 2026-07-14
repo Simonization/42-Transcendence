@@ -10,7 +10,6 @@ import { UserProfile } from './modules/users/entities/user-profile.entity';
 import { UserSettings } from './modules/users/entities/user-settings.entity';
 import { UserGameAccount } from './modules/users/entities/user-game-account.entity';
 
-
 // Feature Modules
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -22,6 +21,7 @@ import { GamesModule } from './modules/games/games.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { TournamentsModule } from './modules/tournaments/tournaments.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
 
 @Module({
   imports: [
@@ -48,6 +48,7 @@ import { TournamentsModule } from './modules/tournaments/tournaments.module';
     GamesModule,
     TeamsModule,
     TournamentsModule,
+    OrganizationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,12 +1,12 @@
 import { Type } from 'class-transformer';
-import { 
-    IsInt, 
-    IsEnum, 
-    IsOptional, 
-    IsArray, 
-    ValidateNested, 
-    IsObject, 
-    IsString 
+import {
+    IsInt,
+    IsOptional,
+    IsArray,
+    ValidateNested,
+    IsString,
+    IsDateString,
+    ValidateIf,
 } from 'class-validator';
 import { CreatePhaseDto } from './create-phase.dto';
 
@@ -21,6 +21,11 @@ export class CreateTournamentDto {
     @IsOptional()
     @IsInt()
     max_participants?: number;
+
+    @IsOptional()
+    @ValidateIf((o) => o.scheduled_at !== null)
+    @IsDateString()
+    scheduled_at?: string | null;
 
     @IsArray()
     @ValidateNested({ each: true })

@@ -1,9 +1,25 @@
-import { IsOptional, IsEnum, IsBoolean, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import type { NotificationType } from '../entities/notification.entity';
 
 export class QueryNotificationsDto {
-  @IsEnum(['info', 'bot_message', 'system', 'friend_request', 'match_result'])
+  @IsEnum([
+    'info',
+    'bot_message',
+    'system',
+    'friend_request',
+    'friend_request_accepted',
+    'team_invite',
+    'tournament_started',
+    'match_result',
+  ])
   @IsOptional()
   type?: NotificationType;
 

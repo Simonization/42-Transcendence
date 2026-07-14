@@ -1,16 +1,19 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { DataSource } from "typeorm";
+import { DataSource, In } from "typeorm";
 import { Tournament, TournamentStatus } from "../entities/tournament.entity";
 import { BracketGeneratorService } from "../services/bracket-generator.service";
 import { Match } from "src/modules/matches/entities/match.entity";
-import { TeamStatus } from "src/modules/teams/entities/team.entity";
+import { Team, TeamStatus } from "src/modules/teams/entities/team.entity";
+import { NotificationsService } from "src/modules/notifications";
+import { NotificationDestination } from "src/modules/notifications/entities/notification.entity";
 
 @Injectable()
 export class StartTournamentCommand {
-    constructor(
-        private dataSource: DataSource,
-        private bracketGenerator: BracketGeneratorService,
-    ) {}
+  constructor(
+    private dataSource: DataSource,
+    private bracketGenerator: BracketGeneratorService,
+    private notificationsService: NotificationsService,
+  ) {}
 
     async execute(tournamentId: number) {
         const queryRunner = this.dataSource.createQueryRunner();
@@ -59,12 +62,54 @@ export class StartTournamentCommand {
             }
 
             await queryRunner.commitTransaction();
+
+            // Send notifications to all team members about tournament start (async, don't block)
+            this.notifyTournamentStart(tournament, readyTeams).catch(err =>
+                console.error('Failed to send tournament start notifications:', err)
+            );
+
             return tournament;
         } catch (err) {
             await queryRunner.rollbackTransaction();
             throw err;
         } finally {
             await queryRunner.release();
+        }
+    }
+
+    private async notifyTournamentStart(
+        tournament: Tournament,
+        readyTeams: any[]
+    ): Promise<void> {
+        const dataSource = this.dataSource;
+
+        const teamsWithMembers = await dataSource.getRepository(Team).find({
+            where: { id: In(readyTeams.map(t => t.id)) },
+            relations: ['members'],
+        });
+
+        for (const team of teamsWithMembers) {
+            if (team.members && Array.isArray(team.members)) {
+                for (const member of team.members) {
+                    try {
+                        await this.notificationsService.sendNotification(
+                            member.id,
+                            'tournament_started',
+                            `Tournament "${tournament.name}" has started! Good luck!`,
+                            undefined,
+                            {
+                                tournamentId: tournament.id,
+                                tournamentName: tournament.name,
+                                teamId: team.id,
+                                teamName: team.name,
+                            },
+                            NotificationDestination.CHAT
+                        );
+                    } catch (notifError) {
+                        console.error(`Failed to notify user ${member.id} about tournament start:`, notifError);
+                    }
+                }
+            }
         }
     }
 }

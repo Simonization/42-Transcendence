@@ -103,13 +103,15 @@ describe('useChatStore', () => {
       expect(store.error).toBe('')
     })
 
-    it('should set error on fetch failure', async () => {
+    it('should fall back to demo data on fetch failure', async () => {
       const store = useChatStore()
       mockGetRooms.mockRejectedValueOnce(new Error('Unauthorized'))
 
       await store.fetchRooms()
 
-      expect(store.error).toBeTruthy()
+      expect(store.demoMode).toBe(true)
+      expect(store.error).toBe('')
+      expect(store.rooms.length).toBeGreaterThan(0)
       expect(store.isLoadingRooms).toBe(false)
     })
   })
@@ -250,7 +252,7 @@ describe('useChatStore', () => {
         { id: 1, blocker: { id: 1 }, blocked: { id: 3, username: 'bob' }, reason: null },
       ] as any)
 
-      await store.loadBlockedUsers(1)
+      await store.loadBlockedUsers()
 
       // visibleRooms excludes DMs with blocked users
       store.$patch({

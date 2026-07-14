@@ -82,24 +82,32 @@ const router = createRouter({
           component: () => import('../pages/menu/TournamentDetailCard.vue'),
         },
         {
+          path: 'tournaments/:id/team',
+          name: 'team-setup',
+          component: () => import('../pages/menu/TeamSetupCard.vue'),
+        },
+        {
           path: 'organizations',
           name: 'organizations',
           component: () => import('../pages/menu/OrganizationsCard.vue'),
         },
         {
-          path: 'notification-tester',
-          name: 'notification-tester',
-          component: () => import('../pages/menu/NotificationTester.vue'),
-        },
-        {
           path: 'admin',
           name: 'admin',
-          meta: { requiredRole: UserRole.ADMIN },
           component: () => import('../pages/menu/AdminCard.vue'),
+          beforeEnter: () => {
+            if (!pinia) {
+              pinia = createPinia()
+              setActivePinia(pinia)
+            }
+
+            const authStore = useAuthStore()
+            return authStore.isAdmin ? true : '/menu/admin-register'
+          },
         },
         {
-          path: 'admin-invite-test',
-          name: 'admin-invite-test',
+          path: 'admin-register',
+          name: 'admin-register',
           component: () => import('../pages/menu/AdminInviteTest.vue'),
         },
       ],
@@ -153,7 +161,7 @@ router.beforeEach(async (to) => {
   const requiredRole = to.meta.requiredRole
   if (requiredRole !== undefined) {
     const userRole = authStore.user?.role ?? UserRole.USER
-    if (userRole !== requiredRole) return '/menu/user'
+    if (userRole < requiredRole) return '/menu/user'
   }
 
   // Authentication valid, allow access

@@ -22,11 +22,19 @@ export function useFriends() {
     friends.value.filter(f => f.status === 0)
   )
 
-  const fetchFriends = async (userId: number) => {
+  const incomingRequests = computed(() =>
+    friends.value.filter(f => f.status === 0 && !f.isSender)
+  )
+
+  const outgoingRequests = computed(() =>
+    friends.value.filter(f => f.status === 0 && f.isSender)
+  )
+
+  const fetchFriends = async () => {
     isLoading.value = true
     error.value = ''
     try {
-      friends.value = await friendsApi.getFriends(userId)
+      friends.value = await friendsApi.getFriends()
     } catch (e) {
       error.value = getErrorMessage(e, 'Failed to load friends')
     } finally {
@@ -34,9 +42,9 @@ export function useFriends() {
     }
   }
 
-  const fetchBlocks = async (userId: number) => {
+  const fetchBlocks = async () => {
     try {
-      blocks.value = await friendsApi.getBlocked(userId)
+      blocks.value = await friendsApi.getBlocked()
     } catch (e) {
       error.value = getErrorMessage(e, 'Failed to load blocks')
     }
@@ -98,6 +106,8 @@ export function useFriends() {
     error,
     acceptedFriends,
     pendingFriends,
+    incomingRequests,
+    outgoingRequests,
     fetchFriends,
     fetchBlocks,
     addFriend,

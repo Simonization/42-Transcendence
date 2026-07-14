@@ -65,9 +65,9 @@ describe('useFriends', () => {
       ]
       mockGetFriends.mockResolvedValueOnce(mockFriends as any)
 
-      await fetchFriends(1)
+      await fetchFriends()
 
-      expect(mockGetFriends).toHaveBeenCalledWith(1)
+      expect(mockGetFriends).toHaveBeenCalled()
       expect(friends.value).toEqual(mockFriends)
       expect(isLoading.value).toBe(false)
     })
@@ -75,7 +75,7 @@ describe('useFriends', () => {
     it('should set error on failure', async () => {
       mockGetFriends.mockRejectedValueOnce(new Error('Network error'))
 
-      await fetchFriends(1)
+      await fetchFriends()
 
       expect(error.value).toBe('Failed to load friends')
     })
@@ -89,7 +89,7 @@ describe('useFriends', () => {
       mockGetBlocked.mockResolvedValueOnce(mockBlocks as any)
 
       
-      await fetchBlocks(1)
+      await fetchBlocks()
 
       expect(blocks.value).toEqual(mockBlocks)
     })
@@ -126,7 +126,7 @@ describe('useFriends', () => {
       mockGetFriends.mockResolvedValueOnce(mockFriends as any)
       mockRemoveFriend.mockResolvedValueOnce(undefined)
 
-      await fetchFriends(1)
+      await fetchFriends()
       expect(friends.value).toHaveLength(2)
 
       await removeFriend(2)
@@ -143,7 +143,7 @@ describe('useFriends', () => {
         { id: 2, username: 'alice', status: 1, since: '2024-01-01', profile: {} },
       ] as any)
 
-      await fetchFriends(1)
+      await fetchFriends()
       expect(friends.value).toHaveLength(1)
 
       await blockUser(2)
@@ -160,7 +160,7 @@ describe('useFriends', () => {
       mockUnblockUser.mockResolvedValueOnce(undefined)
 
       
-      await fetchBlocks(1)
+      await fetchBlocks()
       expect(blocks.value).toHaveLength(1)
 
       await unblockUser(3)
@@ -176,7 +176,7 @@ describe('useFriends', () => {
         { id: 4, username: 'carol', status: 1, since: '2024-01-01', profile: {} },
       ] as any)
 
-      await fetchFriends(1)
+      await fetchFriends()
 
       expect(acceptedFriends.value).toHaveLength(2)
       expect(pendingFriends.value).toHaveLength(1)
@@ -188,7 +188,7 @@ describe('useFriends', () => {
     it('should handle empty friends list', async () => {
       mockGetFriends.mockResolvedValueOnce([] as any)
 
-      await fetchFriends(1)
+      await fetchFriends()
 
       expect(friends.value).toHaveLength(0)
       expect(acceptedFriends.value).toHaveLength(0)
@@ -199,7 +199,7 @@ describe('useFriends', () => {
     it('should handle empty blocks list', async () => {
       mockGetBlocked.mockResolvedValueOnce([] as any)
 
-      await fetchBlocks(1)
+      await fetchBlocks()
 
       expect(blocks.value).toHaveLength(0)
       expect(error.value).toBe('')
@@ -208,7 +208,7 @@ describe('useFriends', () => {
     it('should handle network error on fetchFriends', async () => {
       mockGetFriends.mockRejectedValueOnce(new Error('Network timeout'))
 
-      await fetchFriends(1)
+      await fetchFriends()
 
       expect(error.value).toBe('Failed to load friends')
       expect(friends.value).toHaveLength(0)
@@ -218,7 +218,7 @@ describe('useFriends', () => {
     it('should handle network error on fetchBlocks', async () => {
       mockGetBlocked.mockRejectedValueOnce(new Error('Network timeout'))
 
-      await fetchBlocks(1)
+      await fetchBlocks()
 
       expect(error.value).toBe('Failed to load blocks')
       expect(blocks.value).toHaveLength(0)
@@ -260,7 +260,7 @@ describe('useFriends', () => {
       mockGetFriends.mockResolvedValueOnce(largeList as any)
       mockRemoveFriend.mockResolvedValueOnce(undefined)
 
-      await fetchFriends(1)
+      await fetchFriends()
       expect(friends.value).toHaveLength(100)
 
       await removeFriend(50)
@@ -281,7 +281,7 @@ describe('useFriends', () => {
         { id: 2, username: 'alice', status: 1, since: '2024-01-01', profile: {} },
       ] as any)
 
-      await fetchFriends(1)
+      await fetchFriends()
       const result = await blockUser(2, 'Spam')
 
       expect(result).toBe(true)
@@ -347,7 +347,7 @@ describe('useFriends', () => {
       mockRemoveFriend.mockResolvedValue(undefined)
       mockAddFriend.mockResolvedValue({} as any)
 
-      await fetchFriends(1)
+      await fetchFriends()
       expect(friends.value).toHaveLength(1)
 
       await removeFriend(2)
@@ -361,7 +361,7 @@ describe('useFriends', () => {
       const friend = { id: 2, username: 'alice', status: 1, since: '2024-01-01', profile: {} }
       mockGetFriends.mockResolvedValueOnce([friend] as any)
 
-      await fetchFriends(1)
+      await fetchFriends()
       expect(acceptedFriends.value).toHaveLength(1)
       expect(pendingFriends.value).toHaveLength(0)
     })
@@ -390,9 +390,9 @@ describe('useFriends', () => {
       mockGetFriends.mockResolvedValue(mockFriends as any)
 
       const [r1, r2, r3] = await Promise.all([
-        fetchFriends(1),
-        fetchFriends(1),
-        fetchFriends(1),
+        fetchFriends(),
+        fetchFriends(),
+        fetchFriends(),
       ])
 
       expect(mockGetFriends).toHaveBeenCalledTimes(3)
@@ -406,7 +406,7 @@ describe('useFriends', () => {
         message: 'User not found',
       })
 
-      await fetchFriends(999)
+      await fetchFriends()
 
       expect(error.value).toBe('Failed to load friends')
       expect(friends.value).toHaveLength(0)
@@ -420,7 +420,7 @@ describe('useFriends', () => {
       mockAddFriend.mockResolvedValue({} as any)
       mockRemoveFriend.mockResolvedValue(undefined)
 
-      await fetchFriends(1)
+      await fetchFriends()
       expect(friends.value).toHaveLength(1)
 
       // Rapid add and remove
@@ -451,12 +451,12 @@ describe('useFriends', () => {
     it('should clear error state after successful fetch', async () => {
       // First call fails
       mockGetFriends.mockRejectedValueOnce(new Error('Network error'))
-      await fetchFriends(1)
+      await fetchFriends()
       expect(error.value).not.toBe('')
 
       // Second call succeeds
       mockGetFriends.mockResolvedValueOnce([] as any)
-      await fetchFriends(1)
+      await fetchFriends()
       expect(error.value).toBe('')
     })
 
@@ -471,7 +471,7 @@ describe('useFriends', () => {
         },
       ] as any)
 
-      await fetchFriends(1)
+      await fetchFriends()
 
       expect(friends.value).toHaveLength(1)
       expect(friends.value[0].username).toBe('alice')
@@ -495,7 +495,7 @@ describe('useFriends', () => {
     it('should handle fetching blocks with empty result', async () => {
       mockGetBlocked.mockResolvedValueOnce([] as any)
 
-      await fetchBlocks(1)
+      await fetchBlocks()
 
       expect(blocks.value).toHaveLength(0)
       expect(error.value).toBe('')
@@ -509,7 +509,7 @@ describe('useFriends', () => {
         { id: 4, username: 'user4', status: 1, since: '2024-01-01', profile: {} },
       ] as any)
 
-      await fetchFriends(1)
+      await fetchFriends()
 
       expect(acceptedFriends.value).toHaveLength(2)
       expect(pendingFriends.value).toHaveLength(2)

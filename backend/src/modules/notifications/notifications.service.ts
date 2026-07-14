@@ -1,47 +1,58 @@
-import { Injectable, NotFoundException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification, NotificationType } from './entities/notification.entity';
+import {
+  Notification,
+  NotificationType,
+  NotificationDestination,
+} from './entities/notification.entity';
 import { Chat } from '../chat/entities/chat.entity';
 import { Message } from '../chat/entities/message.entity';
 import { ChatParticipant } from '../chat/entities/chat-participant.entity';
 import { User } from '../users/entities/user.entity';
 import { ChatGateway } from '../chat/chat.gateway';
-import { 
-  BOT_USER_ID, 
-  MAX_NOTIFICATION_ATTEMPTS, 
-  RETRY_DELAY_MS 
+import {
+  BOT_USER_ID,
+  MAX_NOTIFICATION_ATTEMPTS,
+  RETRY_DELAY_MS,
 } from './constants/notification.constants';
-import { CreateNotificationDto, QueryNotificationsDto } from './dto';
+import { QueryNotificationsDto } from './dto';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
-    
+
     @InjectRepository(Chat)
     private readonly chatRepository: Repository<Chat>,
-    
+
     @InjectRepository(Message)
     private readonly messageRepository: Repository<Message>,
-    
+
     @InjectRepository(ChatParticipant)
     private readonly chatParticipantRepository: Repository<ChatParticipant>,
-    
+
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    
+
     @Inject(forwardRef(() => ChatGateway))
     private readonly chatGateway: ChatGateway,
   ) {}
-
 
   async getOrCreateBotChat(userId: number): Promise<Chat> {
     // try to find existing bot chat
     const existingChat = await this.chatRepository
       .createQueryBuilder('chat')
-      .innerJoin('chat.participants', 'p1', 'p1.userId = :botId', { botId: BOT_USER_ID })
+      .innerJoin('chat.participants', 'p1', 'p1.userId = :botId', {
+        botId: BOT_USER_ID,
+      })
       .innerJoin('chat.participants', 'p2', 'p2.userId = :userId', { userId })
       .where('chat.type = :type', { type: 0 }) //direct chat
       .getOne();
@@ -71,12 +82,90 @@ export class NotificationsService {
     return newChat;
   }
 
+  /**
+   * Send notification to chat bot (private message)
+   */
+  private async sendToChatBot(
+    userId: number,
+    body: string,
+    notification: Notification,
+  ): Promise<void> {
+    try {
+      // create bot chat
+      const botChat = await this.getOrCreateBotChat(userId);
+
+      // create message in chat
+      const message = await this.messageRepository.save({
+        chatId: botChat.id,
+        senderId: BOT_USER_ID,
+        content: body,
+      });
+
+      // emit message event via WebSocket
+      this.chatGateway.server.to(`user_${userId}`).emit('message', {
+        id: message.id,
+        chatId: botChat.id,
+        senderId: BOT_USER_ID,
+        content: body,
+        createdAt: message.createdAt,
+        editedAt: message.editedAt,
+        deletedAt: null,
+      });
+
+      // mark as delivered
+      if (notification.id) {
+        await this.notificationRepository.update(notification.id, {
+          deliveredAt: new Date(),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to send to chat bot:', error);
+      // notification is saved in db for retry
+    }
+  }
+
+  /**
+   * Send notification to notification bell (WebSocket event)
+   */
+  private async sendToNotificationBell(
+    userId: number,
+    notification: Notification,
+    type: NotificationType,
+    title: string | undefined,
+    body: string,
+    data: any,
+  ): Promise<void> {
+    try {
+      // emit notification event via WebSocket
+      this.chatGateway.server.to(`user_${userId}`).emit('notification', {
+        id: notification.id,
+        type,
+        title,
+        body,
+        data,
+        createdAt: notification.createdAt,
+        readAt: null,
+      });
+
+      // mark as delivered
+      if (notification.id) {
+        await this.notificationRepository.update(notification.id, {
+          deliveredAt: new Date(),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to send to notification bell:', error);
+      // notification is saved in db for retry
+    }
+  }
+
   async sendNotification(
     userId: number,
     type: NotificationType,
     body: string,
     title?: string,
     data?: any,
+    destination: NotificationDestination = NotificationDestination.BOTH,
   ): Promise<Notification> {
     // check userid number to avoid postgresql overflow
     if (!Number.isInteger(userId) || userId < 1 || userId > 2147483647) {
@@ -90,7 +179,7 @@ export class NotificationsService {
     }
 
     try {
-      // create notification in database
+      // create notification in database (always, for history)
       const notification = await this.notificationRepository.save({
         userId,
         actorId: BOT_USER_ID,
@@ -101,56 +190,33 @@ export class NotificationsService {
         attempts: 0,
       });
 
-      // create bot chat
-      const botChat = await this.getOrCreateBotChat(userId);
+      // Send to chat bot if destination includes CHAT
+      if (
+        destination === NotificationDestination.CHAT ||
+        destination === NotificationDestination.BOTH
+      ) {
+        await this.sendToChatBot(userId, body, notification);
+      }
 
-      // create message in chat
-      const message = await this.messageRepository.save({
-        chatId: botChat.id,
-        senderId: BOT_USER_ID,
-        content: body,
-      });
-
-      // send via Ws if user online
-      try {
-        // emit notification
-        this.chatGateway.server.to(`user-${userId}`).emit('notification', {
-          id: notification.id,
+      // Send to notification bell if destination includes BELL
+      if (
+        destination === NotificationDestination.BELL ||
+        destination === NotificationDestination.BOTH
+      ) {
+        await this.sendToNotificationBell(
+          userId,
+          notification,
           type,
           title,
           body,
           data,
-          chatId: botChat.id,
-          messageId: message.id,
-          createdAt: notification.createdAt,
-        });
-
-        // emit message event to send notifs by chat
-        this.chatGateway.server.to(`user-${userId}`).emit('message', {
-          id: message.id,
-          chatId: botChat.id,
-          senderId: BOT_USER_ID,
-          content: body,
-          createdAt: message.createdAt,
-          editedAt: message.editedAt,
-          deletedAt: null,
-        });
-
-        // mark as received
-        if (notification.id) {
-          await this.notificationRepository.update(notification.id, {
-            deliveredAt: new Date(),
-          });
-        }
-      } catch (wsError) {
-        console.error('WebSocket emission failed:', wsError);
-        // notification is saved in db for retry
+        );
       }
 
       return notification;
     } catch (error) {
       console.error('Failed to send notification:', error);
-      
+
       // save error for retry
       await this.notificationRepository.save({
         userId,
@@ -160,7 +226,7 @@ export class NotificationsService {
         body,
         data,
         attempts: 1,
-        lastError: error.message,
+        lastError: error instanceof Error ? error.message : 'Unknown error',
         nextAttemptAt: new Date(Date.now() + RETRY_DELAY_MS),
       });
 
@@ -179,7 +245,9 @@ export class NotificationsService {
     }
 
     if (notification.userId !== userId) {
-      throw new ForbiddenException('You can only mark your own notifications as read');
+      throw new ForbiddenException(
+        'You can only mark your own notifications as read',
+      );
     }
 
     if (!notification.id) {
@@ -238,7 +306,10 @@ export class NotificationsService {
   }
 
   // delete notif
-  async deleteNotification(notificationId: number, userId: number): Promise<void> {
+  async deleteNotification(
+    notificationId: number,
+    userId: number,
+  ): Promise<void> {
     const notification = await this.notificationRepository.findOne({
       where: { id: notificationId },
     });
@@ -248,7 +319,9 @@ export class NotificationsService {
     }
 
     if (notification.userId !== userId) {
-      throw new ForbiddenException('You can only delete your own notifications');
+      throw new ForbiddenException(
+        'You can only delete your own notifications',
+      );
     }
 
     if (!notification.id) {
@@ -263,8 +336,8 @@ export class NotificationsService {
     const failedNotifications = await this.notificationRepository
       .createQueryBuilder('notification')
       .where('notification.deliveredAt IS NULL')
-      .andWhere('notification.attempts < :maxAttempts', { 
-        maxAttempts: MAX_NOTIFICATION_ATTEMPTS 
+      .andWhere('notification.attempts < :maxAttempts', {
+        maxAttempts: MAX_NOTIFICATION_ATTEMPTS,
       })
       .andWhere('notification.nextAttemptAt <= :now', { now: new Date() })
       .getMany();
@@ -293,7 +366,9 @@ export class NotificationsService {
           await this.notificationRepository.update(notification.id, {
             attempts: notification.attempts + 1,
             lastError: error instanceof Error ? error.message : 'Unknown error',
-            nextAttemptAt: new Date(Date.now() + RETRY_DELAY_MS * (notification.attempts + 1)),
+            nextAttemptAt: new Date(
+              Date.now() + RETRY_DELAY_MS * (notification.attempts + 1),
+            ),
           });
         }
       }

@@ -4,7 +4,7 @@
  */
 
 import { api } from './index'
-import type { BackendGame, CreateGameDto } from '../types'
+import type { BackendGame, CreateGameDto, UpdateGameDto } from '../types'
 
 export const gamesApi = {
   /**
@@ -28,6 +28,25 @@ export const gamesApi = {
     return api<BackendGame>('/games', {
       method: 'POST',
       body: data,
+    })
+  },
+
+  /**
+   * Update a game configuration (admin)
+   */
+  update(id: number, data: UpdateGameDto): Promise<BackendGame> {
+    return api<BackendGame>(`/games/${id}`, {
+      method: 'PATCH',
+      body: data,
+    })
+  },
+
+  /**
+   * Delete a game configuration (admin)
+   */
+  delete(id: number): Promise<void> {
+    return api<void>(`/games/${id}`, {
+      method: 'DELETE',
     })
   },
 }

@@ -8,10 +8,10 @@ import type { Friend, Block, AddFriendDto, RemoveFriendDto, BlockUserDto, Unbloc
 
 export const friendsApi = {
   /**
-   * Get all friends for a user
+   * Get all friends for the authenticated user
    */
-  getFriends(userId: number): Promise<Friend[]> {
-    return api<Friend[]>(`/social/friends?myId=${userId}`)
+  getFriends(): Promise<Friend[]> {
+    return api<Friend[]>('/social/friends')
   },
 
   /**
@@ -21,7 +21,15 @@ export const friendsApi = {
     return api<Friend>('/social/friends', {
       method: 'POST',
       body: data,
-    })
+    }).then(res => {
+        return res;
+    }).catch(err => {
+        //console.error('[friendsApi.addFriend] Error:', err);
+        if (import.meta.env.DEV) {
+          console.error('[friendsApi.addFriend] Error:', err);
+        }
+		throw err;
+    });
   },
 
   /**
@@ -35,10 +43,10 @@ export const friendsApi = {
   },
 
   /**
-   * Get all blocked users for a user
+   * Get all blocked users for the authenticated user
    */
-  getBlocked(userId: number): Promise<Block[]> {
-    return api<Block[]>(`/social/blocks?myId=${userId}`)
+  getBlocked(): Promise<Block[]> {
+    return api<Block[]>('/social/blocks')
   },
 
   /**

@@ -17,16 +17,37 @@ const emit = defineEmits<{
 }>()
 
 const scrollContainer = ref<HTMLElement | null>(null)
-
 const hasTyping = computed(() => (props.typingUsers?.length ?? 0) > 0)
 
-// Auto-scroll when new messages arrive
-watch(() => props.messages.length, async () => {
+const scrollToBottom = async () => {
   await nextTick()
-  if (scrollContainer.value) {
-    scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
+  setTimeout(() => {
+    if (scrollContainer.value) {
+      scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
+    }
+  }, 50)
+}
+
+watch(
+  () => props.messages, 
+  scrollToBottom, 
+  { deep: true, immediate: true }
+)
+
+watch(
+  () => props.isLoading,
+  (isLoadingNow) => {
+    if (!isLoadingNow) {
+      scrollToBottom()
+    }
   }
-})
+)
+
+watch(
+  () => hasTyping.value,
+  scrollToBottom
+)
+
 </script>
 
 <template>

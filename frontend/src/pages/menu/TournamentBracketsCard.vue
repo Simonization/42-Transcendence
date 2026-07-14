@@ -5,12 +5,13 @@
  */
 
 import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import BracketVisualization from '../../components/tournaments/BracketVisualization.vue'
 import { useTournaments } from '../../composables/useTournaments'
 import type { TournamentBracket, BracketRound } from '../../data/mockBracket'
 
 const route = useRoute()
+const router = useRouter()
 const { currentTournament, isLoading, fetchTournament } = useTournaments()
 
 const tournamentId = computed(() => Number(route.params.id) || 1)
@@ -73,8 +74,15 @@ const tournamentName = computed(() => currentTournament.value?.name ?? '')
         {{ $t('common.loading') }}
       </div>
       <BracketVisualization v-else-if="bracket" :bracket="bracket" :tournament-name="tournamentName" />
-      <div v-else style="text-align: center; padding: var(--space-8); color: var(--text-tertiary);">
-        {{ $t('tournament.noBracketData') }}
+      <div v-else class="bracket-guidance">
+        <div class="guidance-icon">&#127942;</div>
+        <h3 class="guidance-title">{{ $t('tournament.noBracketData') }}</h3>
+        <p class="guidance-text">
+          To view a bracket, first create a tournament (Admin &gt; Create), register teams, and start the tournament.
+        </p>
+        <button class="guidance-btn" @click="router.push('/menu/admin')">
+          Go to Admin
+        </button>
       </div>
     </div>
   </div>
@@ -111,5 +119,55 @@ const tournamentName = computed(() => currentTournament.value?.name ?? '')
 
 .card-body {
   padding: var(--space-6);
+}
+
+.bracket-guidance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.guidance-icon {
+  font-size: var(--text-4xl);
+  opacity: 0.6;
+}
+
+.guidance-title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-primary);
+}
+
+.guidance-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.guidance-btn {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-6);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--accent-primary);
+  background: transparent;
+  border: var(--hud-border) solid var(--accent-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.guidance-btn:hover {
+  background: var(--bg-selected);
+  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 </style>

@@ -67,7 +67,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const isAdmin = computed(() => (user.value?.role ?? UserRole.USER) === UserRole.ADMIN)
+  const isSuperAdmin = computed(() => (user.value?.role ?? UserRole.USER) === UserRole.SUPER_ADMIN)
+  const isAdmin = computed(() => isSuperAdmin.value || (user.value?.role ?? UserRole.USER) === UserRole.ADMIN)
   const hasRole = (role: number): boolean => (user.value?.role ?? UserRole.USER) === role
 
   return {
@@ -75,6 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isLoading,
     isAdmin,
+    isSuperAdmin,
     hasRole,
     checkAuth,
     logout,

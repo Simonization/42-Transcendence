@@ -90,7 +90,7 @@ describe('useFriendsStore', () => {
       const store = useFriendsStore()
       mockGetFriends.mockResolvedValueOnce([MOCK_FRIEND] as any)
 
-      await store.fetchFriends(1)
+      await store.fetchFriends()
 
       expect(store.friends).toHaveLength(1)
       expect(store.isLoading).toBe(false)
@@ -101,9 +101,10 @@ describe('useFriendsStore', () => {
       const store = useFriendsStore()
       mockGetFriends.mockRejectedValueOnce(new Error('Network error'))
 
-      await store.fetchFriends(1)
+      await store.fetchFriends()
 
       expect(store.error).toBeTruthy()
+      expect(store.friends).toHaveLength(0)
       expect(store.isLoading).toBe(false)
     })
   })
@@ -113,7 +114,7 @@ describe('useFriendsStore', () => {
       const store = useFriendsStore()
       mockGetBlocked.mockResolvedValueOnce([MOCK_BLOCK] as any)
 
-      await store.fetchBlocks(1)
+      await store.fetchBlocks()
 
       expect(store.blocks).toHaveLength(1)
     })

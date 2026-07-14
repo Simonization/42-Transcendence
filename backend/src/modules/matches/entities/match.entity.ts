@@ -60,6 +60,9 @@ export class Match {
     @Column({ default: MatchStatus.WAITING })
     status: MatchStatus;
 
+    @CreateDateColumn({ name: 'created_at' })
+    created_at: Date;
+
     @OneToMany(() => UserMatch, (um) => um.match)
     userMatches: UserMatch[];
 
@@ -84,6 +87,4 @@ export class Match {
     @Column({ nullable: true })
     round_order: number;
 
-    @CreateDateColumn()
-    created_at: Date;
 }

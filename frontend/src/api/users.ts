@@ -33,7 +33,7 @@ export const usersApi = {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     params.set('limit', String(limit));
-    return api<User[]>(`/users?${params.toString()}`);
+    return api<User[]>(`/users/search?${params.toString()}`);
   },
 
   /**

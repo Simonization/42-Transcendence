@@ -119,6 +119,10 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscape)
   if (userSearchTimeout) clearTimeout(userSearchTimeout)
+  
+  setQuery('') 
+  setTab('tournaments')
+  setPage(1)
 })
 </script>
 

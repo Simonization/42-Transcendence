@@ -26,8 +26,9 @@ export class CreateTournamentCommand {
                 name: dto.name,
                 max_participants: dto.max_participants,
                 description: dto.description,
-                current_phase_order: 1, 
-                status: TournamentStatus.REGISTRATION_OPEN // Aligned with Tournament Entity default
+                current_phase_order: 1,
+                status: TournamentStatus.REGISTRATION_OPEN,
+                scheduledAt: dto.scheduled_at ? new Date(dto.scheduled_at) : null,
             });
             const savedTournament = await queryRunner.manager.save(tournament);
 

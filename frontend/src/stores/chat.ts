@@ -1,8 +1,6 @@
 /**
  * Chat Store
  * Manages chat state with REST API + Socket.io for real-time updates
- *
- * Call `disconnectSocket()` when appropriate to prevent orphaned connections.
  */
 
 import { defineStore } from 'pinia'
@@ -11,9 +9,20 @@ import { chatApi } from '../api/chat'
 import { friendsApi } from '../api/friends'
 import { getAccessToken } from '../api'
 import { getErrorMessage } from '../utils/error'
+import { ChatType } from '../types'
 import type { ChatRoom, Message, TypingUser } from '../types'
+import { io, Socket } from 'socket.io-client' 
+import { useAuthStore } from './auth'
+
+const DEMO_ROOMS: ChatRoom[] = [] 
+const DEMO_MESSAGES: Message[] = [] 
+
 
 export const useChatStore = defineStore('chat', () => {
+  
+  const authStore = useAuthStore()
+  const currentUserId = computed(() => Number(authStore.user?.id) || 0)
+
   const rooms = ref<ChatRoom[]>([])
   const activeRoomId = ref<number | null>(null)
   const messages = ref<Message[]>([])
@@ -21,69 +30,44 @@ export const useChatStore = defineStore('chat', () => {
   const isLoadingMessages = ref(false)
   const isSending = ref(false)
   const error = ref('')
+  const demoMode = ref(false)
 
-  // Socket.io
-  let socket: WebSocket | null = null
+  let socket: Socket | null = null
   const wsConnected = ref(false)
 
-  // Block state
   const blockedUserIds = ref<Set<number>>(new Set())
-  const currentUserId = ref<number>(0)
-
-  // Typing state
+  // const currentUserId = ref<number>(0)
   const typingUsers = ref<TypingUser[]>([])
   const typingTimers = new Map<number, ReturnType<typeof setTimeout>>()
 
-  const activeRoom = computed(() =>
-    rooms.value.find(r => r.id === activeRoomId.value) || null
-  )
-
-  const unreadCount = computed(() =>
-    rooms.value.filter(r => r.isUnread).length
-  )
-
-  /** Rooms filtered to hide DMs with blocked users */
-  const visibleRooms = computed(() =>
-    rooms.value.filter(r => {
-      if (r.type !== 0) return true // ChatType.DM === 0; show all group chats
-      const partner = r.participants.find(p => p.id !== currentUserId.value)
-      return !partner || !blockedUserIds.value.has(partner.id)
-    })
-  )
-
-  /** Whether the active DM partner is blocked */
+  const activeRoom = computed(() => rooms.value.find(r => r.id === activeRoomId.value) || null)
+  const unreadCount = computed(() => rooms.value.filter(r => r.isUnread).length)
+  const visibleRooms = computed(() => rooms.value.filter(r => {
+    if (r.type !== 0) return true
+    const partner = r.participants.find(p => p.id !== currentUserId.value)
+    return !partner || !blockedUserIds.value.has(partner.id)
+  }))
   const isActiveRoomBlocked = computed(() => {
     const room = activeRoom.value
     if (!room || room.type !== 0) return false
     const partner = room.participants.find(p => p.id !== currentUserId.value)
     return !!partner && blockedUserIds.value.has(partner.id)
   })
+  const currentRoomTypingUsers = computed(() => typingUsers.value.filter(t => t.chatId === activeRoomId.value).map(t => t.username))
 
-  /** Typing usernames for the current active room */
-  const currentRoomTypingUsers = computed(() =>
-    typingUsers.value
-      .filter(t => t.roomId === activeRoomId.value)
-      .map(t => t.username)
-  )
+  const setCurrentUser = (id: number) => { currentUserId.value = id }
 
-  const setCurrentUser = (id: number) => {
-    currentUserId.value = id
-  }
-
-  const loadBlockedUsers = async (userId: number) => {
+  const loadBlockedUsers = async () => {
     try {
-      const blocks = await friendsApi.getBlocked(userId)
+      const blocks = await friendsApi.getBlocked()
       blockedUserIds.value = new Set(blocks.map(b => b.blocked.id))
-    } catch {
-      // Silently fail — blocked list is non-critical
-    }
+    } catch {}
   }
 
   const blockUserInChat = async (targetId: number) => {
     try {
       await friendsApi.blockUser({ targetId })
       blockedUserIds.value = new Set([...blockedUserIds.value, targetId])
-      // Clear active room if we just blocked the DM partner
       if (isActiveRoomBlocked.value) {
         activeRoomId.value = null
         messages.value = []
@@ -93,51 +77,55 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  const emitTyping = () => {
-    if (!socket || !activeRoomId.value) return
-    try {
-      socket.send(`42${JSON.stringify(['typing', { chatId: activeRoomId.value }])}`)
-    } catch {
-      // Socket may not be ready
-    }
-  }
-
+  const emitTyping = () => socket?.emit('typing', { roomId: activeRoomId.value, isTyping: true })
+  const emitStopTyping = () => socket?.emit('typing', { roomId: activeRoomId.value, isTyping: false })
+  const emitJoinRoom = (roomId: number) => socket?.emit('joinRoom', { roomId })
+  const emitLeaveRoom = (roomId: number) => socket?.emit('leaveRoom', { roomId })
+  const emitMarkRead = (roomId: number) => socket?.emit('markRead', { roomId })
+ 
   /**
    * Fetch user's chat rooms
    */
   const fetchRooms = async () => {
-    isLoadingRooms.value = true
-    error.value = ''
-    try {
-      rooms.value = await chatApi.getRooms()
-    } catch (e) {
-      error.value = getErrorMessage(e, 'Failed to load conversations')
-    } finally {
-      isLoadingRooms.value = false
-    }
+	isLoadingRooms.value = true
+	error.value = ''
+	try {
+	  rooms.value = await chatApi.getRooms()
+	} catch (e) {
+	  rooms.value = DEMO_ROOMS
+	  demoMode.value = true
+	  error.value = ''
+	} finally {
+	  isLoadingRooms.value = false
+	}
   }
 
   /**
    * Select a room and load its messages
    */
-  const selectRoom = async (roomId: number) => {
+const selectRoom = async (roomId: number) => {
+    if (activeRoomId.value && activeRoomId.value !== roomId) emitLeaveRoom(activeRoomId.value)
+    
     activeRoomId.value = roomId
     messages.value = []
     isLoadingMessages.value = true
     error.value = ''
+    emitJoinRoom(roomId)
+
     try {
-      const msgs = await chatApi.getMessages(roomId)
-      // Guard against stale response
+      const response = await chatApi.getMessages(roomId)
       if (activeRoomId.value !== roomId) return
-      // API returns newest first, reverse for display (oldest at top)
-      messages.value = msgs.reverse()
-      // Mark as read
+
+      const rawMessages = Array.isArray(response) ? response : (response?.data || [])
+      messages.value = [...rawMessages].reverse()
+
       await chatApi.markAsRead(roomId).catch(() => {})
-      // Update local unread state
-      rooms.value = rooms.value.map(r =>
-        r.id === roomId ? { ...r, isUnread: false } : r
-      )
+      
+      rooms.value = rooms.value.map(r => r.id === roomId ? { ...r, isUnread: false } : r)
     } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to load messages:", e)
+      }
       if (activeRoomId.value !== roomId) return
       error.value = getErrorMessage(e, 'Failed to load messages')
     } finally {
@@ -148,7 +136,7 @@ export const useChatStore = defineStore('chat', () => {
   /**
    * Send a message to the active room
    */
-  const sendMessage = async (content: string) => {
+const sendMessage = async (content: string) => {
     if (!activeRoomId.value || !content.trim()) return
     isSending.value = true
     error.value = ''
@@ -157,11 +145,13 @@ export const useChatStore = defineStore('chat', () => {
         chatId: activeRoomId.value,
         content: content.trim(),
       })
-      messages.value.push(msg)
-      // Update room's last message
-      rooms.value = rooms.value.map(r =>
-        r.id === activeRoomId.value ? { ...r, lastMessage: msg } : r
-      )
+      
+      const exists = messages.value.some(m => String(m.id) === String(msg.id))
+      if (!exists) {
+        messages.value.push(msg)
+      }
+      
+      rooms.value = rooms.value.map(r => r.id === activeRoomId.value ? { ...r, lastMessage: msg } : r)
     } catch (e) {
       error.value = getErrorMessage(e, 'Failed to send message')
     } finally {
@@ -172,177 +162,178 @@ export const useChatStore = defineStore('chat', () => {
   /**
    * Create a new chat room
    */
-  const createRoom = async (userIds: number[], title?: string) => {
-    error.value = ''
-    try {
-      const room = await chatApi.createRoom({ userIds, title })
-      // Refresh rooms to get full data
-      await fetchRooms()
-      activeRoomId.value = room.id
-      return room
-    } catch (e) {
-      error.value = getErrorMessage(e, 'Failed to create conversation')
-      return null
-    }
+  const createRoom = async (participantIds: number[], title?: string) => {
+	error.value = ''
+	try {
+	  const room = await chatApi.createRoom({ participantIds, title })
+	  // Refresh rooms to get full data
+	  await fetchRooms()
+	  await selectRoom(room.id)
+	  return room
+	} catch (e) {
+	  error.value = getErrorMessage(e, 'Failed to create conversation')
+	  return null
+	}
   }
 
   /**
    * Delete a message
    */
   const deleteMessage = async (messageId: number) => {
-    try {
-      await chatApi.deleteMessage(messageId)
-      const msg = messages.value.find(m => m.id === messageId)
-      if (msg) {
-        msg.content = 'This message was deleted'
-        msg.deletedAt = new Date().toISOString()
-      }
-    } catch (e) {
-      error.value = getErrorMessage(e, 'Failed to delete message')
-    }
+	try {
+	  await chatApi.deleteMessage(messageId)
+	  const msg = messages.value.find(m => m.id === messageId)
+	  if (msg) {
+		msg.content = 'This message was deleted'
+		msg.deletedAt = new Date().toISOString()
+	  }
+	} catch (e) {
+	  error.value = getErrorMessage(e, 'Failed to delete message')
+	}
   }
 
-  /**
-   * Connect to WebSocket for real-time updates
-   */
+  // Friend activity callback registry
+  const friendActivityCallbacks: Array<() => void> = []
+  const onFriendActivity = (cb: () => void) => {
+    friendActivityCallbacks.push(cb)
+  }
+
   const connectSocket = () => {
     const token = getAccessToken()
-    if (!token || socket) return
+    if (!token || socket?.connected) return
 
-    try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      socket = new WebSocket(
-        `${protocol}//${window.location.host}/socket.io/?EIO=4&transport=websocket`
-      )
+    socket = io('/', { 
+      auth: { token: `Bearer ${token}` },
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5
+    })
 
-      socket.onopen = () => {
-        wsConnected.value = true
+    socket.on('connect', () => {
+      wsConnected.value = true
+      if (import.meta.env.DEV) {
+        console.log('Socket.io connected!')
       }
 
-      socket.onmessage = (event) => {
-        // Socket.io protocol: messages start with type prefix
-        const data = event.data as string
-        if (data.startsWith('42')) {
-          try {
-            const parsed = JSON.parse(data.slice(2))
-            const eventName = parsed[0]
-            const payload = parsed[1]
+      // Resync after reconnect and rejoin active room for real-time updates.
+      fetchRooms().catch(() => {})
+      if (activeRoomId.value) {
+        emitJoinRoom(activeRoomId.value)
+      }
+    })
 
-            if (eventName === 'message' && payload) {
-              const msg = payload as Message
-              // Only add if it's for the active room and not already present
-              if (msg.chatId === activeRoomId.value) {
-                const exists = messages.value.some(m => m.id === msg.id)
-                if (!exists) {
-                  messages.value.push(msg)
-                }
-              }
-              // Update room list
-              rooms.value = rooms.value.map(r =>
-                r.id === msg.chatId
-                  ? {
-                      ...r,
-                      lastMessage: msg,
-                      isUnread: msg.chatId !== activeRoomId.value ? true : r.isUnread
-                    }
-                  : r
-              )
-            } else if (eventName === 'typing' && payload) {
-              const { userId, username, chatId } = payload
-              // Remove existing entry for this user in this room
-              typingUsers.value = typingUsers.value.filter(
-                t => !(t.userId === userId && t.roomId === chatId)
-              )
-              typingUsers.value.push({ userId, username, roomId: chatId })
-              // Clear existing timer for this user
-              const timerKey = userId * 10000 + chatId
-              const existing = typingTimers.get(timerKey)
-              if (existing) clearTimeout(existing)
-              typingTimers.set(timerKey, setTimeout(() => {
-                typingUsers.value = typingUsers.value.filter(
-                  t => !(t.userId === userId && t.roomId === chatId)
-                )
-                typingTimers.delete(timerKey)
-              }, 3000))
-            } else if (eventName === 'stop-typing' && payload) {
-              const { userId, chatId } = payload
-              typingUsers.value = typingUsers.value.filter(
-                t => !(t.userId === userId && t.roomId === chatId)
-              )
-              const timerKey = userId * 10000 + chatId
-              const existing = typingTimers.get(timerKey)
-              if (existing) {
-                clearTimeout(existing)
-                typingTimers.delete(timerKey)
-              }
-            } else if (eventName === 'message-read' && payload) {
-              const { userId, chatId, lastMessageId } = payload
-              if (chatId === activeRoomId.value) {
-                for (const msg of messages.value) {
-                  if (msg.id <= lastMessageId) {
-                    if (!msg.readBy) msg.readBy = []
-                    if (!msg.readBy.includes(userId)) {
-                      msg.readBy.push(userId)
-                    }
-                  }
-                }
-              }
-            }
-          } catch {
-            // Ignore parse errors from socket.io protocol messages
-          }
+    socket.on('disconnect', () => {
+      wsConnected.value = false
+      if (import.meta.env.DEV) {
+        console.log('Socket.io disconnected.')
+      }
+    })
+
+    socket.on('friendActivity', () => {
+      if (import.meta.env.DEV) {
+        console.log('🔥 Soket Sinyali Geldi: friendActivity!')
+      }
+      friendActivityCallbacks.forEach(cb => cb())
+    })
+
+    socket.on('newMessage', (payload: any) => {
+      const targetChatId = payload.roomId ?? payload.chatId
+      
+      let senderObj = payload.sender
+      if (!senderObj && activeRoom.value) {
+        const found = activeRoom.value.participants.find((p: any) => 
+          Number(p.userId || p.user?.id || p.id) === Number(payload.senderId)
+        ) as any
+        
+        if (found) {
+          senderObj = { id: payload.senderId, username: found.user?.username || found.username }
         }
       }
-
-      socket.onclose = () => {
-        wsConnected.value = false
-        socket = null
+      const msg: Message = {
+        id: payload.id, chatId: targetChatId, senderId: payload.senderId,
+        content: payload.content, createdAt: payload.createdAt,
+        editedAt: null, deletedAt: null, sender: senderObj,
       }
-
-      socket.onerror = () => {
-        wsConnected.value = false
+      
+      if (Number(msg.chatId) === Number(activeRoomId.value) && !messages.value.some(m => String(m.id) === String(msg.id))) {
+        messages.value.push(msg)
+        
+        if (Number(msg.senderId) !== currentUserId.value) {
+          chatApi.markAsRead(msg.chatId).catch(() => {})
+        }
       }
-    } catch {
-      wsConnected.value = false
-    }
+      
+      rooms.value = rooms.value.map(r => r.id === msg.chatId 
+        ? { ...r, lastMessage: msg, isUnread: (Number(msg.chatId) !== Number(activeRoomId.value) && Number(msg.senderId) !== currentUserId.value) ? true : r.isUnread } 
+        : r
+      )
+    })
+
+    socket.on('userTyping', (payload: any) => {
+      const targetChatId = payload.roomId ?? payload.chatId
+      const userId = payload.userId
+      const isTyping = payload.isTyping
+      
+      typingUsers.value = typingUsers.value.filter(
+        t => !(Number(t.userId) === Number(userId) && Number(t.chatId) === Number(targetChatId))
+      )
+      const timerKey = Number(userId) * 10000 + Number(targetChatId)
+      const existing = typingTimers.get(timerKey)
+      if (existing) clearTimeout(existing)
+
+      if (isTyping) {
+        let finalUsername = payload.username
+        if (!finalUsername && activeRoom.value) {
+          const found = activeRoom.value.participants.find((p: any) => 
+            Number(p.userId || p.user?.id || p.id) === Number(userId)
+          ) as any
+          finalUsername = found?.user?.username || found?.username
+        }
+        finalUsername = finalUsername ?? `User ${userId}`
+
+        typingUsers.value.push({ userId: Number(userId), username: finalUsername, chatId: Number(targetChatId) })
+        typingTimers.set(timerKey, setTimeout(() => {
+          typingUsers.value = typingUsers.value.filter(
+            t => !(Number(t.userId) === Number(userId) && Number(t.chatId) === Number(targetChatId))
+          )
+          typingTimers.delete(timerKey)
+        }, 3000))
+      } else {
+        typingTimers.delete(timerKey)
+      }
+    })
+
+    socket.on('messagesRead', (payload: any) => {
+      const targetChatId = payload.roomId ?? payload.chatId
+      const userId = payload.userId
+      
+      if (Number(targetChatId) === Number(activeRoomId.value)) {
+        messages.value.forEach(msg => {
+          if (!msg.readBy) msg.readBy = []
+          if (!msg.readBy.some(id => Number(id) === Number(userId))) {
+            msg.readBy.push(Number(userId))
+          }
+        })
+      }
+    })
   }
 
-  /**
-   * Disconnect WebSocket
-   */
   const disconnectSocket = () => {
-    socket?.close()
-    socket = null
+    if (activeRoomId.value) emitLeaveRoom(activeRoomId.value)
+    if (socket) {
+      socket.disconnect()
+      socket = null
+    }
     wsConnected.value = false
   }
 
   return {
-    rooms,
-    activeRoomId,
-    activeRoom,
-    messages,
-    isLoadingRooms,
-    isLoadingMessages,
-    isSending,
-    error,
-    unreadCount,
-    wsConnected,
-    blockedUserIds,
-    currentUserId,
-    typingUsers,
-    visibleRooms,
-    isActiveRoomBlocked,
-    currentRoomTypingUsers,
-    setCurrentUser,
-    loadBlockedUsers,
-    blockUserInChat,
-    emitTyping,
-    fetchRooms,
-    selectRoom,
-    sendMessage,
-    createRoom,
-    deleteMessage,
-    connectSocket,
-    disconnectSocket,
+    rooms, activeRoomId, activeRoom, messages, isLoadingRooms, isLoadingMessages, isSending,
+    error, unreadCount, demoMode, wsConnected, blockedUserIds, currentUserId, typingUsers,
+    visibleRooms, isActiveRoomBlocked, currentRoomTypingUsers,
+    setCurrentUser, loadBlockedUsers, blockUserInChat, onFriendActivity,
+    emitTyping, emitStopTyping, emitJoinRoom, emitLeaveRoom, emitMarkRead,
+    fetchRooms, selectRoom, sendMessage, createRoom, deleteMessage,
+    connectSocket, disconnectSocket,
   }
 })

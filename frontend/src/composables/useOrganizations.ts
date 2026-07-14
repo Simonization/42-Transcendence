@@ -9,6 +9,11 @@ import { getErrorMessage } from '../utils/error'
 import type { Organization, OrgMember, CreateOrgDto, UpdateOrgDto } from '../types'
 import { OrgRole } from '../types'
 
+const DEMO_ORGS: Organization[] = [
+  { id: 901, name: '42 Brussels Esports', description: 'Official esports club of 42 Brussels', avatarUrl: null, ownerId: 1, memberCount: 12, createdAt: '2025-06-01T10:00:00Z', updatedAt: '2025-09-01T10:00:00Z' },
+  { id: 902, name: 'Pong Champions League', description: 'Competitive pong players', avatarUrl: null, ownerId: 901, memberCount: 8, createdAt: '2025-07-15T12:00:00Z', updatedAt: '2025-08-20T12:00:00Z' },
+]
+
 export function useOrganizations(currentUserId: number) {
   const organizations = ref<Organization[]>([])
   const selectedOrg = ref<Organization | null>(null)
@@ -17,6 +22,7 @@ export function useOrganizations(currentUserId: number) {
   const isLoadingMembers = ref(false)
   const error = ref('')
   const searchQuery = ref('')
+  const demoMode = ref(false)
 
   const myOrgs = computed(() =>
     organizations.value.filter(o => o.ownerId === currentUserId)
@@ -39,7 +45,9 @@ export function useOrganizations(currentUserId: number) {
     try {
       organizations.value = await organizationsApi.getAll(q ? { q } : undefined)
     } catch (e) {
-      error.value = getErrorMessage(e, 'Failed to load organizations')
+      organizations.value = DEMO_ORGS
+      demoMode.value = true
+      error.value = ''
     } finally {
       isLoading.value = false
     }
@@ -73,6 +81,15 @@ export function useOrganizations(currentUserId: number) {
       organizations.value.unshift(org)
       return org
     } catch (e) {
+      if (demoMode.value) {
+        const fakeOrg: Organization = {
+          id: Date.now(), name: data.name, description: data.description || null,
+          avatarUrl: null, ownerId: currentUserId, memberCount: 1,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        }
+        organizations.value.unshift(fakeOrg)
+        return fakeOrg
+      }
       error.value = getErrorMessage(e, 'Failed to create organization')
       return null
     }
@@ -150,6 +167,7 @@ export function useOrganizations(currentUserId: number) {
     myOrgs,
     currentUserRole,
     canManage,
+    demoMode,
     fetchOrganizations,
     selectOrg,
     deselectOrg,

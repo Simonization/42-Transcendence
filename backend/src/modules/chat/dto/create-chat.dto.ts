@@ -12,7 +12,7 @@ export class CreateChatDto {
     @IsInt({ each: true })
     @ArrayMinSize(1)
     // One ID for DM, multiple for Group
-    userIds: number[];
+    participantIds: number[];
 
     @IsOptional()
     @IsString()

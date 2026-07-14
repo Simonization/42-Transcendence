@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { io, Socket } from 'socket.io-client'
 import { chatApi } from '../api/chat'
-import { getAccessToken } from '../api'
+import { getAccessToken, clearTokens } from '../api'
 import { getErrorMessage } from '../utils/error'
 import { useApiLogger } from './useApiLogger'
 import type { ChatRoom, Message } from '../types'
@@ -18,200 +18,274 @@ const announcements = ref<{ id: number, content: string, createdAt: string }[]>(
 const socket = ref<Socket | null>(null)
 const wsConnected = ref(false)
 const uptime = ref('0.0')
+const friendActivityCallbacks: Array<() => void> = []
+const notificationCallbacks: Array<(data: Record<string, unknown>) => void> = []
 
 export function useChat() {
-	const activeRoom = computed(() =>
-		rooms.value.find(r => r.id === activeRoomId.value) || null
-	)
+    const activeRoom = computed(() =>
+        rooms.value.find(r => r.id === activeRoomId.value) || null
+    )
 
-	const unreadCount = computed(() =>
-		rooms.value.filter(r => r.isUnread).length
-	)
+    const unreadCount = computed(() =>
+        rooms.value.filter(r => r.isUnread).length
+    )
 
-	const fetchRooms = async () => {
-		isLoadingRooms.value = true
-		error.value = ''
-		try {
-			rooms.value = await chatApi.getRooms()
-		} catch (e) {
-			error.value = getErrorMessage(e, 'Failed to load conversations')
-		} finally {
-			isLoadingRooms.value = false
-		}
-	}
+    const fetchRooms = async () => {
+        isLoadingRooms.value = true
+        error.value = ''
+        try {
+            rooms.value = await chatApi.getRooms()
+        } catch (e) {
+            error.value = getErrorMessage(e, 'Failed to load conversations')
+        } finally {
+            isLoadingRooms.value = false
+        }
+    }
 
-	const selectRoom = async (roomId: number) => {
-		activeRoomId.value = roomId
-		messages.value = []
-		isLoadingMessages.value = true
-		error.value = ''
-		try {
-			const msgs = await chatApi.getMessages(roomId)
-			if (activeRoomId.value !== roomId) return
+    const selectRoom = async (roomId: number) => {
+        activeRoomId.value = roomId
+        messages.value = []
+        isLoadingMessages.value = true
+        error.value = ''
 
-			messages.value = msgs.reverse()
-			await chatApi.markAsRead(roomId).catch(() => { })
-			rooms.value = rooms.value.map(r =>
-				r.id === roomId ? { ...r, isUnread: false } : r
-			)
-		} catch (e) {
-			if (activeRoomId.value !== roomId) return
-			error.value = getErrorMessage(e, 'Failed to load messages')
-		} finally {
-			isLoadingMessages.value = false
-		}
-	}
+        // Join the socket.io room to receive real-time messages
+        if (socket.value && socket.value.connected) {
+            socket.value.emit('joinRoom', { roomId })
+        }
 
-	const sendMessage = async (content: string) => {
-		if (!activeRoomId.value || !content.trim()) return
-		isSending.value = true
-		error.value = ''
-		try {
-			const msg = await chatApi.sendMessage({
-				chatId: activeRoomId.value,
-				content: content.trim(),
-			})
+        try {
+            const response = await chatApi.getMessages(roomId)
+            if (activeRoomId.value !== roomId) return
 
-			const exists = messages.value.some(m => m.id === msg.id)
-			if (!exists) {
-				messages.value.push(msg)
-			}
+            const rawMessages = Array.isArray(response) ? response : (response?.data || [])
+            messages.value = [...rawMessages].reverse()
 
-			rooms.value = rooms.value.map(r =>
-				r.id === activeRoomId.value ? { ...r, lastMessage: msg } : r
-			)
-		} catch (e) {
-			error.value = getErrorMessage(e, 'Failed to send message')
-		} finally {
-			isSending.value = false
-		}
-	}
+            await chatApi.markAsRead(roomId).catch(() => { })
+            rooms.value = rooms.value.map(r =>
+                r.id === roomId ? { ...r, isUnread: false } : r
+            )
 
-	const createRoom = async (userIds: number[], title?: string) => {
-		error.value = ''
-		try {
-			const room = await chatApi.createRoom({ userIds, title })
-			await fetchRooms()
-			activeRoomId.value = room.id
-			return room
-		} catch (e) {
-			error.value = getErrorMessage(e, 'Failed to create conversation')
-			return null
-		}
-	}
+            // Emit markRead via socket for real-time sync
+            if (socket.value && socket.value.connected) {
+                socket.value.emit('markRead', { roomId })
+            }
+        } catch (e) {
+            if (import.meta.env.DEV) {
+                console.error("Error: Cannot bring messages", e)
+            }
+            if (activeRoomId.value !== roomId) return
+            error.value = getErrorMessage(e, 'Failed to load messages')
+        } finally {
+            isLoadingMessages.value = false
+        }
+    }
 
-	const deleteMessage = async (messageId: number) => {
-		try {
-			await chatApi.deleteMessage(messageId)
-			const msg = messages.value.find(m => m.id === messageId)
-			if (msg) {
-				msg.content = 'This message was deleted'
-				msg.deletedAt = new Date().toISOString()
-			}
-		} catch (e) {
-			error.value = getErrorMessage(e, 'Failed to delete message')
-		}
-	}
+    const sendMessage = async (content: string) => {
+        if (!activeRoomId.value || !content.trim()) return
+        isSending.value = true
+        error.value = ''
+        try {
+            const msg = await chatApi.sendMessage({
+                chatId: activeRoomId.value,
+                content: content.trim(),
+            })
+            const exists = messages.value.some(m => String(m.id) === String(msg.id))
+            if (!exists) {
+                messages.value.push(msg)
+            }
+            rooms.value = rooms.value.map(r =>
+                r.id === activeRoomId.value ? { ...r, lastMessage: msg } : r
+            )
+        } catch (e) {
+            error.value = getErrorMessage(e, 'Failed to send message')
+        } finally {
+            isSending.value = false
+        }
+    }
 
-	const connectSocket = () => {
-		const token = getAccessToken()
-		const { addWsLog } = useApiLogger()
-		if (!token || (socket.value && socket.value.connected))
-			return
-		socket.value = io('/', {
-			path: '/socket.io/',
-			transports: ['websocket'],
-			auth: {
-				token: token
-			},
-			reconnection: true
-		})
+    const createRoom = async (participantIds: number[], title?: string) => {
+        error.value = ''
+        try {
+            const room = await chatApi.createRoom({ participantIds, title })
+            await fetchRooms()
+            activeRoomId.value = room.id
+            return room
+        } catch (e) {
+            error.value = getErrorMessage(e, 'Failed to create conversation')
+            return null
+        }
+    }
 
-		socket.value.on('connect', () => {
-			wsConnected.value = true
-			addWsLog({ method: 'EVENT', endpoint: 'connect', direction: 'in' })
-		})
+    const deleteMessage = async (messageId: number) => {
+        try {
+            await chatApi.deleteMessage(messageId)
+            const msg = messages.value.find(m => m.id === messageId)
+            if (msg) {
+                msg.content = 'This message was deleted'
+                msg.deletedAt = new Date().toISOString()
+            }
+        } catch (e) {
+            error.value = getErrorMessage(e, 'Failed to delete message')
+        }
+    }
 
-		socket.value.on('disconnect', () => {
-			wsConnected.value = false
-			addWsLog({ method: 'EVENT', endpoint: 'disconnect', direction: 'in' })
-		})
+    const connectSocket = () => {
+        const token = getAccessToken()
+        const { addWsLog } = useApiLogger()
+        if (!token || (socket.value && socket.value.connected))
+            return
 
-		socket.value.on('message', (msg: Message & Record<string, unknown>) => {
-			addWsLog({ method: 'EVENT', endpoint: 'message', direction: 'in', responseBody: msg })
-			if (typeof msg === 'object' && msg !== null && msg.chatId) {
-				if (msg.chatId === activeRoomId.value) {
-					const exists = messages.value.some(m => m.id === msg.id)
-					if (!exists) messages.value.push(msg)
-					const roomIdx = rooms.value.findIndex(r => r.id === msg.chatId)
-					if (roomIdx !== -1) rooms.value[roomIdx] = { ...rooms.value[roomIdx], lastMessage: msg }
-				} else {
-					const roomIdx = rooms.value.findIndex(r => r.id === msg.chatId)
-					if (roomIdx !== -1) rooms.value[roomIdx] = { ...rooms.value[roomIdx], isUnread: true }
-				}
-			}
-		})
+        socket.value = io('/', {
+            path: '/socket.io/',
+            transports: ['websocket'],
+            auth: {
+                token: token
+            },
+            reconnection: true
+        })
 
-		socket.value.on('connect_error', () => {
-			wsConnected.value = false
-			addWsLog({ method: 'EVENT', endpoint: 'connect_error', direction: 'in' })
-		})
+        socket.value.on('connect', () => {
+            wsConnected.value = true
+            addWsLog({ method: 'EVENT', endpoint: 'connect', direction: 'in' })
+            // Sync rooms after (re)connect to reflect any missed messages.
+            fetchRooms().catch(() => { })
 
-		socket.value.on('time-pulse', (serverTime: string) => {
-			uptime.value = serverTime
-			addWsLog({ method: 'EVENT', endpoint: 'time-pulse', direction: 'in', responseBody: serverTime })
-		})
+            // Rejoin currently opened room after reconnect.
+            if (activeRoomId.value) {
+                socket.value?.emit('joinRoom', { roomId: activeRoomId.value })
+            }
+        })
 
-		socket.value.on('announcement', (data: Record<string, unknown>) => {
-			addWsLog({ method: 'EVENT', endpoint: 'announcement', direction: 'in', responseBody: data })
-			announcements.value.unshift(data)
+        socket.value.on('disconnect', () => {
+            wsConnected.value = false
+            addWsLog({ method: 'EVENT', endpoint: 'disconnect', direction: 'in' })
+        })
 
-			if (announcements.value.length > 5) {
-				announcements.value.pop()
-			}
-		})
-	}
+        socket.value.on('friendActivity', (payload: Record<string, unknown>) => {
+            addWsLog({ method: 'EVENT', endpoint: 'friendActivity', direction: 'in', responseBody: payload })
+            friendActivityCallbacks.forEach(cb => cb())
+        })
 
-	const sendAnnouncement = (text: string) => {
-		if (socket.value && text.trim()) {
-			const { addWsLog } = useApiLogger()
-			addWsLog({ method: 'EMIT', endpoint: 'create-announcement', direction: 'out', requestBody: { message: text } })
-			socket.value.emit('create-announcement', { message: text })
-		}
-	}
+        socket.value.on('newMessage', (payload: Record<string, unknown>) => {
+            addWsLog({ method: 'EVENT', endpoint: 'newMessage', direction: 'in', responseBody: payload })
+            if (typeof payload === 'object' && payload !== null) {
+                const roomId = (payload.roomId ?? payload.chatId) as number
+                const msg: Message = {
+                    id: payload.id as number,
+                    chatId: roomId,
+                    senderId: payload.senderId as number,
+                    content: payload.content as string,
+                    createdAt: payload.createdAt as string,
+                    editedAt: null,
+                    deletedAt: null,
+                    sender: payload.sender as { id: number; username: string } | undefined,
+                }
+                if (msg.chatId === activeRoomId.value) {
+                    const exists = messages.value.some(m => String(m.id) === String(msg.id))
+                    if (!exists) messages.value.push(msg)
+                    const roomIdx = rooms.value.findIndex(r => r.id === msg.chatId)
+                    if (roomIdx !== -1) rooms.value[roomIdx] = { ...rooms.value[roomIdx], lastMessage: msg }
+                } else {
+                    const roomIdx = rooms.value.findIndex(r => r.id === msg.chatId)
+                    if (roomIdx !== -1) {
+                        rooms.value[roomIdx] = {
+                            ...rooms.value[roomIdx],
+                            lastMessage: msg,
+                            isUnread: true,
+                        }
+                    } else {
+                        // A new/private room can arrive through socket before local cache knows it.
+                        fetchRooms().catch(() => { })
+                    }
+                }
+            }
+        })
 
-	const disconnectSocket = () => {
-		if (socket.value) {
-			socket.value.disconnect()
-			socket.value = null
-			wsConnected.value = false
-		}
-		uptime.value = '0.0'
-		activeRoomId.value = null
-		messages.value = []
-	}
+        socket.value.on('connect_error', () => {
+            wsConnected.value = false
+            addWsLog({ method: 'EVENT', endpoint: 'connect_error', direction: 'in' })
+        })
 
-	return {
-		rooms,
-		activeRoomId,
-		activeRoom,
-		messages,
-		isLoadingRooms,
-		isLoadingMessages,
-		isSending,
-		error,
-		unreadCount,
-		wsConnected,
-		uptime,
-		announcements,
-		socket,
-		fetchRooms,
-		selectRoom,
-		sendMessage,
-		createRoom,
-		deleteMessage,
-		connectSocket,
-		disconnectSocket,
-		sendAnnouncement,
-	}
+        socket.value.on('time-pulse', (serverTime: string) => {
+            uptime.value = serverTime
+            addWsLog({ method: 'EVENT', endpoint: 'time-pulse', direction: 'in', responseBody: serverTime })
+        })
+
+        socket.value.on('announcement', (data: Record<string, unknown>) => {
+            addWsLog({ method: 'EVENT', endpoint: 'announcement', direction: 'in', responseBody: data })
+            announcements.value.unshift(data)
+
+            if (announcements.value.length > 5) {
+                announcements.value.pop()
+            }
+        })
+
+        socket.value.on('notification', (data: Record<string, unknown>) => {
+            addWsLog({ method: 'EVENT', endpoint: 'notification', direction: 'in', responseBody: data })
+            notificationCallbacks.forEach(cb => cb(data))
+        })
+
+        socket.value.on('force-logout', () => {
+            addWsLog({ method: 'EVENT', endpoint: 'force-logout', direction: 'in' })
+            clearTokens()
+            window.location.href = '/auth'
+        })
+    }
+
+    const onNotification = (cb: (data: Record<string, unknown>) => void) => {
+        if (!notificationCallbacks.includes(cb)) {
+            notificationCallbacks.push(cb)
+        }
+    }
+
+    const onFriendActivity = (cb: () => void) => {
+        if (!friendActivityCallbacks.includes(cb)) {
+            friendActivityCallbacks.push(cb)
+        }
+    }
+
+    const sendAnnouncement = (text: string) => {
+        if (socket.value && text.trim()) {
+            const { addWsLog } = useApiLogger()
+            addWsLog({ method: 'EMIT', endpoint: 'create-announcement', direction: 'out', requestBody: { message: text } })
+            socket.value.emit('create-announcement', { message: text })
+        }
+    }
+
+    const disconnectSocket = () => {
+        if (socket.value) {
+            socket.value.disconnect()
+            socket.value = null
+            wsConnected.value = false
+        }
+        uptime.value = '0.0'
+        activeRoomId.value = null
+        messages.value = []
+    }
+
+    return {
+        rooms,
+        activeRoomId,
+        activeRoom,
+        messages,
+        isLoadingRooms,
+        isLoadingMessages,
+        isSending,
+        error,
+        unreadCount,
+        wsConnected,
+        uptime,
+        announcements,
+        socket,
+        fetchRooms,
+        selectRoom,
+        sendMessage,
+        createRoom,
+        deleteMessage,
+        connectSocket,
+        disconnectSocket,
+        sendAnnouncement,
+        onNotification,
+        onFriendActivity,
+    }
 }

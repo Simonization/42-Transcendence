@@ -5,9 +5,12 @@ import { User } from '../users/entities/user.entity';
 import { KickPlayerCommand } from './commands/kick-player.command';
 import { InvitePlayerCommand } from './commands/invite-player.command';
 import { LockTeamCommand } from './commands/lock-team.command';
-import { GetMyInvitationsQuery } from './queries/get-my-invitations.query';
-import { DeclineInvitationCommand } from './commands/decline-invitation.command';
 import { AcceptInvitationCommand } from './commands/accept-invitation.command';
+import { DeclineInvitationCommand } from './commands/decline-invitation.command';
+import { DeleteTeamCommand } from './commands/delete-team.command';
+import { LeaveTeamCommand } from './commands/leave-team.command';
+import { GetMyInvitationsQuery } from './queries/get-my-invitations.query';
+import { GetMyTeamForTournamentQuery } from './queries/get-my-team-for-tournament.query';
 
 @Injectable()
 export class TeamsService {
@@ -18,7 +21,10 @@ export class TeamsService {
         private readonly lockCmd: LockTeamCommand,
         private readonly acceptCmd: AcceptInvitationCommand,
         private readonly declineCmd: DeclineInvitationCommand,
+        private readonly deleteCmd: DeleteTeamCommand,
+        private readonly leaveCmd: LeaveTeamCommand,
         private readonly getInvitesQuery: GetMyInvitationsQuery,
+        private readonly getMyTeamQuery: GetMyTeamForTournamentQuery,
     ) {}
 
     async create(dto: CreateTeamDto, user: User) {
@@ -47,5 +53,21 @@ export class TeamsService {
 
     async declineInvitation(inviteId: number, userId: number) {
         return await this.declineCmd.execute(inviteId, userId);
+    }
+
+    async deleteTeam(teamId: number, userId: number) {
+        return await this.deleteCmd.execute(teamId, userId);
+    }
+
+    async leaveTeam(teamId: number, userId: number) {
+        return await this.leaveCmd.execute(teamId, userId);
+    }
+
+    async getMyTeamForTournament(tournamentId: number, userId: number) {
+        return await this.getMyTeamQuery.execute(tournamentId, userId);
+    }
+
+    async getTeamPendingInvitations(teamId: number) {
+        return await this.getMyTeamQuery.getPendingInvitations(teamId);
     }
 }

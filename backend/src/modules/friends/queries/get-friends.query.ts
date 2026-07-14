@@ -10,27 +10,49 @@ export class GetFriendsQuery {
         private readonly friendRepo: Repository<Friend>,
     ) {}
 
-    async execute(userId: number) {
+    async execute(userId: any) {
+        const uid = Number(userId);
+
+        if (!uid || isNaN(uid)) {
+            console.error('Error. GetFriendsQuery returns undefined value.', userId);
+            return [];
+        }
+
         const friendships = await this.friendRepo.find({
             where: [
-                { user1: userId, status: 1 }, // Friends where I am user1
-                { user2: userId, status: 1 }    // Friends where I am user2
+                { user1: uid }, 
+                { user2: uid }  
             ],
-            // We use the relation names defined in the Entity
             relations: ['user1Entity', 'user1Entity.profile', 'user2Entity', 'user2Entity.profile'],
         });
 
-        // We map the results so the frontend doesn't have to guess who is who
-        return friendships.map(f => {
-            // If I am user1, the friend is user2. Otherwise, the friend is user1.
-            const friendData = f.user1 === userId ? f.user2Entity : f.user1Entity;
+        const validFriendships = friendships.filter(f => {
+            const safeStatus = String(f.status).toUpperCase();
+            const isAccepted = safeStatus === '1' || safeStatus === 'ACCEPTED';
+            const isPending = safeStatus === '0' || safeStatus === 'PENDING';
             
+            const isSender = Number(f.actionUserId) === uid;
+
+            if (isAccepted) return true;
+            if (isPending && !isSender) return true; 
+
+            return false;
+        });
+
+        return validFriendships.map(f => {
+            const friendData = Number(f.user1) === uid ? f.user2Entity : f.user1Entity;
+            
+            const safeProfile = friendData?.profile || { displayName: friendData?.username || 'Unknown User' };
+            const safeStatus = String(f.status).toUpperCase();
+            const numericStatus = (safeStatus === '1' || safeStatus === 'ACCEPTED') ? 1 : 0;
+
             return {
-                id: friendData.id,
-                username: friendData.username,
-                profile: friendData.profile,
-                status: f.status,
-                since: f.createdAt
+                id: friendData?.id,
+                username: friendData?.username,
+                profile: safeProfile,
+                status: numericStatus,
+                since: f.createdAt,
+                isSender: Number(f.actionUserId) === uid
             };
         });
     }

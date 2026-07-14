@@ -20,12 +20,17 @@ import { GetTournamentQuery } from './queries/get-tournament-details.query';
 // External Modules
 import { GamesModule } from '../games/games.module';
 import { MatchesModule } from '../matches/matches.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { Team } from '../teams/entities/team.entity';
+import { TeamInvitation } from '../teams/entities/team-invitation.entity';
+import { User } from '../users/entities/user.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Tournament, TournamentPhase]),
+        TypeOrmModule.forFeature([Tournament, TournamentPhase, Team, TeamInvitation, User]),
         GamesModule,
         forwardRef(() => MatchesModule),
+        NotificationsModule,
     ],
     controllers: [TournamentsController],
     providers: [

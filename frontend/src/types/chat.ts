@@ -32,7 +32,7 @@ export interface Message {
 export interface TypingUser {
   userId: number
   username: string
-  roomId: number
+  chatId: number
 }
 
 export interface TypingEvent {
@@ -57,7 +57,7 @@ export interface ChatRoom {
 }
 
 export interface CreateRoomDto {
-  userIds: number[]
+  participantIds: number[]
   title?: string
 }
 

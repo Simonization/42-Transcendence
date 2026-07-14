@@ -3,11 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Friend } from '../entities/friend.entity';
 import { ActionFriendDto } from '../dto/action-friend.dto';
+import { ChatGateway } from '../../chat/chat.gateway';
 
 @Injectable()
 export class RemoveFriendCommand {
     constructor(
-        @InjectRepository(Friend) private readonly friendRepo: Repository<Friend>
+        @InjectRepository(Friend) private readonly friendRepo: Repository<Friend>,
+        private readonly chatGateway: ChatGateway 
     ) {}
 
     async execute(userId: number, dto: ActionFriendDto): Promise<void> {
@@ -22,6 +24,7 @@ export class RemoveFriendCommand {
             throw new NotFoundException('Friendship not found');
         }
 
+         this.chatGateway.broadcastToUsers([u1, u2], 'friendActivity', { user1: u1, user2: u2 });
         await this.friendRepo.remove(friendship);
     }
 }

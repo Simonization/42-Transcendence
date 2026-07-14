@@ -3,8 +3,9 @@
  * Tournament Filters - Sidebar Filter Controls
  */
 
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { gamesApi } from '../../api/games'
 
 interface Filters {
   games: string[]
@@ -36,18 +37,16 @@ const localFilters = ref<Filters>({
   statuses: props.statuses,
 })
 
-const gameOptions = [
-  'League of Legends',
-  'Counter-Strike 2',
-  'Chess',
-  'Dota 2',
-  'Valorant',
-  'StarCraft II',
-  'Overwatch 2',
-  'Rocket League',
-  'Fortnite',
-  'Street Fighter VI',
-]
+const gameOptions = ref<string[]>([])
+
+onMounted(async () => {
+  try {
+    const games = await gamesApi.getAll()
+    gameOptions.value = games.map(g => g.name)
+  } catch {
+    gameOptions.value = []
+  }
+})
 
 const statusOptions = computed(() => [
   { value: 'open', label: t('tournament.registrationOpen') },

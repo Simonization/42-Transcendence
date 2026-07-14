@@ -104,6 +104,7 @@ export {
   type CreateTeamDto,
   type InvitePlayerDto,
   type CreateGameDto,
+  type UpdateGameDto,
   TournamentStatus,
   PhaseType,
   TeamStatus,

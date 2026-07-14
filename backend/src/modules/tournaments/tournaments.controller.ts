@@ -1,13 +1,14 @@
-import { 
-        Controller, 
-        Get, 
-        Post, 
-        Body, 
-        Patch, 
-        Param, 
-        Delete, 
-        ParseIntPipe, 
-        UseGuards 
+import {
+        Controller,
+        Get,
+        Post,
+        Body,
+        Patch,
+        Param,
+        Delete,
+        ParseIntPipe,
+        UseGuards,
+        Request
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
@@ -50,5 +51,15 @@ export class TournamentsController {
     @UseGuards(JwtAuthGuard)
     remove(@Param('id', ParseIntPipe) id: number) {
         return this.tournamentsService.remove(id);
+    }
+
+    @Post(':id/register')
+    @UseGuards(JwtAuthGuard)
+    register(
+        @Request() req,
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: { teamName?: string; memberIds?: number[] },
+    ) {
+        return this.tournamentsService.register(req.user.sub, id, body.teamName, body.memberIds);
     }
 }

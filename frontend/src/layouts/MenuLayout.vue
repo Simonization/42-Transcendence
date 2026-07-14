@@ -6,8 +6,10 @@ import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import SearchModal from '../components/common/SearchModal.vue'
+import NotificationBell from '../components/notifications/NotificationBell.vue'
 import { useChat } from '@/composables/useChat'
 import { useSearch } from '@/composables/useSearch'
+import { useFriendsStore } from '../stores/friends'
 import { friendsApi } from '../api/friends'
 import type { Friend, ChatRoom } from '../types'
 
@@ -17,15 +19,27 @@ const authStore = useAuthStore()
 const { logout } = authStore
 const themeStore = useThemeStore()
 const { theme } = themeStore
-const { connectSocket, disconnectSocket, rooms: chatRooms } = useChat()
+const { connectSocket, disconnectSocket, rooms: chatRooms, unreadCount, fetchRooms, onFriendActivity } = useChat()
 const { isOpen: searchOpen, openSearch, closeSearch } = useSearch()
+const friendsStore = useFriendsStore()
 
 const friends = ref<Friend[]>([])
 
 onMounted(async () => {
     connectSocket()
+  await fetchRooms().catch(() => {})
+    
+    // Listen for friend activity events and refresh friends list
+    onFriendActivity(() => {
+      friendsStore.fetchFriends()
+      friendsStore.fetchBlocks()
+      if (authStore.user?.id) {
+        friendsApi.getFriends().then(f => { friends.value = f }).catch(() => {})
+      }
+    })
+    
     if (authStore.user?.id) {
-      friendsApi.getFriends(authStore.user.id).then(f => { friends.value = f }).catch(() => {})
+      friendsApi.getFriends().then(f => { friends.value = f }).catch(() => {})
     }
 })
 
@@ -36,6 +50,7 @@ const handleLogout = async () => {
 }
 
 const navItems = computed(() => {
+
   const baseItems = [
     { to: '/', label: t('nav.home'), icon: '⚡︎' },
     { to: '/menu/user', label: t('nav.user'), icon: '👤', badge: null },
@@ -49,7 +64,6 @@ const navItems = computed(() => {
 
   if (authStore.isAdmin) {
     baseItems.push({ to: '/menu/admin', label: t('nav.admin'), icon: '⚙️' })
-    baseItems.push({ to: '/menu/admin-invite-test', label: 'ADMIN INV', icon: '🧪' })
   }
 
   return baseItems
@@ -74,6 +88,7 @@ const navItems = computed(() => {
       </div>
       <div class="menu-header-actions">
         <button class="menu-search-btn" @click="openSearch" :title="$t('search.open')">&#9906;</button>
+        <NotificationBell />
         <ThemeToggle />
         <button @click="handleLogout" class="menu-quit-btn">{{ $t('common.quit') }}</button>
       </div>

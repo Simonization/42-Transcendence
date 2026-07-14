@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/auth'
 import { useOrganizations } from '../../composables/useOrganizations'
 import { usersApi } from '../../api/users'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
+import DemoBanner from '../../components/common/DemoBanner.vue'
 import type { Organization, User } from '../../types'
 
 const { t } = useI18n()
@@ -22,6 +23,7 @@ const {
   myOrgs,
   currentUserRole,
   canManage,
+  demoMode,
   fetchOrganizations,
   selectOrg,
   deselectOrg,
@@ -128,6 +130,7 @@ const getInitials = (name: string) => name.slice(0, 2).toUpperCase()
 
 <template>
   <div class="card card-page glass-panel">
+    <DemoBanner v-if="demoMode" />
     <!-- Header -->
     <header class="section">
       <div class="section-header-row">
@@ -199,6 +202,7 @@ const getInitials = (name: string) => name.slice(0, 2).toUpperCase()
     <template v-if="!selectedOrg && !isLoading">
       <div v-if="organizations.length === 0" class="section empty-state">
         <p class="text-tertiary">{{ $t('org.noOrgs') }}</p>
+        <p class="guidance-hint">Create your first organization to group teams and manage members.</p>
       </div>
 
       <div v-else class="org-list">
@@ -419,6 +423,12 @@ const getInitials = (name: string) => name.slice(0, 2).toUpperCase()
 .empty-state {
   padding: var(--space-8);
   text-align: center;
+}
+
+.guidance-hint {
+  margin: var(--space-2) 0 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 /* Org list */

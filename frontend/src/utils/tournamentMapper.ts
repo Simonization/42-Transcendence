@@ -14,10 +14,12 @@ const statusMap: Record<TournamentStatus, Tournament['status']> = {
   [TournamentStatus.COMPLETED]: 'finished',
 }
 
-const formatMap: Record<PhaseType, Tournament['format']> = {
+const formatMap: Partial<Record<PhaseType, Tournament['format']>> = {
   [PhaseType.SINGLE_ELIMINATION]: 'single-elimination',
   [PhaseType.DOUBLE_ELIMINATION]: 'double-elimination',
   [PhaseType.ROUND_ROBIN]: 'round-robin',
+  [PhaseType.SWISS]: 'round-robin',
+  [PhaseType.GROUP_STAGE]: 'round-robin',
 }
 
 export function toDisplayTournament(bt: BackendTournament): Tournament {
@@ -33,7 +35,7 @@ export function toDisplayTournament(bt: BackendTournament): Tournament {
     endDate: '',
     status: statusMap[bt.status] ?? 'open',
     maxParticipants: bt.max_participants,
-    currentParticipants: bt.teams.length,
+    currentParticipants: bt.teams?.length ?? 0,
     format,
     description: bt.description ?? '',
     rules: '',

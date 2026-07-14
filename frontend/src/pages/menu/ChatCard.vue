@@ -10,10 +10,11 @@ import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import UserProfilePopup from '../../components/chat/UserProfilePopup.vue'
 import { storeToRefs } from 'pinia'
 import { usersApi } from '../../api/users'
+import DemoBanner from '../../components/common/DemoBanner.vue'
 import type { User } from '../../types'
 
 const authStore = useAuthStore()
-const { user } = authStore
+const { user } = storeToRefs(authStore)
 const chatStore = useChatStore()
 const {
   activeRoomId,
@@ -24,6 +25,7 @@ const {
   isLoadingMessages,
   isSending,
   error,
+  demoMode,
   wsConnected,
   visibleRooms,
   isActiveRoomBlocked,
@@ -37,10 +39,14 @@ const {
   sendMessage,
   createRoom,
   deleteMessage,
+  connectSocket,
+  disconnectSocket,
   setCurrentUser,
   loadBlockedUsers,
   blockUserInChat,
   emitTyping,
+  emitLeaveRoom,
+  emitStopTyping,
 } = chatStore
 
 const router = useRouter()
@@ -83,24 +89,29 @@ const cancelNewChat = () => {
   showNewChat.value = false
 }
 
+const myId = computed(() => Number(user.value?.id) || 0)
+
 const activeRoomTitle = computed(() => {
   if (!activeRoom.value) return 'Chat'
-  return activeRoom.value.title
-    || activeRoom.value.participants.find(p => p.id !== user.value?.id)?.username
-    || 'Chat'
+  const partner = activeRoom.value.participants.find(p => Number(p.id) !== myId.value)
+  return activeRoom.value.title || partner?.username || 'Chat'
 })
 
 const dmPartnerId = computed(() => {
-  if (!activeRoom.value || activeRoom.value.type !== 0) return null
-  return activeRoom.value.participants.find(p => p.id !== user.value?.id)?.id ?? null
+if (!activeRoom.value || activeRoom.value.type !== 0) return null
+  const partner = activeRoom.value.participants.find((p: any) => Number(p.id) !== myId.value)
+  
+  return partner ? Number(partner.userId || partner.user?.id || partner.id) : null
 })
 
 const blockedIdsArray = computed(() => [...blockedUserIds.value])
 
 onMounted(async () => {
+  connectSocket()
+
   if (user.value?.id) {
     setCurrentUser(user.value.id)
-    loadBlockedUsers(user.value.id)
+    loadBlockedUsers()
   }
   await fetchRooms()
 
@@ -140,8 +151,8 @@ const handleSend = (content: string) => {
 }
 
 const handleBlockConfirm = async () => {
-  if (dmPartnerId.value) {
-    await blockUserInChat(dmPartnerId.value)
+if (dmPartnerId.value) {
+    await blockUserInChat(Number(dmPartnerId.value))
   }
   showBlockConfirm.value = false
 }
@@ -165,7 +176,7 @@ const handleProfileViewFriends = () => {
 }
 
 const handleGameInvite = () => {
-  const partnerName = activeRoom.value?.participants.find(p => p.id !== user.value?.id)?.username || 'opponent'
+  const partnerName = activeRoom.value?.participants.find(p => Number(p.id) !== myId.value)?.username || 'opponent'
   sendMessage(`🎮 Game invitation! I'm challenging ${partnerName} to a match. Ready to play?`)
 }
 
@@ -182,11 +193,25 @@ watch(error, (val) => {
 
 onUnmounted(() => {
   if (errorTimer) clearTimeout(errorTimer)
+  if (newChatSearchTimer) clearTimeout(newChatSearchTimer)
+  
+  // Stop typing indicator if user was typing
+  if (activeRoomId.value) {
+    emitStopTyping()
+    emitLeaveRoom(activeRoomId.value)
+    activeRoomId.value = null
+  }
+
+  disconnectSocket()
+  
+  // Clear messages to reset the chat state
+  messages.value = []
 })
 </script>
 
 <template>
   <div class="card card-page chat-layout glass-panel">
+    <DemoBanner v-if="demoMode" />
     <!-- Sidebar: Room list -->
     <aside class="chat-sidebar">
       <div class="sidebar-header">
@@ -239,8 +264,7 @@ onUnmounted(() => {
         v-else
         :rooms="visibleRooms"
         :active-room-id="activeRoomId"
-        :current-user-id="user?.id || 0"
-        @select="selectRoom"
+        :current-user-id="myId"  @select="selectRoom"
       />
     </aside>
 
@@ -283,22 +307,21 @@ onUnmounted(() => {
           <p>{{ $t('chat.blockedConversation') }}</p>
         </div>
 
-        <ChatConversation
-          v-if="!isActiveRoomBlocked"
-          :messages="messages"
-          :current-user-id="user?.id || 0"
-          :is-loading="isLoadingMessages"
-          :typing-users="currentRoomTypingUsers"
-          :blocked-user-ids="blockedIdsArray"
-          @delete-message="deleteMessage"
-          @view-profile="handleViewProfile"
-        />
+      <ChatConversation
+        v-if="!isActiveRoomBlocked"
+        :messages="messages"
+        :current-user-id="myId"  :is-loading="isLoadingMessages"
+        :typing-users="currentRoomTypingUsers"
+        :blocked-user-ids="blockedIdsArray"
+        @delete-message="deleteMessage"
+        @view-profile="handleViewProfile"
+      />
 
         <MessageInput
           v-if="!isActiveRoomBlocked"
           :disabled="isSending"
           @send="handleSend"
-          @typing="emitTyping"
+          @typing="(isTyping) => isTyping ? emitTyping() : emitStopTyping()"
         />
       </template>
 

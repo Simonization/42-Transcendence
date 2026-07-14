@@ -2,42 +2,61 @@ import { SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnectio
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Not} from 'typeorm';
+import { ChatParticipant } from './entities/chat-participant.entity';
+import { Message } from './entities/message.entity';
+import { User } from '../users/entities/user.entity';
 
-@WebSocketGateway(
-	{
-		cors:
-		{
-			origin: '*', // We need to change this for PROD level, (with frontend address)
-		},
-	})
-
+@WebSocketGateway({
+    cors: {
+        origin: ['https://localhost:8443', 'http://localhost:8443'],
+        credentials: true,
+    },
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
 
     private activeIntervals = new Map<string, NodeJS.Timeout>();
-    constructor(private jwtService: JwtService) {}
+
+    constructor(
+        private jwtService: JwtService,
+        @InjectRepository(ChatParticipant) private partRepo: Repository<ChatParticipant>,
+        @InjectRepository(Message) private messageRepo: Repository<Message>,
+        @InjectRepository(User) private userRepo: Repository<User>,
+    ) {}
+
     async handleConnection(client: Socket) {
         try {
             const token = this.extractTokenFromSocket(client);
+            if (!token) throw new UnauthorizedException('No Token found !');
 
-            if (!token) {
-                throw new UnauthorizedException('No Token found !');
-            }
             const payload = this.jwtService.verify(token);
-            client.data.user = payload; 
-            
-            // Join user-specific room for notifications
-            const userRoom = `user-${payload.sub}`;
-            client.join(userRoom);
-            
-            console.log(`Client connected: ${client.id} | User ID: ${payload.sub} | Username: ${payload.username} | Room: ${userRoom}`);
-            client.emit('message', `Welcome ${payload.username}!`);
-            this.startPulse(client); 
+            const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+            if (!user || this.isBannedUser(user)) {
+                throw new UnauthorizedException('User is banned');
+            }
+            client.data.user = payload;
+            const personalRoom = `user_${payload.sub}`;
+            client.join(personalRoom);
+
+            client.use(async (_packet, next) => {
+                const latestUser = await this.userRepo.findOne({ where: { id: payload.sub } });
+                if (!latestUser || this.isBannedUser(latestUser)) {
+                    client.emit('force-logout', { reason: 'banned' });
+                    client.disconnect(true);
+                    return;
+                }
+                next();
+            });
+
+            console.log(`Client connected: ${client.id} | Joined Room: ${personalRoom}`);
+            this.startPulse(client);
 
         } catch (error) {
-            console.error(`Unauthorized Access Denied ! ${client.id} - ${error.message}`);
-            client.disconnect(true); 
+            console.error(`Unauthorized Access Denied ! ${client.id}`);
+            client.disconnect(true);
         }
     }
 
@@ -46,25 +65,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.stopPulse(client);
     }
 
-    @SubscribeMessage('sendMessage')
-    handleMessage(client: Socket, payload: string): void {
-        const user = client.data.user;
-        console.log(`Incoming Message from ${user.username}: ${payload}`);
-        this.server.emit('message', `${user.username}: ${payload}`);
-    }
-
-    @SubscribeMessage('create-announcement')
-    handleAnnouncement(client: Socket, payload: { message: string }): void {
-
-		// if(client.data.user.role !== 'admin') return; -> Possible Condition for Admin Check
-
-        console.log(`Admin Announcement: ${payload.message}`);
-        this.server.emit('announcement', {
-            id: Date.now(),
-            content: payload.message,
-            createdAt: new Date().toISOString(),
-            type: 'system'
-        });
+    private isBannedUser(user: User): boolean {
+        return user.status === 1 || (!!user.banUntil && new Date(user.banUntil) > new Date());
     }
 
     private extractTokenFromSocket(client: Socket): string | undefined {
@@ -95,53 +97,96 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             this.activeIntervals.delete(client.id);
         }
     }
+
+    broadcastToUsers(userIds: number[], event: string, data: any) {
+        userIds.forEach(userId => {
+            this.server.to(`user_${userId}`).emit(event, data);
+        });
+    }
+
+    async disconnectUser(userId: number) {
+        const roomName = `user_${userId}`;
+        const sockets = await this.server.in(roomName).fetchSockets();
+        sockets.forEach((socket) => {
+            socket.emit('force-logout', { reason: 'banned' });
+            socket.disconnect(true);
+        });
+    }
+
+    /***    NEW CHAT EVENTS      ***/
+
+    @SubscribeMessage('joinRoom')
+    handleJoinRoom(client: Socket, payload: { roomId: number }) {
+        const roomName = `room_${payload.roomId}`;
+        client.join(roomName);
+        console.log(`User ${client.data.user.username} joined ${roomName}`);
+    }
+
+    @SubscribeMessage('leaveRoom')
+    handleLeaveRoom(client: Socket, payload: { roomId: number }) {
+        const roomName = `room_${payload.roomId}`;
+        client.leave(roomName);
+        console.log(`User ${client.data.user.username} left ${roomName}`);
+    }
+
+    @SubscribeMessage('typing')
+    handleTyping(client: Socket, payload: { roomId: number, isTyping: boolean }) {
+        const user = client.data.user;
+        client.broadcast.to(`room_${payload.roomId}`).emit('userTyping', {
+            roomId: payload.roomId,
+            userId: user.sub,
+            isTyping: payload.isTyping
+        });
+    }
+
+    @SubscribeMessage('markRead')
+    async handleMarkRead(client: Socket, payload: { roomId: number }) {
+        const user = client.data.user;
+        await this.messageRepo.update(
+            { 
+                chatId: payload.roomId, 
+                senderId: Not(user.sub), 
+                isRead: false 
+            },
+            { isRead: true }
+        );
+        client.broadcast.to(`room_${payload.roomId}`).emit('messagesRead', {
+            roomId: payload.roomId,
+            userId: user.sub
+        });
+    }
+
+    @SubscribeMessage('sendMessage')
+    async handleSendMessage(client: Socket, payload: { roomId: number, content: string }) {
+        const user = client.data.user;
+
+        const newMessage = this.messageRepo.create({
+            chatId: payload.roomId,
+            senderId: user.sub,
+            content: payload.content,
+        });
+        const savedMessage = await this.messageRepo.save(newMessage);
+
+        const messageToBroadcast = {
+            id: savedMessage.id,
+            roomId: payload.roomId,
+            senderId: user.sub,
+            content: savedMessage.content,
+            createdAt: savedMessage.createdAt,
+            sender: { id: user.sub, username: user.username }
+        };
+
+        this.server.to(`room_${payload.roomId}`).emit('newMessage', messageToBroadcast);
+    }
+
+    @SubscribeMessage('create-announcement')
+    handleAnnouncement(client: Socket, payload: { message: string }): void {
+        console.log(`Admin Announcement: ${payload.message}`);
+        this.server.emit('announcement', {
+            id: Date.now(),
+            content: payload.message,
+            createdAt: new Date().toISOString(),
+            type: 'system'
+        });
+    }
 }
-
-/*	
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-	@WebSocketServer()
-	server: Server;
-
-	private activeIntervals = new Map<string, NodeJS.Timeout>();
-	constructor(private jwtService: JwtService) {}
-
-	handleConnection(client: Socket) {
-		const startTime = Date.now();
-		const interval = setInterval(() => {
-			const now = Date.now();
-			const elapsed = ((now - startTime) / 1000).toFixed(1);
-			client.emit('time-pulse', elapsed);
-		}, 100);
-		this.activeIntervals.set(client.id, interval);
-		console.log(`Client connected: ${client.id}`);
-		client.emit('message', 'Welcome to Chat Server!');
-	}
-
-	handleDisconnect(client: Socket) {
-		console.log(`Client left: ${client.id}`);
-		const interval = this.activeIntervals.get(client.id);
-		if (interval) {
-			clearInterval(interval);
-			this.activeIntervals.delete(client.id);
-		}
-	}
-
-	@SubscribeMessage('sendMessage')
-	handleMessage(client: Socket, payload: string): void {
-		console.log(`Incoming Message: ${payload}`);
-		this.server.emit('message', `someone: ${payload}`);
-	}
-
-	@SubscribeMessage('create-announcement')
-	handleAnnouncement(client: Socket, payload: { message: string }): void {
-		console.log(`Admin Messages: ${payload.message}`);
-
-		this.server.emit('announcement', {
-			id: Date.now(),
-			content: payload.message,
-			createdAt: new Date().toISOString(),
-			type: 'system'
-		});
-	}
-}
-*/

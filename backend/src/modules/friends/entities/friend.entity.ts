@@ -16,6 +16,9 @@ export class Friend {
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
+    @Column({ default: 0 }) 
+    actionUserId: number;
+
     // Optional: Keep these if you want to load User objects later
     @ManyToOne(() => User)
     @JoinColumn({ name: 'user1' })

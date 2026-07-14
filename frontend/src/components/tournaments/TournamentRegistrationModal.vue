@@ -56,7 +56,7 @@ watch(() => props.isOpen, (open) => {
   if (open) {
     resetForm()
     if (!isSolo.value && authStore.user) {
-      friendsStore.fetchFriends(authStore.user.id)
+      friendsStore.fetchFriends()
     }
   }
 })

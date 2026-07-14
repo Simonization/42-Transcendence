@@ -48,6 +48,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             throw new UnauthorizedException();
         }
 
+        const isBanned = user.status === 1 || (user.banUntil && new Date(user.banUntil) > new Date());
+        if (isBanned) {
+            throw new UnauthorizedException('User is banned');
+        }
+
         return { id: user.id, sub: user.id, username: user.username, role: user.role };
     }
 }

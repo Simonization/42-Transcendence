@@ -22,9 +22,13 @@ import { GetBlocksQuery } from './queries/get-blocks.query';
 import { FriendsService } from './friends.service';
 import { FriendsController } from './friends.controller';
 
+import { ChatModule } from '../chat/chat.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
     imports: [
+        ChatModule,
+        NotificationsModule,
         TypeOrmModule.forFeature([
                 Friend,
                 Block,
