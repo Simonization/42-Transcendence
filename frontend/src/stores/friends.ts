@@ -17,11 +17,14 @@ export const useFriendsStore = defineStore('friends', () => {
   const error = ref('')
 
 
+  // A block row can arrive without its `blocked` relation populated; unguarded access here
+  // throws inside the computed and takes the whole friends view down with it.
+  const isBlocked = (friendId: number | string) =>
+    blocks.value.some(b => Number(b?.blocked?.id) === Number(friendId))
+
   const acceptedFriends = computed(() =>
     friends.value.filter(f => {
-      if (!f) return false;
-      const isBlocked = blocks.value.some(b => Number(b.blocked.id) === Number(f.id));
-      if (isBlocked) return false;
+      if (!f || isBlocked(f.id)) return false;
 
       const s = String(f.status).toUpperCase();
       return s === '1' || s === 'ACCEPTED' || s === 'FRIEND';
@@ -30,9 +33,7 @@ export const useFriendsStore = defineStore('friends', () => {
 
   const pendingFriends = computed(() =>
     friends.value.filter(f => {
-      if (!f) return false;
-      const isBlocked = blocks.value.some(b => Number(b.blocked.id) === Number(f.id));
-      if (isBlocked) return false;
+      if (!f || isBlocked(f.id)) return false;
 
       const s = String(f.status).toUpperCase();
       return s === '0' || s === 'PENDING';
@@ -108,7 +109,7 @@ export const useFriendsStore = defineStore('friends', () => {
     error.value = ''
     try {
       await friendsApi.unblockUser({ targetId })
-      blocks.value = blocks.value.filter(b => b.blocked.id !== targetId)
+      blocks.value = blocks.value.filter(b => b?.blocked?.id !== targetId)
       return true
     } catch (e) {
       error.value = getErrorMessage(e, 'Failed to unblock user')

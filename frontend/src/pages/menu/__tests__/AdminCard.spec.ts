@@ -211,7 +211,7 @@ describe('AdminCard', () => {
       await tabs[1].trigger('click')
       await wrapper.vm.$nextTick()
 
-      expect(wrapper.text()).toContain('Single Elimination')
+      expect(wrapper.text()).toContain('Single Elim.')
     })
 
     it('should have a submit button', async () => {

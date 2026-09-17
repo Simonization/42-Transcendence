@@ -46,16 +46,20 @@ vi.mock('../../../components/chat/MessageInput.vue', () => ({
   },
 }))
 
-// Mock Pinia stores - Auth only
-vi.mock('../../../stores/auth', () => ({
-  useAuthStore: vi.fn(() => ({
-    user: {
-      id: 1,
-      username: 'testuser',
-      mail: 'test@example.com',
-    },
-  })),
-}))
+// Mock Pinia stores - Auth only.
+// `user` must be a ref: ChatCard reads it through storeToRefs, which skips plain values.
+vi.mock('../../../stores/auth', async () => {
+  const { ref } = await import('vue')
+  return {
+    useAuthStore: vi.fn(() => ({
+      user: ref({
+        id: 1,
+        username: 'testuser',
+        mail: 'test@example.com',
+      }),
+    })),
+  }
+})
 
 import { setActivePinia, createPinia } from 'pinia'
 import { useChatStore } from '../../../stores/chat'

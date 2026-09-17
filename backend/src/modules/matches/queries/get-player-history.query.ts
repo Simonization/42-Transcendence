@@ -18,10 +18,11 @@ export class GetPlayerHistoryQuery {
             },
             relations: [
                 'teams',
+                'game',
                 'phase',
                 'phase.tournament',
                 'userMatches',
-                'userMatches.user',  // ← THE FIX: load user on every participant
+                'userMatches.user',
             ],
             order: {
                 created_at: 'DESC',

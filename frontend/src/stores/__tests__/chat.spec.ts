@@ -5,6 +5,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
+import { useAuthStore } from '../auth'
 import * as chatApiModule from '../../api/chat'
 import * as friendsApiModule from '../../api/friends'
 import * as apiIndexModule from '../../api/index'
@@ -81,11 +82,17 @@ describe('useChatStore', () => {
     })
   })
 
-  describe('setCurrentUser', () => {
-    it('should set currentUserId', () => {
+  describe('currentUserId', () => {
+    it('should derive the viewer from the auth store rather than being set directly', () => {
+      const auth = useAuthStore()
+      auth.user = { id: 42, username: 'simon' } as any
+
       const store = useChatStore()
-      store.setCurrentUser(42)
-      // Verify through visibleRooms computed (uses currentUserId internally)
+      store.$patch({
+        rooms: [{ ...MOCK_ROOM, type: 0, participants: [{ id: 42 }, { id: 7 }] }] as any,
+      })
+      store.blockedUserIds = new Set([7])
+
       expect(store.visibleRooms).toHaveLength(0)
     })
   })
@@ -103,15 +110,15 @@ describe('useChatStore', () => {
       expect(store.error).toBe('')
     })
 
-    it('should fall back to demo data on fetch failure', async () => {
+    it('should surface the error and show no rooms on fetch failure', async () => {
       const store = useChatStore()
       mockGetRooms.mockRejectedValueOnce(new Error('Unauthorized'))
 
       await store.fetchRooms()
 
       expect(store.demoMode).toBe(true)
-      expect(store.error).toBe('')
-      expect(store.rooms.length).toBeGreaterThan(0)
+      expect(store.error).toBe('Failed to load conversations')
+      expect(store.rooms).toEqual([])
       expect(store.isLoadingRooms).toBe(false)
     })
   })
@@ -258,7 +265,7 @@ describe('useChatStore', () => {
       store.$patch({
         rooms: [{ ...MOCK_ROOM, type: 0, participants: [{ id: 1 }, { id: 3 }] }] as any,
       })
-      store.setCurrentUser(1)
+      useAuthStore().user = { id: 1, username: 'simon' } as any
 
       expect(store.visibleRooms).toHaveLength(0)
     })

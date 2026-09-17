@@ -41,7 +41,6 @@ const {
   deleteMessage,
   connectSocket,
   disconnectSocket,
-  setCurrentUser,
   loadBlockedUsers,
   blockUserInChat,
   emitTyping,
@@ -110,7 +109,6 @@ onMounted(async () => {
   connectSocket()
 
   if (user.value?.id) {
-    setCurrentUser(user.value.id)
     loadBlockedUsers()
   }
   await fetchRooms()

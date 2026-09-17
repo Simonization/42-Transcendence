@@ -11,23 +11,6 @@ import type { User } from '../types'
 
 const PAGE_SIZE = 20
 
-const DEMO_SETTINGS = {
-  userId: 0,
-  language: 'en' as const,
-  timezone: null,
-  theme: 0 as const,
-  openMessage: false,
-  createdAt: '2025-01-01T00:00:00Z',
-}
-
-const DEMO_USERS: User[] = [
-  { id: 1, username: 'admin_simon', mail: 'simon@42.fr', twoFactorEnabled: false, role: 1, status: 0, profile: { userId: 1, displayName: 'Simon', avatarUrl: null, bio: null, createdAt: '2025-01-01T00:00:00Z' }, settings: { ...DEMO_SETTINGS, userId: 1 } },
-  { id: 2, username: 'alice42', mail: 'alice@42.fr', twoFactorEnabled: true, role: 0, status: 0, profile: { userId: 2, displayName: 'Alice', avatarUrl: null, bio: null, createdAt: '2025-02-01T00:00:00Z' }, settings: { ...DEMO_SETTINGS, userId: 2 } },
-  { id: 3, username: 'bob_dev', mail: 'bob@42.fr', twoFactorEnabled: false, role: 0, status: 0, profile: { userId: 3, displayName: 'Bob', avatarUrl: null, bio: null, createdAt: '2025-03-01T00:00:00Z' }, settings: { ...DEMO_SETTINGS, userId: 3 } },
-  { id: 4, username: 'charlie_pong', mail: 'charlie@42.fr', twoFactorEnabled: false, role: 2, status: 0, profile: { userId: 4, displayName: 'Charlie', avatarUrl: null, bio: null, createdAt: '2025-04-01T00:00:00Z' }, settings: { ...DEMO_SETTINGS, userId: 4 } },
-  { id: 5, username: 'banned_user', mail: 'banned@42.fr', twoFactorEnabled: false, role: 0, status: 1, profile: { userId: 5, displayName: 'Banned', avatarUrl: null, bio: null, createdAt: '2025-05-01T00:00:00Z' }, settings: { ...DEMO_SETTINGS, userId: 5 } },
-]
-
 export function useAdminUsers() {
   const users = ref<User[]>([])
   const total = ref(0)
@@ -51,10 +34,10 @@ export function useAdminUsers() {
       users.value = res.users
       total.value = res.total
     } catch (e) {
-      users.value = DEMO_USERS
-      total.value = DEMO_USERS.length
+      users.value = []
+      total.value = 0
       demoMode.value = true
-      error.value = ''
+      error.value = getErrorMessage(e, 'Failed to load users')
     } finally {
       isLoading.value = false
     }

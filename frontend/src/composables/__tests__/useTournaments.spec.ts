@@ -76,18 +76,18 @@ describe('useTournaments', () => {
       expect(isLoading.value).toBe(false)
     })
 
-    it('should fall back to demo data on API error', async () => {
+    it('should surface a generic error and show none on API error', async () => {
       vi.mocked(tournamentsApi.getAll).mockRejectedValue(new Error('Network error'))
 
       const { error, tournaments, fetchTournaments, demoMode } = useTournaments()
       await fetchTournaments()
 
       expect(demoMode.value).toBe(true)
-      expect(error.value).toBe('')
-      expect(tournaments.value.length).toBeGreaterThan(0)
+      expect(error.value).toBe('Failed to load tournaments')
+      expect(tournaments.value).toEqual([])
     })
 
-    it('should fall back to demo data on ApiError', async () => {
+    it('should surface the server message on ApiError', async () => {
       vi.mocked(tournamentsApi.getAll).mockRejectedValue(
         new ApiError(403, 'FORBIDDEN', 'You do not have access')
       )
@@ -96,8 +96,8 @@ describe('useTournaments', () => {
       await fetchTournaments()
 
       expect(demoMode.value).toBe(true)
-      expect(error.value).toBe('')
-      expect(tournaments.value.length).toBeGreaterThan(0)
+      expect(error.value).toBe('You do not have access')
+      expect(tournaments.value).toEqual([])
     })
 
     it('should clear previous error on new fetch', async () => {
@@ -108,7 +108,7 @@ describe('useTournaments', () => {
       const { error, demoMode, fetchTournaments } = useTournaments()
       await fetchTournaments()
       expect(demoMode.value).toBe(true)
-      expect(error.value).toBe('')
+      expect(error.value).toBe('Failed to load tournaments')
 
       await fetchTournaments()
       expect(error.value).toBe('')

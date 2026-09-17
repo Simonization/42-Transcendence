@@ -49,13 +49,13 @@ describe('useOrganizations', () => {
     expect(isLoading.value).toBe(false)
   })
 
-  it('fetchOrganizations falls back to demo data on error', async () => {
+  it('fetchOrganizations surfaces the error and shows none on failure', async () => {
     vi.mocked(organizationsApi.getAll).mockRejectedValue(new Error('fail'))
     const { error, organizations, fetchOrganizations, demoMode } = useOrganizations(42)
     await fetchOrganizations()
     expect(demoMode.value).toBe(true)
-    expect(error.value).toBe('')
-    expect(organizations.value.length).toBeGreaterThan(0)
+    expect(error.value).toBe('Failed to load organizations')
+    expect(organizations.value).toEqual([])
   })
 
   it('createOrg adds to list', async () => {

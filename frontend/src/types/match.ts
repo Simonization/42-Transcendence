@@ -6,7 +6,7 @@
 // --- Backend shapes (raw API response) ---
 
 export interface BackendUserMatch {
-  userId: number
+  user_id: number
   result: 'WIN' | 'LOSS' | 'DRAW' | 'PENDING'
   user: {
     id: number
@@ -16,7 +16,7 @@ export interface BackendUserMatch {
 
 export interface BackendMatch {
   id: number
-  game_type: string
+  game?: { id: number; name: string } | null
   created_at: string
   userMatches: BackendUserMatch[]
   details?: Record<string, unknown>
@@ -24,7 +24,8 @@ export interface BackendMatch {
 
 // --- Frontend shapes ---
 
-export type GameType = 'Chess' | 'League of Legends' | 'Unknown'
+/** Games are admin-created rows, so the set is open-ended. */
+export type GameType = string
 export type MatchResult = 'win' | 'loss' | 'draw'
 
 export interface Match {

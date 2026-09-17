@@ -96,25 +96,25 @@ describe('useMatches', () => {
       expect(matches.value).toHaveLength(1)
     })
 
-    it('should fall back to demo data on failure', async () => {
+    it('should surface the error and show no matches on failure', async () => {
       mockGetMyHistory.mockRejectedValueOnce(new Error('Network error'))
 
       const { error, isLoading, matches, fetchMyHistory, demoMode } = useMatches(42)
       await fetchMyHistory()
 
       expect(demoMode.value).toBe(true)
-      expect(error.value).toBe('')
-      expect(matches.value.length).toBeGreaterThan(0)
+      expect(error.value).toBe('Failed to load match history')
+      expect(matches.value).toEqual([])
       expect(isLoading.value).toBe(false)
     })
 
-    it('should clear demo state on successful retry', async () => {
+    it('should clear the error on successful retry', async () => {
       mockGetMyHistory.mockRejectedValueOnce(new Error('fail'))
 
       const { error, fetchMyHistory, demoMode } = useMatches(42)
       await fetchMyHistory()
       expect(demoMode.value).toBe(true)
-      expect(error.value).toBe('')
+      expect(error.value).toBe('Failed to load match history')
 
       mockGetMyHistory.mockResolvedValueOnce([])
       await fetchMyHistory()

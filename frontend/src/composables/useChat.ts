@@ -34,7 +34,9 @@ export function useChat() {
         isLoadingRooms.value = true
         error.value = ''
         try {
-            rooms.value = await chatApi.getRooms()
+            const response = await chatApi.getRooms()
+            // rooms is module-scoped, so a non-array response would break every later read of it.
+            rooms.value = Array.isArray(response) ? response : []
         } catch (e) {
             error.value = getErrorMessage(e, 'Failed to load conversations')
         } finally {

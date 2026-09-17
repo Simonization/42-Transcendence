@@ -48,15 +48,15 @@ describe('useAdminUsers', () => {
     expect(error.value).toBe('')
   })
 
-  it('fetchUsers falls back to demo data on error', async () => {
+  it('fetchUsers surfaces the error and shows no users when the API fails', async () => {
     mockGetUsers.mockRejectedValueOnce(new Error('Network error'))
 
     const { fetchUsers, error, users, demoMode } = useAdminUsers()
     await fetchUsers()
 
     expect(demoMode.value).toBe(true)
-    expect(error.value).toBe('')
-    expect(users.value.length).toBeGreaterThan(0)
+    expect(error.value).toBe('Failed to load users')
+    expect(users.value).toEqual([])
   })
 
   it('setSearch resets page and fetches', async () => {
@@ -78,9 +78,13 @@ describe('useAdminUsers', () => {
 
     const { fetchUsers, banUser, users } = useAdminUsers()
     await fetchUsers()
-    await banUser(1)
+    await banUser(1, { banUnit: 'permanent' })
 
-    expect(mockUpdateUser).toHaveBeenCalledWith(1, { status: 1 })
+    expect(mockUpdateUser).toHaveBeenCalledWith(1, {
+      status: 1,
+      banUnit: 'permanent',
+      banValue: undefined,
+    })
     expect(users.value[0].status).toBe(1)
   })
 

@@ -349,18 +349,14 @@ describe('FriendCard', () => {
     })
 
     it('should unblock user', async () => {
-      const pinia = createInitializedPinia()
-      const friendsStore = useFriendsStore()
-      vi.spyOn(friendsStore, 'unblockUser').mockResolvedValue(undefined)
-
-      const wrapper = mount(FriendCard, {
-        global: {
-          plugins: [pinia],
-        },
-      })
+      // Must reuse the pinia from beforeEach: a fresh one bypasses the fetch mocks, so the
+      // store sits in its loading state and the tab content is never rendered.
+      const friendsStore = mockFriendsStore()
+      const wrapper = mountWithPinia(FriendCard)
 
       const tabs = wrapper.findAll('.tab-btn')
       await tabs[2].trigger('click')
+      await wrapper.vm.$nextTick()
 
       const blocked = wrapper.findComponent({ name: 'BlockedUsers' })
       await blocked.vm.$emit('unblock', 5)

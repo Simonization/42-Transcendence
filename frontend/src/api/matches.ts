@@ -4,12 +4,7 @@
  */
 
 import { api } from './index'
-import type { BackendMatch, Match, MatchStats, GameType, MatchResult } from '../types'
-
-const GAME_TYPE_MAP: Record<string, GameType> = {
-  CHESS: 'Chess',
-  LEAGUE: 'League of Legends',
-}
+import type { BackendMatch, Match, MatchStats, MatchResult } from '../types'
 
 const RESULT_MAP: Record<string, MatchResult> = {
   WIN: 'win',
@@ -22,15 +17,15 @@ const RESULT_MAP: Record<string, MatchResult> = {
  * Extracts opponent from userMatches and maps enum values
  */
 export function transformMatch(raw: BackendMatch, currentUserId: number): Match | null {
-  const myEntry = raw.userMatches.find(um => um.userId === currentUserId)
+  const myEntry = raw.userMatches?.find(um => um.user_id === currentUserId)
   if (!myEntry || myEntry.result === 'PENDING') return null
 
-  const opponentEntry = raw.userMatches.find(um => um.userId !== currentUserId)
+  const opponentEntry = raw.userMatches.find(um => um.user_id !== currentUserId)
 
   return {
     id: raw.id,
     opponent: opponentEntry?.user?.username ?? 'Unknown',
-    game: GAME_TYPE_MAP[raw.game_type] ?? 'Unknown',
+    game: raw.game?.name ?? 'Unknown',
     result: RESULT_MAP[myEntry.result],
     date: raw.created_at,
   }

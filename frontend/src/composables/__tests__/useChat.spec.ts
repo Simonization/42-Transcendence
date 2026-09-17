@@ -408,11 +408,12 @@ describe('useChat WebSocket Integration', () => {
     })
 
     it('should update room list lastMessage on incoming message', async () => {
-      mockGetRooms.mockResolvedValueOnce([
+      // Persistent, not Once: connecting the socket triggers its own rooms sync.
+      mockGetRooms.mockResolvedValue([
         { id: 1, title: 'Room 1', participants: [], isUnread: false, lastMessage: null },
       ] as any)
-      mockGetMessages.mockResolvedValueOnce([] as any)
-      mockMarkAsRead.mockResolvedValueOnce(undefined)
+      mockGetMessages.mockResolvedValue([] as any)
+      mockMarkAsRead.mockResolvedValue(undefined)
 
       const { connectSocket, fetchRooms, selectRoom, rooms } = useChat()
 
@@ -517,11 +518,12 @@ describe('useChat WebSocket Integration', () => {
     })
 
     it('should mark unread for inactive room messages', async () => {
-      mockGetRooms.mockResolvedValueOnce([
+      // Persistent, not Once: connecting the socket triggers its own rooms sync.
+      mockGetRooms.mockResolvedValue([
         { id: 1, title: 'Room 1', isUnread: false, lastMessage: null },
         { id: 2, title: 'Room 2', isUnread: false, lastMessage: null },
       ] as any)
-      mockGetMessages.mockResolvedValueOnce([] as any)
+      mockGetMessages.mockResolvedValue([] as any)
       mockMarkAsRead.mockResolvedValueOnce(undefined)
 
       const { connectSocket, fetchRooms, selectRoom, rooms } = useChat()

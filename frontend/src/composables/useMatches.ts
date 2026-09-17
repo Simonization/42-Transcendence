@@ -8,15 +8,6 @@ import { matchesApi, transformMatch, computeStats } from '../api/matches'
 import { getErrorMessage } from '../utils/error'
 import type { Match } from '../types'
 
-const DEMO_MATCHES: Match[] = [
-  { id: 901, opponent: 'alice42', game: 'Chess', result: 'win', date: '2025-09-10T14:00:00Z' },
-  { id: 902, opponent: 'bob_dev', game: 'Chess', result: 'loss', date: '2025-09-09T11:00:00Z' },
-  { id: 903, opponent: 'charlie_pong', game: 'Chess', result: 'win', date: '2025-09-08T16:00:00Z' },
-  { id: 904, opponent: 'diana_chess', game: 'Chess', result: 'draw', date: '2025-09-07T10:00:00Z' },
-  { id: 905, opponent: 'alice42', game: 'Chess', result: 'win', date: '2025-09-06T15:00:00Z' },
-  { id: 906, opponent: 'bob_dev', game: 'Chess', result: 'loss', date: '2025-09-05T13:00:00Z' },
-]
-
 export function useMatches(currentUserId: number) {
   const matches = ref<Match[]>([])
   const isLoading = ref(false)
@@ -39,9 +30,9 @@ export function useMatches(currentUserId: number) {
         .map(m => transformMatch(m, currentUserId))
         .filter((m): m is Match => m !== null)
     } catch (e) {
-      matches.value = DEMO_MATCHES
+      matches.value = []
       demoMode.value = true
-      error.value = ''
+      error.value = getErrorMessage(e, 'Failed to load match history')
     } finally {
       isLoading.value = false
     }

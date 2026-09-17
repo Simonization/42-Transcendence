@@ -14,9 +14,6 @@ import type { ChatRoom, Message, TypingUser } from '../types'
 import { io, Socket } from 'socket.io-client' 
 import { useAuthStore } from './auth'
 
-const DEMO_ROOMS: ChatRoom[] = [] 
-const DEMO_MESSAGES: Message[] = [] 
-
 
 export const useChatStore = defineStore('chat', () => {
   
@@ -36,7 +33,6 @@ export const useChatStore = defineStore('chat', () => {
   const wsConnected = ref(false)
 
   const blockedUserIds = ref<Set<number>>(new Set())
-  // const currentUserId = ref<number>(0)
   const typingUsers = ref<TypingUser[]>([])
   const typingTimers = new Map<number, ReturnType<typeof setTimeout>>()
 
@@ -54,8 +50,6 @@ export const useChatStore = defineStore('chat', () => {
     return !!partner && blockedUserIds.value.has(partner.id)
   })
   const currentRoomTypingUsers = computed(() => typingUsers.value.filter(t => t.chatId === activeRoomId.value).map(t => t.username))
-
-  const setCurrentUser = (id: number) => { currentUserId.value = id }
 
   const loadBlockedUsers = async () => {
     try {
@@ -92,9 +86,9 @@ export const useChatStore = defineStore('chat', () => {
 	try {
 	  rooms.value = await chatApi.getRooms()
 	} catch (e) {
-	  rooms.value = DEMO_ROOMS
+	  rooms.value = []
 	  demoMode.value = true
-	  error.value = ''
+	  error.value = getErrorMessage(e, 'Failed to load conversations')
 	} finally {
 	  isLoadingRooms.value = false
 	}
@@ -331,7 +325,7 @@ const sendMessage = async (content: string) => {
     rooms, activeRoomId, activeRoom, messages, isLoadingRooms, isLoadingMessages, isSending,
     error, unreadCount, demoMode, wsConnected, blockedUserIds, currentUserId, typingUsers,
     visibleRooms, isActiveRoomBlocked, currentRoomTypingUsers,
-    setCurrentUser, loadBlockedUsers, blockUserInChat, onFriendActivity,
+    loadBlockedUsers, blockUserInChat, onFriendActivity,
     emitTyping, emitStopTyping, emitJoinRoom, emitLeaveRoom, emitMarkRead,
     fetchRooms, selectRoom, sendMessage, createRoom, deleteMessage,
     connectSocket, disconnectSocket,

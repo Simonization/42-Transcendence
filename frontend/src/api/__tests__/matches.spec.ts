@@ -19,11 +19,11 @@ const mockApi = vi.mocked(apiModule.api)
 
 const makeBackendMatch = (overrides: Partial<BackendMatch> = {}): BackendMatch => ({
   id: 1,
-  game_type: 'CHESS',
+  game: { id: 1, name: 'Chess' },
   created_at: '2026-02-07T10:00:00.000Z',
   userMatches: [
-    { userId: 42, result: 'WIN', user: { id: 42, username: 'simon' } },
-    { userId: 17, result: 'LOSS', user: { id: 17, username: 'opponent' } },
+    { user_id: 42, result: 'WIN', user: { id: 42, username: 'simon' } },
+    { user_id: 17, result: 'LOSS', user: { id: 17, username: 'opponent' } },
   ],
   ...overrides,
 })
@@ -84,8 +84,8 @@ describe('Matches API', () => {
     it('should transform a LOSS match correctly', () => {
       const raw = makeBackendMatch({
         userMatches: [
-          { userId: 42, result: 'LOSS', user: { id: 42, username: 'simon' } },
-          { userId: 17, result: 'WIN', user: { id: 17, username: 'winner' } },
+          { user_id: 42, result: 'LOSS', user: { id: 42, username: 'simon' } },
+          { user_id: 17, result: 'WIN', user: { id: 17, username: 'winner' } },
         ],
       })
       const result = transformMatch(raw, 42)
@@ -98,8 +98,8 @@ describe('Matches API', () => {
     it('should transform a DRAW match correctly', () => {
       const raw = makeBackendMatch({
         userMatches: [
-          { userId: 42, result: 'DRAW', user: { id: 42, username: 'simon' } },
-          { userId: 17, result: 'DRAW', user: { id: 17, username: 'other' } },
+          { user_id: 42, result: 'DRAW', user: { id: 42, username: 'simon' } },
+          { user_id: 17, result: 'DRAW', user: { id: 17, username: 'other' } },
         ],
       })
       const result = transformMatch(raw, 42)
@@ -111,8 +111,8 @@ describe('Matches API', () => {
     it('should return null for PENDING matches', () => {
       const raw = makeBackendMatch({
         userMatches: [
-          { userId: 42, result: 'PENDING', user: { id: 42, username: 'simon' } },
-          { userId: 17, result: 'PENDING', user: { id: 17, username: 'other' } },
+          { user_id: 42, result: 'PENDING', user: { id: 42, username: 'simon' } },
+          { user_id: 17, result: 'PENDING', user: { id: 17, username: 'other' } },
         ],
       })
       const result = transformMatch(raw, 42)
@@ -127,22 +127,15 @@ describe('Matches API', () => {
       expect(result).toBeNull()
     })
 
-    it('should map game_type CHESS to Chess', () => {
-      const raw = makeBackendMatch({ game_type: 'CHESS' })
-      const result = transformMatch(raw, 42)
-
-      expect(result!.game).toBe('Chess')
-    })
-
-    it('should map game_type LEAGUE to League of Legends', () => {
-      const raw = makeBackendMatch({ game_type: 'LEAGUE' })
+    it('should use the related game name', () => {
+      const raw = makeBackendMatch({ game: { id: 7, name: 'League of Legends' } })
       const result = transformMatch(raw, 42)
 
       expect(result!.game).toBe('League of Legends')
     })
 
-    it('should map unknown game_type to Unknown', () => {
-      const raw = makeBackendMatch({ game_type: 'UNKNOWN_GAME' })
+    it('should fall back to Unknown when no game is joined', () => {
+      const raw = makeBackendMatch({ game: null })
       const result = transformMatch(raw, 42)
 
       expect(result!.game).toBe('Unknown')
@@ -151,7 +144,7 @@ describe('Matches API', () => {
     it('should handle missing opponent gracefully', () => {
       const raw = makeBackendMatch({
         userMatches: [
-          { userId: 42, result: 'WIN', user: { id: 42, username: 'simon' } },
+          { user_id: 42, result: 'WIN', user: { id: 42, username: 'simon' } },
         ],
       })
       const result = transformMatch(raw, 42)
