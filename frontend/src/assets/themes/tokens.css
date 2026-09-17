@@ -108,6 +108,9 @@ html {
   line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Backstop only: a wide child must be fixed at its source, not hidden here. `clip` rather
+     than `hidden` so the document does not become a scroll container and break position: sticky. */
+  overflow-x: clip;
 }
 
 h1, h2, h3, h4, h5, h6 {

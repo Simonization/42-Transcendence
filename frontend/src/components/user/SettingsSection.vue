@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { usersApi } from '../../api/users'
 import { useThemeStore } from '../../stores/theme'
@@ -19,7 +20,8 @@ const emit = defineEmits<{
 const { t, locale } = useI18n()
 
 const themeStore = useThemeStore()
-const { toggleTheme, themeName } = themeStore
+const { themeName } = storeToRefs(themeStore)
+const { toggleTheme } = themeStore
 const { message, messageType, handleError, handleSuccess, clearMessage } = useErrorHandler()
 
 const isSaving = ref(false)

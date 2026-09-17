@@ -503,7 +503,7 @@ function formatDate(iso: string): string {
 /* Responsive */
 @media (max-width: 768px) {
   .bracket-column {
-    min-width: calc(100vw - var(--space-8) * 2);
+    min-width: calc(100% - var(--space-8) * 2);
   }
 
   .round-indicators {
@@ -546,7 +546,7 @@ function formatDate(iso: string): string {
 
 @media (max-width: 480px) {
   .bracket-column {
-    min-width: calc(100vw - var(--space-4) * 2);
+    min-width: calc(100% - var(--space-4) * 2);
   }
 
   .bracket-grid {

@@ -3,7 +3,6 @@ import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useThemeStore } from '../stores/theme'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import SearchModal from '../components/common/SearchModal.vue'
 import NotificationBell from '../components/notifications/NotificationBell.vue'
@@ -17,8 +16,6 @@ const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const { logout } = authStore
-const themeStore = useThemeStore()
-const { theme } = themeStore
 const { connectSocket, disconnectSocket, rooms: chatRooms, unreadCount, fetchRooms, onFriendActivity } = useChat()
 const { isOpen: searchOpen, openSearch, closeSearch } = useSearch()
 const friendsStore = useFriendsStore()
@@ -71,7 +68,7 @@ const navItems = computed(() => {
 </script>
 
 <template>
-  <div class="menu-layout" :data-theme="theme">
+  <div class="menu-layout">
     <!-- Animated background layer -->
     <div class="menu-background">
       <div class="bg-pattern"></div>
@@ -211,6 +208,7 @@ const navItems = computed(() => {
   display: flex;
   align-items: baseline;
   gap: var(--space-4);
+  min-width: 0;
 }
 
 .menu-title-link {
@@ -235,6 +233,7 @@ const navItems = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  min-width: 0;
 }
 
 .menu-search-btn {
@@ -439,6 +438,30 @@ const navItems = computed(() => {
 
 /* Mobile responsive - bottom tab bar */
 @media (max-width: 768px) {
+  /* The header's min-content width is ~700px (unbreakable Orbitron wordmark + four actions),
+     so without wrapping and these reductions it alone pushes the document past the viewport. */
+  .menu-header {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .menu-title {
+    font-size: var(--text-base);
+    letter-spacing: var(--tracking-wider);
+  }
+
+  .menu-header-left .hud-serial {
+    display: none;
+  }
+
+  .menu-header-actions {
+    gap: var(--space-2);
+  }
+
+  /* Up to 9 modules, so a 5-column grid wraps to two rows rather than overflowing sideways.
+     The base rule's overflow-y makes overflow-x compute to auto, which is what allowed the
+     strip to be swiped horizontally, so both axes are reset here. */
   .menu-modules {
     top: auto;
     bottom: 0;
@@ -446,25 +469,35 @@ const navItems = computed(() => {
     right: 0;
     width: 100%;
     height: auto;
-    flex-direction: row;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-1);
     padding: var(--space-2);
+    overflow: visible;
     border-right: none;
     border-top: 1px solid var(--glass-border);
   }
 
   .module-btn {
-    flex: 1;
     min-width: 0;
+    padding: var(--space-2) var(--space-1);
   }
 
   .module-label {
     font-size: 8px;
+    letter-spacing: var(--tracking-wide);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Clears the two-row fixed tab bar for the content and the footer alike. */
+  .menu-layout {
+    padding-bottom: 132px;
   }
 
   .menu-content {
     padding: var(--space-4);
-    padding-bottom: calc(80px + var(--space-4));
   }
 }
 </style>

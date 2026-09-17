@@ -7,7 +7,6 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAccessToken } from '../api'
-import { useThemeStore } from '../stores/theme'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import ShaderButton from '../components/hud/ShaderButton.vue'
 import HeroSection from '../components/landing/HeroSection.vue'
@@ -17,14 +16,11 @@ import BrowseTournamentsLink from '../components/landing/BrowseTournamentsLink.v
 
 const router = useRouter()
 
-const themeStore = useThemeStore()
-const { theme } = themeStore
-
 const hasToken = computed(() => !!getAccessToken())
 </script>
 
 <template>
-  <div class="landing" :data-theme="theme">
+  <div class="landing">
     <!-- Animated background layer -->
     <div class="landing-background">
       <div class="bg-pattern"></div>
@@ -278,5 +274,33 @@ const hasToken = computed(() => !!getAccessToken())
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   letter-spacing: var(--tracking-wider);
+}
+
+/* Same unshrinkable-header problem as MenuLayout: the wordmark plus the sign-in button exceed
+   a phone viewport, and nothing here wrapped or reduced. */
+@media (max-width: 768px) {
+  .landing-header {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .landing-header-left {
+    min-width: 0;
+  }
+
+  .landing-header-actions {
+    min-width: 0;
+    gap: var(--space-2);
+  }
+
+  .landing-title {
+    font-size: var(--text-base);
+    letter-spacing: var(--tracking-wider);
+  }
+
+  .landing-header-left .hud-serial {
+    display: none;
+  }
 }
 </style>

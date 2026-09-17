@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useThemeStore } from '../../stores/theme'
@@ -12,7 +13,8 @@ const WS_TEST_TIMEOUT = 3000
 const { t } = useI18n()
 const { user } = useAuthStore()
 const themeStore = useThemeStore()
-const { theme, setTheme, themeName } = themeStore
+const { theme, themeName } = storeToRefs(themeStore)
+const { setTheme } = themeStore
 const { uptime } = useChat()
 const { logs, selectedLog, filter, clearLogs } = useApiLogger()
 

@@ -273,4 +273,33 @@ describe('useThemeStore', () => {
       }
     })
   })
+
+  describe('exclusive ownership of data-theme', () => {
+    const sources = import.meta.glob(
+      ['../../pages/**/*.vue', '../../layouts/**/*.vue', '../../components/**/*.vue'],
+      { query: '?raw', import: 'default', eager: true },
+    ) as Record<string, string>
+
+    // The palettes are scoped with unqualified `[data-theme="..."]` selectors, so a second
+    // data-theme anywhere below <html> re-declares every colour token for that subtree and
+    // out-inherits the store's update — the toggle then only appears to work after a reload.
+    it('is not re-declared by any component', () => {
+      const offenders = Object.entries(sources)
+        .filter(([, src]) => src.includes('data-theme'))
+        .map(([path]) => path)
+
+      expect(offenders).toEqual([])
+    })
+
+    // Destructuring a Pinia setup store unwraps refs into values frozen at setup time.
+    it('is not read through a non-reactive store destructure', () => {
+      const offenders = Object.entries(sources)
+        .filter(([, src]) =>
+          /const\s*\{[^}]*\b(theme|themeName|isDark)\b[^}]*\}\s*=\s*themeStore\b/.test(src),
+        )
+        .map(([path]) => path)
+
+      expect(offenders).toEqual([])
+    })
+  })
 })

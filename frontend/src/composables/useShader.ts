@@ -10,8 +10,13 @@ export interface ShaderParams {
   u_angle?: number
   u_scale?: number
   u_shape?: number
+  u_rotation?: number
+  u_originX?: number
+  u_originY?: number
   u_offsetX?: number
   u_offsetY?: number
+  u_worldWidth?: number
+  u_worldHeight?: number
 }
 
 interface UseShaderOptions {
@@ -29,10 +34,16 @@ const DEFAULT_PARAMS: ShaderParams = {
   u_distortion: 0,
   u_contour: 0,
   u_angle: 45,
-  u_scale: 8,
-  u_shape: 1,
-  u_offsetX: 0.1,
-  u_offsetY: -0.1,
+  // Sizing uniforms have no shader-side defaults: anything omitted arrives as 0, which anchors
+  // the shape at the canvas corner instead of its centre and covers only part of the button.
+  u_scale: 4,
+  u_rotation: 0,
+  u_originX: 0.5,
+  u_originY: 0.5,
+  u_offsetX: 0,
+  u_offsetY: 0,
+  u_worldWidth: 0,
+  u_worldHeight: 0,
 }
 
 // Global shader instance counter
@@ -52,33 +63,13 @@ function hasWebGL(): boolean {
   return _webglSupported!
 }
 
-// Inject global style for shader canvas once
-let styleInjected = false
-function injectShaderStyle() {
-  if (styleInjected) return
-  const style = document.createElement('style')
-  style.id = 'hud-shader-canvas-style'
-  style.textContent = `
-    .shader-container canvas {
-      width: 100% !important;
-      height: 100% !important;
-      display: block !important;
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-    }
-  `
-  document.head.appendChild(style)
-  styleInjected = true
-}
-
 export function useShader(options: UseShaderOptions) {
   const { container, params = {}, speed: initialSpeed = 0.6, enabled = true } = options
   const isLoaded = ref(false)
   const error = ref<string | null>(null)
   const webglSupported = ref(hasWebGL())
   // ShaderMount from @paper-design/shaders — no exported type available
-  let shaderMount: { setSpeed?: (s: number) => void; destroy?: () => void; [k: string]: unknown } | null = null
+  let shaderMount: { setSpeed?: (s: number) => void; dispose?: () => void; [k: string]: unknown } | null = null
   let currentSpeed = initialSpeed
 
   const setSpeed = (speed: number) => {
@@ -95,11 +86,10 @@ export function useShader(options: UseShaderOptions) {
   }
 
   const destroy = () => {
-    if (shaderMount?.destroy) {
-      shaderMount.destroy()
-      shaderMount = null
-      activeShaderCount--
-    }
+    if (!shaderMount) return
+    shaderMount.dispose?.()
+    shaderMount = null
+    activeShaderCount--
   }
 
   const handleVisibility = () => {
@@ -127,17 +117,24 @@ export function useShader(options: UseShaderOptions) {
       return
     }
 
-    injectShaderStyle()
-
     try {
-      const { liquidMetalFragmentShader, ShaderMount } = await import('@paper-design/shaders')
+      const { liquidMetalFragmentShader, ShaderMount, ShaderFitOptions, LiquidMetalShapes } =
+        await import('@paper-design/shaders')
 
       if (!container.value) return
 
       shaderMount = new ShaderMount(
         container.value,
         liquidMetalFragmentShader,
-        { ...DEFAULT_PARAMS, ...params },
+        {
+          u_fit: ShaderFitOptions.cover,
+          u_shape: LiquidMetalShapes.circle,
+          u_isImage: false,
+          u_colorBack: [0, 0, 0, 0],
+          u_colorTint: [1, 1, 1, 1],
+          ...DEFAULT_PARAMS,
+          ...params,
+        },
         undefined,
         initialSpeed,
       )

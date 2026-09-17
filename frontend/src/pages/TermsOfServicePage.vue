@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { useThemeStore } from '../stores/theme'
 import ThemeToggle from '../components/ThemeToggle.vue'
-
-const themeStore = useThemeStore()
-const { theme } = themeStore
 </script>
 
 <template>
-  <div class="legal-page" :data-theme="theme">
+  <div class="legal-page">
     <div class="legal-background">
       <div class="bg-pattern"></div>
       <div class="bg-gradient"></div>

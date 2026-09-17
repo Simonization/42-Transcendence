@@ -127,4 +127,11 @@ const toggleTheme = () => {
   color: var(--text-secondary);
   min-width: 50px;
 }
+
+/* The track alone still conveys state, and the button keeps its aria-label. */
+@media (max-width: 768px) {
+  .theme-label {
+    display: none;
+  }
+}
 </style>
