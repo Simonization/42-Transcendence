@@ -4,13 +4,17 @@
  * Fetches all planned/active tournaments from the backend and displays them in a carousel.
  */
 
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { tournamentsApi } from '../../api/tournaments'
 import { getAccessToken } from '../../api'
 import { TournamentStatus } from '../../types'
 import type { BackendTournament } from '../../types'
+
+const props = defineProps<{
+  tournaments: BackendTournament[]
+  isLoading?: boolean
+}>()
 
 const { t } = useI18n()
 const router = useRouter()
@@ -18,28 +22,19 @@ const scrollContainer = ref<HTMLElement | null>(null)
 
 const isLoggedIn = computed(() => !!getAccessToken())
 
-const tournaments = ref<BackendTournament[]>([])
-const isLoading = ref(false)
+const isLoading = computed(() => props.isLoading ?? false)
 
-onMounted(async () => {
-  isLoading.value = true
-  try {
-    const all = await tournamentsApi.getAll()
-    tournaments.value = all
-      .filter(bt => bt.status !== TournamentStatus.COMPLETED)
-      .sort((a, b) => {
-        if (a.scheduledAt && b.scheduledAt)
-          return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
-        if (a.scheduledAt) return -1
-        if (b.scheduledAt) return 1
-        return 0
-      })
-  } catch {
-    tournaments.value = []
-  } finally {
-    isLoading.value = false
-  }
-})
+const tournaments = computed(() =>
+  props.tournaments
+    .filter(bt => bt.status !== TournamentStatus.COMPLETED)
+    .sort((a, b) => {
+      if (a.scheduledAt && b.scheduledAt)
+        return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+      if (a.scheduledAt) return -1
+      if (b.scheduledAt) return 1
+      return 0
+    }),
+)
 
 function handleRegister(bt: BackendTournament) {
   if (!isLoggedIn.value) {

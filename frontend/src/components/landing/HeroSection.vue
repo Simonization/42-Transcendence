@@ -7,19 +7,35 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAccessToken } from '../../api'
-import { mockTournaments } from '../../data/mockTournaments'
+import { TournamentStatus } from '../../types'
+import type { BackendTournament } from '../../types'
 import ShaderButton from '../hud/ShaderButton.vue'
+
+const props = defineProps<{
+  tournaments: BackendTournament[]
+}>()
 
 const router = useRouter()
 
 const hasToken = computed(() => !!getAccessToken())
 
 const activeTournaments = computed(() =>
-  mockTournaments.filter(t => t.status === 'open' || t.status === 'live')
+  props.tournaments.filter(
+    t =>
+      t.status === TournamentStatus.REGISTRATION_OPEN ||
+      t.status === TournamentStatus.ONGOING,
+  ),
 )
 
 const totalParticipants = computed(() =>
-  mockTournaments.reduce((sum, t) => sum + t.currentParticipants, 0)
+  props.tournaments.reduce((sum, t) => sum + (t.teams?.length ?? 0), 0),
+)
+
+const gameTitles = computed(
+  () =>
+    new Set(
+      props.tournaments.flatMap(t => (t.phases ?? []).map(p => p.game?.name).filter(Boolean)),
+    ).size,
 )
 
 const handleBrowseTournaments = () => {
@@ -61,7 +77,7 @@ const handleCreateAccount = () => {
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-value">6</span>
+          <span class="stat-value">{{ gameTitles }}</span>
           <span class="stat-label">{{ $t('landing.gameTitles') }}</span>
         </div>
       </div>

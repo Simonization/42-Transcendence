@@ -5,7 +5,7 @@
 
 import type { BackendTournament } from '../types'
 import { TournamentStatus, PhaseType } from '../types'
-import type { Tournament } from '../data/mockTournaments'
+import type { Tournament } from '../types'
 
 const statusMap: Record<TournamentStatus, Tournament['status']> = {
   [TournamentStatus.DRAFT]: 'open',

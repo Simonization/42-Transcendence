@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { tournamentsApi } from '../api/tournaments'
 import { usersApi } from '../api/users'
 import type { BackendTournament } from '../types'
-import type { Tournament } from '../data/mockTournaments'
+import type { Tournament } from '../types'
 import type { Friend, ChatRoom, User } from '../types'
 
 export type SearchTab = 'tournaments' | 'users' | 'rooms'

@@ -7,16 +7,25 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAccessToken } from '../../api'
-import { mockTournaments } from '../../data/mockTournaments'
+import { TournamentStatus } from '../../types'
+import type { BackendTournament } from '../../types'
+
+const props = defineProps<{
+  tournaments: BackendTournament[]
+}>()
 
 const router = useRouter()
 
 const hasToken = computed(() => !!getAccessToken())
 
-const totalTournaments = computed(() => mockTournaments.length)
+const totalTournaments = computed(() => props.tournaments.length)
 
 const upcomingTournaments = computed(() =>
-  mockTournaments.filter(t => t.status === 'open' || t.status === 'live')
+  props.tournaments.filter(
+    t =>
+      t.status === TournamentStatus.REGISTRATION_OPEN ||
+      t.status === TournamentStatus.ONGOING,
+  ),
 )
 
 const handleBrowse = () => {

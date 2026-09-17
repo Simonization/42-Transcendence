@@ -4,7 +4,7 @@
  * Shows tournament summary with game, date, status, participants
  */
 
-import type { Tournament } from '../../data/mockTournaments'
+import type { Tournament } from '../../types'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 

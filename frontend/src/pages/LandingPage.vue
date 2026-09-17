@@ -4,9 +4,10 @@
  * Accessible without authentication - shows esports links, hero, featured tournaments
  */
 
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAccessToken } from '../api'
+import { useTournaments } from '../composables/useTournaments'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import ShaderButton from '../components/hud/ShaderButton.vue'
 import HeroSection from '../components/landing/HeroSection.vue'
@@ -17,6 +18,10 @@ import BrowseTournamentsLink from '../components/landing/BrowseTournamentsLink.v
 const router = useRouter()
 
 const hasToken = computed(() => !!getAccessToken())
+
+// One fetch for the whole page; the three sections below all read from it.
+const { tournaments, isLoading, fetchTournaments } = useTournaments()
+onMounted(fetchTournaments)
 </script>
 
 <template>
@@ -56,15 +61,15 @@ const hasToken = computed(() => !!getAccessToken())
 
     <main class="landing-main">
       <!-- Hero Section -->
-      <HeroSection />
+      <HeroSection :tournaments="tournaments" />
 
       <!-- Featured Tournaments Carousel -->
-      <FeaturedTournamentsSection />
+      <FeaturedTournamentsSection :tournaments="tournaments" :is-loading="isLoading" />
 
       <!-- Browse Grid -->
       <div class="landing-grid">
         <EsportsLinksCard class="glass-card" />
-        <BrowseTournamentsLink class="glass-card" />
+        <BrowseTournamentsLink class="glass-card" :tournaments="tournaments" />
       </div>
     </main>
 

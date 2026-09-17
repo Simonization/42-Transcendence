@@ -90,6 +90,7 @@ export {
 
 // Tournament types
 export {
+  type Tournament,
   type BackendTournament,
   type BackendPhase,
   type BackendTeam,

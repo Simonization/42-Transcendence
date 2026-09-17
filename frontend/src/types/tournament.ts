@@ -160,3 +160,24 @@ export interface UpdateGameDto {
   team_count?: number
   team_size?: number
 }
+
+/** View-model a tournament card renders; produced from BackendTournament by tournamentMapper. */
+export interface Tournament {
+  id: string
+  name: string
+  game: string
+  date: string
+  endDate: string
+  status: 'open' | 'live' | 'finished'
+  maxParticipants: number
+  currentParticipants: number
+  format: 'single-elimination' | 'double-elimination' | 'round-robin'
+  description: string
+  rules: string
+  prize: string
+  organizer: {
+    name: string
+    avatar: string
+  }
+  featured?: boolean
+}
