@@ -10,12 +10,11 @@ import { useAuthStore } from '../../stores/auth'
 import DashboardTab from '../../components/admin/DashboardTab.vue'
 import CreateTournamentTab from '../../components/admin/CreateTournamentTab.vue'
 import MyTournamentsTab from '../../components/admin/MyTournamentsTab.vue'
-import ParticipantsTab from '../../components/admin/ParticipantsTab.vue'
 import ManageUsersTab from '../../components/admin/ManageUsersTab.vue'
 import ManageGamesTab from '../../components/admin/ManageGamesTab.vue'
 import SuperAdminTab from '../../components/admin/SuperAdminTab.vue'
 
-type AdminTab = 'dashboard' | 'create' | 'tournaments' | 'games' | 'participants' | 'users' | 'superadmin'
+type AdminTab = 'dashboard' | 'create' | 'tournaments' | 'games' | 'users' | 'superadmin'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -36,7 +35,6 @@ const tabs = computed(() => {
     { id: 'create', label: t('admin.create'), icon: '➕' },
     { id: 'tournaments', label: t('admin.tournaments'), icon: '🏆' },
     { id: 'games', label: t('admin.gamesTab'), icon: '🎮' },
-    { id: 'participants', label: t('admin.participantsTab'), icon: '👥' },
     { id: 'users', label: t('admin.usersTab'), icon: '🛡' },
   ]
   if (authStore.isSuperAdmin) {
@@ -77,7 +75,6 @@ const tabs = computed(() => {
       <CreateTournamentTab v-show="activeTab === 'create'" class="tab-pane glass-panel" @tournament-created="onTournamentCreated" />
       <MyTournamentsTab :key="tournamentsKey" v-show="activeTab === 'tournaments'" class="tab-pane glass-panel" />
       <ManageGamesTab v-show="activeTab === 'games'" class="tab-pane glass-panel" />
-      <ParticipantsTab v-show="activeTab === 'participants'" class="tab-pane glass-panel" />
       <ManageUsersTab v-show="activeTab === 'users'" class="tab-pane glass-panel" />
       <SuperAdminTab v-if="authStore.isSuperAdmin" v-show="activeTab === 'superadmin'" class="tab-pane glass-panel" />
     </main>
@@ -675,12 +672,6 @@ const tabs = computed(() => {
   margin-right: var(--space-1);
 }
 
-/* Participants Preview */
-.participants-preview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
 
 .search-container {
   position: relative;

@@ -28,7 +28,10 @@ const activeTournaments = computed(() =>
 )
 
 const totalParticipants = computed(() =>
-  props.tournaments.reduce((sum, t) => sum + (t.teams?.length ?? 0), 0),
+  props.tournaments.reduce(
+    (sum, t) => sum + (t.teams ?? []).reduce((n, team) => n + (team.members?.length ?? 0), 0),
+    0,
+  ),
 )
 
 const gameTitles = computed(

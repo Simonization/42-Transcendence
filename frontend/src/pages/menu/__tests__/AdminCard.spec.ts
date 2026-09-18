@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import AdminCard from '../AdminCard.vue'
 import { useAuthStore } from '../../../stores/auth'
@@ -79,7 +79,7 @@ describe('AdminCard', () => {
       expect(wrapper.text()).toContain('CREATE')
       expect(wrapper.text()).toContain('TOURNAMENTS')
       expect(wrapper.text()).toContain('GAMES')
-      expect(wrapper.text()).toContain('PARTICIPANTS')
+      expect(wrapper.text()).toContain('USERS')
     })
   })
 
@@ -90,39 +90,21 @@ describe('AdminCard', () => {
       expect(wrapper.text()).toContain('DASHBOARD OVERVIEW')
     })
 
-    it('should display all stat cards', () => {
+    it('should display the stat cards', () => {
       const wrapper = mount(AdminCard)
 
-      const stats = wrapper.findAll('.stat-card')
-      expect(stats.length).toBe(4)
+      expect(wrapper.findAll('.stat-card').length).toBe(3)
     })
 
-    it('should show active tournaments stat', () => {
+    it('should derive stats from the tournament list rather than hardcoding them', async () => {
       const wrapper = mount(AdminCard)
+      await flushPromises()
 
+      // The API is stubbed with an empty list, so honest stats are all zero.
       expect(wrapper.text()).toContain('Active Tournaments')
-      expect(wrapper.text()).toContain('3')
-    })
-
-    it('should show total participants stat', () => {
-      const wrapper = mount(AdminCard)
-
       expect(wrapper.text()).toContain('Total Participants')
-      expect(wrapper.text()).toContain('148')
-    })
-
-    it('should show matches today stat', () => {
-      const wrapper = mount(AdminCard)
-
-      expect(wrapper.text()).toContain('Matches Today')
-      expect(wrapper.text()).toContain('12')
-    })
-
-    it('should show pending registrations stat', () => {
-      const wrapper = mount(AdminCard)
-
       expect(wrapper.text()).toContain('Pending Registrations')
-      expect(wrapper.text()).toContain('7')
+      expect(wrapper.text()).not.toContain('148')
     })
 
     it('should display quick actions section', () => {
@@ -139,43 +121,6 @@ describe('AdminCard', () => {
 
       const badges = wrapper.findAll('.v2-badge-small')
       expect(badges.length).toBeGreaterThan(0)
-    })
-
-    it('should display recent activity feed', () => {
-      const wrapper = mount(AdminCard)
-
-      expect(wrapper.text()).toContain('RECENT ACTIVITY')
-    })
-
-    it('should show 5 activity items', () => {
-      const wrapper = mount(AdminCard)
-
-      const activityItems = wrapper.findAll('.activity-item')
-      expect(activityItems.length).toBe(5)
-    })
-
-    it('should display activity event names', () => {
-      const wrapper = mount(AdminCard)
-
-      expect(wrapper.text()).toContain('Spring Championship registered')
-      expect(wrapper.text()).toContain('New user signup')
-      expect(wrapper.text()).toContain('Match result submitted')
-    })
-
-    it('should display activity timestamps', () => {
-      const wrapper = mount(AdminCard)
-
-      expect(wrapper.text()).toContain('2 hours ago')
-      expect(wrapper.text()).toContain('4 hours ago')
-      expect(wrapper.text()).toContain('6 hours ago')
-    })
-
-    it('should display activity icons', () => {
-      const wrapper = mount(AdminCard)
-
-      expect(wrapper.text()).toContain('🏆')
-      expect(wrapper.text()).toContain('👤')
-      expect(wrapper.text()).toContain('📊')
     })
   })
 
@@ -253,81 +198,6 @@ describe('AdminCard', () => {
     })
   })
 
-  describe('Participants Tab', () => {
-    it('should display participants management tab when clicked', async () => {
-      const wrapper = mount(AdminCard)
-
-      const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[4]
-
-      await participantsTab.trigger('click')
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.text()).toContain('PARTICIPANTS')
-    })
-
-    it('should display participant list with headers', async () => {
-      const wrapper = mount(AdminCard)
-
-      const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[4]
-
-      await participantsTab.trigger('click')
-
-      const headers = wrapper.findAll('thead th, th')
-      expect(headers.length).toBeGreaterThan(0)
-    })
-
-    it('should show 4 mock participants', async () => {
-      const wrapper = mount(AdminCard)
-
-      const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[4]
-
-      await participantsTab.trigger('click')
-
-      const rows = wrapper.findAll('tbody tr, tr')
-      // At least 4 participants or empty state
-      expect(rows.length).toBeGreaterThanOrEqual(0)
-    })
-
-    it('should display participant usernames', async () => {
-      const wrapper = mount(AdminCard)
-
-      const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[4]
-
-      await participantsTab.trigger('click')
-
-      expect(wrapper.text()).toContain('admin_user')
-      expect(wrapper.text()).toContain('player_alpha')
-    })
-
-    it('should display participant roles', async () => {
-      const wrapper = mount(AdminCard)
-
-      const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[4]
-
-      await participantsTab.trigger('click')
-
-      expect(wrapper.text()).toContain('Admin')
-      expect(wrapper.text()).toContain('Player')
-    })
-
-    it('should display participant status', async () => {
-      const wrapper = mount(AdminCard)
-
-      const tabs = wrapper.findAll('.tab-btn')
-      const participantsTab = tabs[4]
-
-      await participantsTab.trigger('click')
-
-      expect(wrapper.text()).toContain('active')
-      expect(wrapper.text()).toContain('inactive')
-    })
-  })
-
   describe('Tab Switching', () => {
     it('should switch from dashboard to create tab', async () => {
       const wrapper = mount(AdminCard)
@@ -365,10 +235,10 @@ describe('AdminCard', () => {
       await wrapper.vm.$nextTick()
       expect(wrapper.text()).toContain('MANAGE GAMES')
 
-      // Tab 4: Participants
+      // Tab 4: Users
       await tabs[4].trigger('click')
       await wrapper.vm.$nextTick()
-      expect(wrapper.text()).toContain('PARTICIPANTS')
+      expect(wrapper.text()).toContain('MANAGE USERS')
     })
 
     it('should highlight active tab', async () => {
@@ -421,14 +291,7 @@ describe('AdminCard', () => {
       expect(statsGrid.exists()).toBe(true)
 
       const statCards = statsGrid.findAll('.stat-card')
-      expect(statCards.length).toBe(4)
-    })
-
-    it('should render activity feed as list', () => {
-      const wrapper = mount(AdminCard)
-
-      const activityList = wrapper.find('.activity-list')
-      expect(activityList.exists()).toBe(true)
+      expect(statCards.length).toBe(3)
     })
 
     it('should have proper spacing with design tokens', () => {
@@ -454,7 +317,7 @@ describe('AdminCard', () => {
       const wrapper = mount(AdminCard)
 
       const statCards = wrapper.findAll('.stat-card')
-      expect(statCards.length).toBe(4)
+      expect(statCards.length).toBe(3)
 
       // Each stat should have an icon
       statCards.forEach(card => {

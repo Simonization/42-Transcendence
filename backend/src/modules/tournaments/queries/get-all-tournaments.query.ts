@@ -9,8 +9,9 @@ export class GetAllTournamentsQuery {
     
     async execute() {
         return await this.repo.find({
-            // teams is needed for participant counts; without it every list view reports 0.
-            relations: ['phases', 'phases.game', 'teams'],
+            // teams and their members are needed for participant counts; without them every
+            // list view reports 0.
+            relations: ['phases', 'phases.game', 'teams', 'teams.members'],
             order: { createdAt: 'DESC' }
         });
     }

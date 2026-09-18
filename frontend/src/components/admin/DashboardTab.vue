@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { tournamentsApi } from '../../api/tournaments'
+import { TeamStatus, TournamentStatus } from '../../types'
+import type { BackendTournament } from '../../types'
 
 const emit = defineEmits<{
   (e: 'navigate-tab', tab: string): void
@@ -8,20 +11,24 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const stats = computed(() => ({
-  activeTournaments: 3,
-  totalParticipants: 148,
-  matchesToday: 12,
-  pendingRegistrations: 7,
-}))
+const tournaments = ref<BackendTournament[]>([])
 
-const recentActivity = [
-  { id: '1', event: 'Spring Championship registered', time: '2 hours ago', icon: '🏆' },
-  { id: '2', event: 'New user signup', time: '4 hours ago', icon: '👤' },
-  { id: '3', event: 'Match result submitted', time: '6 hours ago', icon: '📊' },
-  { id: '4', event: 'Team registration completed', time: '1 day ago', icon: '👥' },
-  { id: '5', event: 'Tournament bracket generated', time: '2 days ago', icon: '🏅' },
-]
+onMounted(async () => {
+  // Stats simply read zero if this fails; the tabs themselves report their own errors.
+  tournaments.value = await tournamentsApi.getAll().catch(() => [])
+})
+
+const allTeams = computed(() => tournaments.value.flatMap(tr => tr.teams ?? []))
+
+const stats = computed(() => ({
+  activeTournaments: tournaments.value.filter(
+    tr =>
+      tr.status === TournamentStatus.REGISTRATION_OPEN ||
+      tr.status === TournamentStatus.ONGOING,
+  ).length,
+  totalParticipants: allTeams.value.reduce((n, team) => n + (team.members?.length ?? 0), 0),
+  pendingRegistrations: allTeams.value.filter(team => team.status === TeamStatus.DRAFT).length,
+}))
 </script>
 
 <template>
@@ -43,14 +50,6 @@ const recentActivity = [
         <div class="stat-info">
           <span class="stat-label">{{ t('admin.totalParticipants') }}</span>
           <span class="stat-value">{{ stats.totalParticipants }}</span>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">📊</div>
-        <div class="stat-info">
-          <span class="stat-label">{{ t('admin.matchesToday') }}</span>
-          <span class="stat-value">{{ stats.matchesToday }}</span>
         </div>
       </div>
 
@@ -84,19 +83,6 @@ const recentActivity = [
       </div>
     </div>
 
-    <!-- Recent Activity Feed -->
-    <div class="activity-feed">
-      <h3 class="activity-feed-title">{{ t('admin.recentActivity') }}</h3>
-      <ul class="activity-list">
-        <li v-for="activity in recentActivity" :key="activity.id" class="activity-item">
-          <span class="activity-icon">{{ activity.icon }}</span>
-          <div class="activity-content">
-            <span class="activity-event">{{ activity.event }}</span>
-            <span class="activity-time">{{ activity.time }}</span>
-          </div>
-        </li>
-      </ul>
-    </div>
   </div>
 </template>
 
@@ -231,63 +217,11 @@ const recentActivity = [
   margin-top: var(--space-1);
 }
 
-.activity-feed {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
 
-.activity-feed-title {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-  letter-spacing: var(--tracking-widest);
-  color: var(--text-primary);
-  text-transform: uppercase;
-}
 
-.activity-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
 
-.activity-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background: var(--bg-tertiary);
-  border: var(--hud-border) solid var(--border-subtle);
-  border-left: 3px solid var(--accent-primary);
-}
 
-.activity-icon {
-  font-size: var(--text-2xl);
-  flex-shrink: 0;
-}
 
-.activity-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  flex: 1;
-  min-width: 0;
-}
 
-.activity-event {
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-}
 
-.activity-time {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  letter-spacing: var(--tracking-wider);
-}
 </style>
