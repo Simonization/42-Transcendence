@@ -9,8 +9,8 @@ import {
 export class UpdateSettingsDto {
     @IsOptional()
     @IsString()
-    @IsIn(['en', 'fr', 'tr', 'nl', 'ko'], {
-        message: 'Language must be one of: en, fr, tr, nl, ko',
+    @IsIn(['en', 'fr', 'tr'], {
+        message: 'Language must be one of: en, fr, tr',
     })
     language?: string;
 

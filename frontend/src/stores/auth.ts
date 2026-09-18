@@ -9,6 +9,7 @@ import { usersApi } from '../api/users'
 import { authApi } from '../api/auth'
 import { getAccessToken } from '../api'
 import { i18n } from '../i18n'
+import { settingToTheme, useThemeStore } from './theme'
 import { UserRole } from '../types'
 import type { User } from '../types'
 
@@ -39,6 +40,10 @@ export const useAuthStore = defineStore('auth', () => {
         i18n.global.locale.value = userData.settings.language
         localStorage.setItem('locale', userData.settings.language)
       }
+
+      // The saved theme wins over this device's localStorage, so it follows the account.
+      const savedTheme = settingToTheme(userData.settings?.theme)
+      if (savedTheme) useThemeStore().setTheme(savedTheme)
 
       return true
     } catch {

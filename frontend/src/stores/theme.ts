@@ -38,6 +38,17 @@ export function initThemeBeforeMount(): void {
   applyThemeToDocument(getStoredTheme())
 }
 
+/** user_settings.theme is 0 = follow the device, 1 = light (Stellar), 2 = dark (Dragon). */
+export function settingToTheme(value: number | null | undefined): ThemeMode | null {
+  if (value === 1) return 'stellar'
+  if (value === 2) return 'dragon'
+  return null
+}
+
+export function themeToSetting(theme: ThemeMode): number {
+  return theme === 'dragon' ? 2 : 1
+}
+
 export const useThemeStore = defineStore('theme', () => {
   const theme = ref<ThemeMode>(getStoredTheme())
 

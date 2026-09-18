@@ -16,7 +16,7 @@ export interface UserProfile {
 export interface UserSettings {
   userId: number;
   /** Supported languages */
-  language: 'en' | 'fr' | 'tr' | 'nl' | 'ko';
+  language: SupportedLanguage;
   timezone: string | null;
   /** 0 = System, 1 = Light, 2 = Dark */
   theme: 0 | 1 | 2;
@@ -55,7 +55,7 @@ export interface UpdateProfileDto {
 
 /** DTO for updating user settings */
 export interface UpdateSettingsDto {
-  language?: 'en' | 'fr' | 'tr' | 'nl' | 'ko';
+  language?: SupportedLanguage;
   timezone?: string;
   theme?: 0 | 1 | 2;
   openMessage?: boolean;
@@ -73,5 +73,6 @@ export const UserRole = { USER: 0, ADMIN: 1, SUPER_ADMIN: 2, BOT: 999 } as const
 export type UserRoleValue = typeof UserRole[keyof typeof UserRole]
 
 /** Language options */
-export const SUPPORTED_LANGUAGES = ['en', 'fr', 'tr', 'nl', 'ko'] as const;
+/** Only locales with a translation file; i18n/index.ts filters to the same set. */
+export const SUPPORTED_LANGUAGES = ['en', 'fr', 'tr'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];

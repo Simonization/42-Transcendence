@@ -56,11 +56,14 @@ const router = createRouter({
           name: 'chat',
           component: () => import('../pages/menu/ChatCard.vue'),
         },
-        {
-          path: 'dev',
-          name: 'dev',
-          component: () => import('../pages/menu/DevCard.vue'),
-        },
+        // Exposes request/response bodies and an access-token prefix, so dev builds only.
+        ...(import.meta.env.DEV
+          ? [{
+              path: 'dev',
+              name: 'dev',
+              component: () => import('../pages/menu/DevCard.vue'),
+            }]
+          : []),
         {
           path: 'history',
           name: 'match-history',
@@ -103,14 +106,17 @@ const router = createRouter({
             }
 
             const authStore = useAuthStore()
-            return authStore.isAdmin ? true : '/menu/admin-register'
+            return authStore.isAdmin ? true : '/menu/user'
           },
         },
-        {
-          path: 'admin-register',
-          name: 'admin-register',
-          component: () => import('../pages/menu/AdminInviteTest.vue'),
-        },
+        // Super-admin bootstrap form: dev builds only, and never a redirect target.
+        ...(import.meta.env.DEV
+          ? [{
+              path: 'admin-register',
+              name: 'admin-register',
+              component: () => import('../pages/menu/AdminInviteTest.vue'),
+            }]
+          : []),
       ],
     },
 

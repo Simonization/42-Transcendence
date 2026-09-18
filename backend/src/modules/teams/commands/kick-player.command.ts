@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { TeamAdmin } from '../entities/team-admin.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
+import { NotificationsService } from '../../notifications/notifications.service';
+import { NotificationDestination } from '../../notifications/entities/notification.entity';
 
 @Injectable()
 export class KickPlayerCommand {
@@ -11,6 +13,7 @@ export class KickPlayerCommand {
     @InjectRepository(Team) private teamRepo: Repository<Team>,
     @InjectRepository(TeamAdmin) private adminRepo: Repository<TeamAdmin>,
     private readonly permissions: TeamPermissionsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async execute(teamId: number, targetUserId: number, actorId: number) {
@@ -39,6 +42,21 @@ export class KickPlayerCommand {
 
     await this.adminRepo.delete({ teamId, userId: targetUserId });
     team.members = team.members.filter(m => m.id !== targetUserId);
-    return await this.teamRepo.save(team);
+    const saved = await this.teamRepo.save(team);
+
+    try {
+      await this.notificationsService.sendNotification(
+        targetUserId,
+        'team_member_removed',
+        `You were removed from team "${team.name}"`,
+        undefined,
+        { teamId, teamName: team.name, actorId },
+        NotificationDestination.BELL,
+      );
+    } catch (e) {
+      console.error('Failed to send team removal notification:', e);
+    }
+
+    return saved;
   }
 }

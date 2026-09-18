@@ -4,12 +4,15 @@ import { DataSource, Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { User } from '../../users/entities/user.entity';
 import { InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
+import { NotificationsService } from '../../notifications/notifications.service';
+import { NotificationDestination } from '../../notifications/entities/notification.entity';
 
 @Injectable()
 export class AcceptInvitationCommand {
     constructor(
         private dataSource: DataSource,
         @InjectRepository(TeamInvitation) private inviteRepo: Repository<TeamInvitation>,
+        private readonly notificationsService: NotificationsService,
     ) {}
 
     async execute(invitationId: number, userId: number) {
@@ -88,6 +91,22 @@ export class AcceptInvitationCommand {
             }
 
             await queryRunner.commitTransaction();
+
+            // After commit and outside the transaction: a failed notification must not
+            // roll back a roster change the user already sees as done.
+            try {
+                await this.notificationsService.sendNotification(
+                    invite.sender_id,
+                    'team_invite_accepted',
+                    `${user.username} joined your team "${team.name}"`,
+                    undefined,
+                    { teamId: team.id, teamName: team.name, userId },
+                    NotificationDestination.BELL,
+                );
+            } catch (e) {
+                console.error('Failed to send invite-accepted notification:', e);
+            }
+
             return { message: 'Joined team successfully', teamId: team.id };
 
         } catch (err) {
