@@ -2,12 +2,14 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Friend } from '../../friends/entities/friend.entity';
+import { Block } from '../../friends/entities/block.entity';
 import { UserSettings } from '../../users/entities/user-settings.entity';
 
 @Injectable()
 export class ChatPrivacyService {
     constructor(
         @InjectRepository(Friend) private readonly friendRepo: Repository<Friend>,
+        @InjectRepository(Block) private readonly blockRepo: Repository<Block>,
         @InjectRepository(UserSettings) private readonly settingsRepo: Repository<UserSettings>,
     ) {}
 
@@ -19,6 +21,19 @@ export class ChatPrivacyService {
             console.error('Error: ChatPrivacyService does not have senderId.');
             throw new ForbiddenException('Authentication error: Sender ID is missing or invalid.');
         }
+        // A block must win outright. Blocking removes the friendship, so without this the
+        // check falls through to the receiver's openMessage setting and a blocked sender can
+        // still reach anyone who accepts messages from non-friends.
+        const blocked = await this.blockRepo.findOne({
+            where: [
+                { blocker: { id: rid }, blocked: { id: sid } },
+                { blocker: { id: sid }, blocked: { id: rid } },
+            ],
+        });
+        if (blocked) {
+            throw new ForbiddenException('Messaging is not available between these users.');
+        }
+
         const [u1, u2] = [sid, rid].sort((a, b) => a - b);
         const friendship = await this.friendRepo.findOne({
             where: { user1: u1, user2: u2 }

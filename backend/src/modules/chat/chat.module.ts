@@ -7,6 +7,7 @@ import { Message } from './entities/message.entity';
 import { ChatParticipant } from './entities/chat-participant.entity';
 import { User } from '../users/entities/user.entity';
 import { Friend } from '../friends/entities/friend.entity';
+import { Block } from '../friends/entities/block.entity';
 import { UserSettings } from '../users/entities/user-settings.entity';
 
 import { ChatController } from './chat.controller';
@@ -33,6 +34,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
       ChatParticipant, 
       User, 
       Friend, 
+      Block,
       UserSettings,
     ]),
     JwtModule.register({ secret: getJwtSecret() }),

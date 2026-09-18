@@ -3,7 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not} from 'typeorm';
+import { Repository } from 'typeorm';
 import { ChatParticipant } from './entities/chat-participant.entity';
 import { Message } from './entities/message.entity';
 import { User } from '../users/entities/user.entity';
@@ -139,44 +139,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
     }
 
-    @SubscribeMessage('markRead')
-    async handleMarkRead(client: Socket, payload: { roomId: number }) {
-        const user = client.data.user;
-        await this.messageRepo.update(
-            { 
-                chatId: payload.roomId, 
-                senderId: Not(user.sub), 
-                isRead: false 
-            },
-            { isRead: true }
-        );
-        client.broadcast.to(`room_${payload.roomId}`).emit('messagesRead', {
-            roomId: payload.roomId,
-            userId: user.sub
-        });
-    }
 
-    @SubscribeMessage('sendMessage')
-    async handleSendMessage(client: Socket, payload: { roomId: number, content: string }) {
-        const user = client.data.user;
-
-        const newMessage = this.messageRepo.create({
-            chatId: payload.roomId,
-            senderId: user.sub,
-            content: payload.content,
-        });
-        const savedMessage = await this.messageRepo.save(newMessage);
-
-        const messageToBroadcast = {
-            id: savedMessage.id,
-            roomId: payload.roomId,
-            senderId: user.sub,
-            content: savedMessage.content,
-            createdAt: savedMessage.createdAt,
-            sender: { id: user.sub, username: user.username }
-        };
-
-        this.server.to(`room_${payload.roomId}`).emit('newMessage', messageToBroadcast);
-    }
 
 }

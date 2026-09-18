@@ -75,7 +75,6 @@ export const useChatStore = defineStore('chat', () => {
   const emitStopTyping = () => socket?.emit('typing', { roomId: activeRoomId.value, isTyping: false })
   const emitJoinRoom = (roomId: number) => socket?.emit('joinRoom', { roomId })
   const emitLeaveRoom = (roomId: number) => socket?.emit('leaveRoom', { roomId })
-  const emitMarkRead = (roomId: number) => socket?.emit('markRead', { roomId })
  
   /**
    * Fetch user's chat rooms
@@ -84,7 +83,8 @@ export const useChatStore = defineStore('chat', () => {
 	isLoadingRooms.value = true
 	error.value = ''
 	try {
-	  rooms.value = await chatApi.getRooms()
+	  const response = await chatApi.getRooms()
+	  rooms.value = Array.isArray(response) ? response : []
 	} catch (e) {
 	  rooms.value = []
 	  demoMode.value = true
@@ -224,9 +224,6 @@ const sendMessage = async (content: string) => {
     })
 
     socket.on('friendActivity', () => {
-      if (import.meta.env.DEV) {
-        console.log('🔥 Soket Sinyali Geldi: friendActivity!')
-      }
       friendActivityCallbacks.forEach(cb => cb())
     })
 
@@ -326,7 +323,7 @@ const sendMessage = async (content: string) => {
     error, unreadCount, demoMode, wsConnected, blockedUserIds, currentUserId, typingUsers,
     visibleRooms, isActiveRoomBlocked, currentRoomTypingUsers,
     loadBlockedUsers, blockUserInChat, onFriendActivity,
-    emitTyping, emitStopTyping, emitJoinRoom, emitLeaveRoom, emitMarkRead,
+    emitTyping, emitStopTyping, emitJoinRoom, emitLeaveRoom,
     fetchRooms, selectRoom, sendMessage, createRoom, deleteMessage,
     connectSocket, disconnectSocket,
   }

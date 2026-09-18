@@ -65,11 +65,6 @@ export function useChat() {
             rooms.value = rooms.value.map(r =>
                 r.id === roomId ? { ...r, isUnread: false } : r
             )
-
-            // Emit markRead via socket for real-time sync
-            if (socket.value && socket.value.connected) {
-                socket.value.emit('markRead', { roomId })
-            }
         } catch (e) {
             if (import.meta.env.DEV) {
                 console.error("Error: Cannot bring messages", e)

@@ -23,7 +23,10 @@ export class GetConversationsQuery {
                 'lastMessage',
                 'lastMessage.chatId = chat.id AND lastMessage.deletedAt IS NULL'
             )
-            .orderBy('lastMessage.createdAt', 'DESC')
+            // NULLS LAST: Postgres defaults DESC to NULLS FIRST, which floated every empty
+            // conversation above the active ones.
+            .orderBy('lastMessage.createdAt', 'DESC', 'NULLS LAST')
+            .take(limit)
             .getMany();
 
         return chats.map(chat => {

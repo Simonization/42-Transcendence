@@ -33,6 +33,4 @@ export class Message {
     @JoinColumn({ name: 'sender_id' })
     sender: User;
 
-    @Column({ default: false })
-    isRead: boolean;
 }

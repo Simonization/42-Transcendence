@@ -7,6 +7,7 @@ import { ChatParticipant } from '../entities/chat-participant.entity';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { ChatPrivacyService } from '../services/chat-privacy.service';
 import { ChatGateway } from '../chat.gateway';
+import { BOT_USER_ID } from '../../notifications/constants/notification.constants';
 
 @Injectable()
 export class SendMessageCommand {
@@ -27,10 +28,19 @@ export class SendMessageCommand {
             throw new ForbiddenException('You are not a member of this chat');
         }
 
-        const participants = await this.partRepo.find({ 
-            where: { chatId: dto.chatId } 
+        const participants = await this.partRepo.find({
+            where: { chatId: dto.chatId }
         });
         const participantIds = participants.map(p => p.userId);
+
+        // Privacy was only checked when the room was created, so a later block or unfriend did
+        // not stop messages in a room that already existed. Group rooms have no single
+        // counterparty to check, and the notification bot is exempt so its DM stays usable.
+        const others = participantIds.filter(id => id !== senderId);
+        if (others.length === 1 && others[0] !== BOT_USER_ID) {
+            await this.privacyService.validateAccess(senderId, others[0]);
+        }
+
         const message = this.messageRepo.create({
             chatId: dto.chatId,
             senderId: senderId,
