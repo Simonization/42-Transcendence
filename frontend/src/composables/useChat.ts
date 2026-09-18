@@ -14,7 +14,6 @@ const isLoadingMessages = ref(false)
 const isSending = ref(false)
 const error = ref('')
 
-const announcements = ref<{ id: number, content: string, createdAt: string }[]>([])
 const socket = ref<Socket | null>(null)
 const wsConnected = ref(false)
 const uptime = ref('0.0')
@@ -213,15 +212,6 @@ export function useChat() {
             addWsLog({ method: 'EVENT', endpoint: 'time-pulse', direction: 'in', responseBody: serverTime })
         })
 
-        socket.value.on('announcement', (data: Record<string, unknown>) => {
-            addWsLog({ method: 'EVENT', endpoint: 'announcement', direction: 'in', responseBody: data })
-            announcements.value.unshift(data)
-
-            if (announcements.value.length > 5) {
-                announcements.value.pop()
-            }
-        })
-
         socket.value.on('notification', (data: Record<string, unknown>) => {
             addWsLog({ method: 'EVENT', endpoint: 'notification', direction: 'in', responseBody: data })
             notificationCallbacks.forEach(cb => cb(data))
@@ -243,14 +233,6 @@ export function useChat() {
     const onFriendActivity = (cb: () => void) => {
         if (!friendActivityCallbacks.includes(cb)) {
             friendActivityCallbacks.push(cb)
-        }
-    }
-
-    const sendAnnouncement = (text: string) => {
-        if (socket.value && text.trim()) {
-            const { addWsLog } = useApiLogger()
-            addWsLog({ method: 'EMIT', endpoint: 'create-announcement', direction: 'out', requestBody: { message: text } })
-            socket.value.emit('create-announcement', { message: text })
         }
     }
 
@@ -277,7 +259,6 @@ export function useChat() {
         unreadCount,
         wsConnected,
         uptime,
-        announcements,
         socket,
         fetchRooms,
         selectRoom,
@@ -286,7 +267,6 @@ export function useChat() {
         deleteMessage,
         connectSocket,
         disconnectSocket,
-        sendAnnouncement,
         onNotification,
         onFriendActivity,
     }

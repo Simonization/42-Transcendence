@@ -10,6 +10,7 @@ import { Friend } from '../friends/entities/friend.entity';
 import { UserSettings } from '../users/entities/user-settings.entity';
 
 import { ChatController } from './chat.controller';
+import { getJwtSecret } from '../auth/jwt-secret';
 import { ChatPrivacyService } from './services/chat-privacy.service';
 
 // Commands & Queries
@@ -34,7 +35,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
       Friend, 
       UserSettings,
     ]),
-    JwtModule.register({ secret: process.env.JWT_SECRET, }),
+    JwtModule.register({ secret: getJwtSecret() }),
   ],
   controllers: [ChatController],
   providers: [

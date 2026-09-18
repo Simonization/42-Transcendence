@@ -5,7 +5,6 @@ import {
   Delete, 
   Param, 
   Query, 
-  Body,
   UseGuards,
   Request,
   ParseIntPipe,
@@ -13,7 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
-import { CreateNotificationDto, QueryNotificationsDto } from './dto';
+import { QueryNotificationsDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('notifications')
@@ -67,17 +66,4 @@ export class NotificationsController {
     await this.notificationsService.deleteNotification(notificationId, userId);
   }
 
-  // manuel send notif is on for tests, MUST BE REMOVED WHEN DONE
-  @Post('send')
-  async sendNotification(
-    @Body() createNotificationDto: CreateNotificationDto,
-  ) {
-    return this.notificationsService.sendNotification(
-      createNotificationDto.userId,
-      createNotificationDto.type,
-      createNotificationDto.body,
-      createNotificationDto.title,
-      createNotificationDto.data,
-    );
-  }
 }

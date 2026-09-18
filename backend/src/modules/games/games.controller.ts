@@ -13,6 +13,7 @@ import { GamesService } from './games.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @Controller('games')
 export class GamesController {
@@ -22,7 +23,7 @@ export class GamesController {
      * CREATE: Add a new game configuration (e.g., Valorant, 5v5)
      * POST /games
      */
-    @UseGuards(JwtAuthGuard) // Usually restricted to Admins later
+    @UseGuards(JwtAuthGuard, AdminGuard)
     @Post()
     async create(@Body() createGameDto: CreateGameDto) {
         return await this.gamesService.create(createGameDto);
@@ -50,7 +51,7 @@ export class GamesController {
      * UPDATE: Change game settings (e.g., update team size)
      * PATCH /games/:id
      */
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, AdminGuard)
     @Patch(':id')
     async update(
         @Param('id', ParseIntPipe) id: number, 
@@ -63,7 +64,7 @@ export class GamesController {
      * DELETE: Remove a game type
      * DELETE /games/:id
      */
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, AdminGuard)
     @Delete(':id')
     async remove(@Param('id', ParseIntPipe) id: number) {
         return await this.gamesService.remove(id);

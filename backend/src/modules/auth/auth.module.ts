@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { getJwtSecret } from './jwt-secret';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
 import { User } from '../users/entities/user.entity';
@@ -30,7 +31,7 @@ const googleStrategyProviders =
         TypeOrmModule.forFeature([User, RefreshToken, AdminInvite]),
         PassportModule,
         JwtModule.register({
-            secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+            secret: getJwtSecret(),
             signOptions: { expiresIn: '24h' },
         }),
     ],

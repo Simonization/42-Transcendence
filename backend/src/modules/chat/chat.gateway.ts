@@ -179,14 +179,4 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(`room_${payload.roomId}`).emit('newMessage', messageToBroadcast);
     }
 
-    @SubscribeMessage('create-announcement')
-    handleAnnouncement(client: Socket, payload: { message: string }): void {
-        console.log(`Admin Announcement: ${payload.message}`);
-        this.server.emit('announcement', {
-            id: Date.now(),
-            content: payload.message,
-            createdAt: new Date().toISOString(),
-            type: 'system'
-        });
-    }
 }

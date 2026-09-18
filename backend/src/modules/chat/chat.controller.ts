@@ -48,10 +48,12 @@ export class ChatController {
 
     @Get('rooms/:id/messages')
     async getHistory(
-        @Param('id', ParseIntPipe) chatId: number, 
+        @Req() req,
+        @Param('id', ParseIntPipe) chatId: number,
         @Query() dto: GetMessagesDto
     ) {
-        return this.getHistoryQuery.execute(chatId, dto.limit, dto.offset);
+        const userId = req.user.id || req.user.sub;
+        return this.getHistoryQuery.execute(chatId, userId, dto.limit, dto.offset);
     }
 
     @Post('messages')

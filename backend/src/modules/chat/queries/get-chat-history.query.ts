@@ -1,6 +1,6 @@
 // src/modules/chat/queries/get-chat-history.query.ts
 
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { Message } from '../entities/message.entity';
@@ -16,7 +16,13 @@ export class GetChatHistoryQuery {
         private readonly partRepo: Repository<ChatParticipant>
     ) {}
 
-    async execute(chatId: number, limit: number = 50, offset: number = 0) {
+    async execute(chatId: number, requesterId: number, limit: number = 50, offset: number = 0) {
+        // Without this any authenticated user could read any conversation by guessing its id.
+        const isParticipant = await this.partRepo.existsBy({ chatId, userId: requesterId });
+        if (!isParticipant) {
+            throw new ForbiddenException('You are not a participant in this conversation');
+        }
+
         const messages = await this.messageRepo.find({
             where: { 
                 chatId: chatId, 

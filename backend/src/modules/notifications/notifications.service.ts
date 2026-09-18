@@ -101,8 +101,9 @@ export class NotificationsService {
         content: body,
       });
 
-      // emit message event via WebSocket
-      this.chatGateway.server.to(`user_${userId}`).emit('message', {
+      // Must be 'newMessage': that is the event the chat clients listen for. Emitting
+      // 'message' meant every CHAT-destination notification went nowhere.
+      this.chatGateway.server.to(`user_${userId}`).emit('newMessage', {
         id: message.id,
         chatId: botChat.id,
         senderId: BOT_USER_ID,
