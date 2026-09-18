@@ -38,19 +38,29 @@ export interface BackendGame {
   createdAt?: string
 }
 
+/** Mirrors MatchStatus in the backend's match entity. */
+export type BackendMatchStatus =
+  | 'WAITING'
+  | 'READY'
+  | 'ONGOING'
+  | 'FINISHED'
+  | 'CANCELLED'
+  | 'BYE'
+
+/**
+ * The real `matches` row. Teams come through a join table rather than team1_id/team2_id, and
+ * the score is one string rather than a pair of numbers.
+ */
 export interface BackendMatch {
   id: number
   phase_id: number
-  round: number
-  position: number
-  team1_id: number | null
-  team2_id: number | null
-  team1_score: number | null
-  team2_score: number | null
+  round_order: number | null
+  status: BackendMatchStatus
+  teams?: BackendTeam[]
   winner_id: number | null
-  status: string
-  scheduledAt: string | null
-  completedAt: string | null
+  score: string | null
+  created_at: string
+  game_data?: Record<string, unknown> | null
 }
 
 export interface BackendPhase {
@@ -176,6 +186,48 @@ export interface UpdateGameDto {
   name?: string
   team_count?: number
   team_size?: number
+}
+
+// ─── Bracket view-model (what BracketVisualization renders) ──────────────────
+
+export type MatchStatus = 'upcoming' | 'live' | 'completed'
+export type BracketType = 'single-elimination' | 'double-elimination' | 'round-robin'
+
+/** A bracket slot. Named "player" for historical reasons; it holds a team. */
+export interface BracketPlayer {
+  id: string
+  username: string
+  avatar: string
+  rating: number
+  seed: number
+}
+
+export interface BracketMatch {
+  id: string
+  roundIndex: number
+  matchIndex: number
+  player1: BracketPlayer | null
+  player2: BracketPlayer | null
+  score1: number | null
+  score2: number | null
+  status: MatchStatus
+  winnerId: string | null
+  scheduledAt: string
+  completedAt: string | null
+}
+
+export interface BracketRound {
+  label: string
+  matches: BracketMatch[]
+}
+
+export interface TournamentBracket {
+  tournamentId: string
+  bracketType: BracketType
+  rounds: BracketRound[]
+  champion: BracketPlayer | null
+  /** True while the field can still change: seeded from registrations, not persisted matches. */
+  provisional?: boolean
 }
 
 /** View-model a tournament card renders; produced from BackendTournament by tournamentMapper. */

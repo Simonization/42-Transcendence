@@ -67,7 +67,8 @@ const router = createRouter({
           component: () => import('../pages/menu/MatchHistoryCard.vue'),
         },
         {
-          path: 'brackets',
+          // Optional id: without one the page has no tournament to show a bracket for.
+          path: 'brackets/:id?',
           name: 'tournament-brackets',
           component: () => import('../pages/menu/TournamentBracketsCard.vue'),
         },

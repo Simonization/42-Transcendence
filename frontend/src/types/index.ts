@@ -91,6 +91,13 @@ export {
 // Tournament types
 export {
   type Tournament,
+  type TournamentBracket,
+  type BracketRound,
+  type BracketMatch,
+  type BracketPlayer,
+  type BracketType,
+  type MatchStatus as BracketMatchStatus,
+  type BackendMatchStatus,
   type BackendTournament,
   type BackendPhase,
   type BackendTeam,

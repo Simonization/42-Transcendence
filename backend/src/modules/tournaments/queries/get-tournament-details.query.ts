@@ -10,7 +10,16 @@ export class GetTournamentQuery {
     async execute(id: number) {
         const tournament = await this.repo.findOne({
             where: { id },
-            relations: ['phases', 'phases.game', 'teams', 'teams.members']
+            relations: [
+                'phases',
+                'phases.game',
+                // Without the matches the bracket view renders an empty frame.
+                'phases.matches',
+                'phases.matches.teams',
+                'teams',
+                'teams.members',
+                'teams.admins',
+            ]
         });
         if (!tournament) throw new NotFoundException();
         return tournament;

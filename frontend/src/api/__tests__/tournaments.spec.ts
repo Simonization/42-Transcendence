@@ -127,28 +127,15 @@ describe('Tournaments API', () => {
     })
   })
 
-  describe('tournamentsApi.register', () => {
-    it('should call POST /tournaments/:id/register with data', async () => {
-      mockApi.mockResolvedValueOnce(undefined)
+  describe('tournamentsApi.start', () => {
+    it('should call POST /tournaments/:id/start', async () => {
+      const tournament = { id: 7, name: 'Cup' }
+      mockApi.mockResolvedValueOnce(tournament)
 
-      const dto = { teamName: 'My Team', memberIds: [1, 2, 3] }
-      await tournamentsApi.register(7, dto)
+      const result = await tournamentsApi.start(7)
 
-      expect(mockApi).toHaveBeenCalledWith('/tournaments/7/register', {
-        method: 'POST',
-        body: dto,
-      })
-    })
-
-    it('should send empty object when no data provided', async () => {
-      mockApi.mockResolvedValueOnce(undefined)
-
-      await tournamentsApi.register(7)
-
-      expect(mockApi).toHaveBeenCalledWith('/tournaments/7/register', {
-        method: 'POST',
-        body: {},
-      })
+      expect(mockApi).toHaveBeenCalledWith('/tournaments/7/start', { method: 'POST' })
+      expect(result).toEqual(tournament)
     })
   })
 })

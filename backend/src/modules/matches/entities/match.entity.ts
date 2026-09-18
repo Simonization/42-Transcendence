@@ -39,7 +39,10 @@ export class Match {
     @Column({ nullable: true })
     tournament_id: number;
 
+    // Without the JoinColumn, TypeORM derives a second FK column ("phaseId") and the relation
+    // reads that instead of phase_id, so generated matches were invisible to every query.
     @ManyToOne(() => TournamentPhase, (phase) => phase.matches)
+    @JoinColumn({ name: 'phase_id' })
     phase: TournamentPhase;
 
     @Column({ nullable: true })

@@ -6,10 +6,7 @@
 import { ref } from 'vue'
 import { tournamentsApi } from '../api/tournaments'
 import { getErrorMessage } from '../utils/error'
-import type {
-  BackendTournament,
-  RegisterTournamentDto,
-} from '../types'
+import type { BackendTournament } from '../types'
 
 export function useTournaments() {
   const tournaments = ref<BackendTournament[]>([])
@@ -45,15 +42,15 @@ export function useTournaments() {
     }
   }
 
-  const register = async (id: number, data?: RegisterTournamentDto): Promise<boolean> => {
+  /** Freezes the field and generates phase 1's matches. Admin only. */
+  const startTournament = async (id: number): Promise<boolean> => {
     error.value = ''
     try {
-      await tournamentsApi.register(id, data)
-      // Refresh tournament to get updated teams list
+      await tournamentsApi.start(id)
       await fetchTournament(id)
       return true
     } catch (e) {
-      error.value = getErrorMessage(e, 'Failed to register for tournament')
+      error.value = getErrorMessage(e, 'Failed to start tournament')
       return false
     }
   }
@@ -66,6 +63,6 @@ export function useTournaments() {
     demoMode,
     fetchTournaments,
     fetchTournament,
-    register,
+    startTournament,
   }
 }

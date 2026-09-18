@@ -7,10 +7,10 @@ import {
         Param,
         Delete,
         ParseIntPipe,
-        UseGuards,
-        Request
+        UseGuards
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
 import { TournamentsService } from './tournaments.service';
@@ -20,7 +20,7 @@ export class TournamentsController {
     constructor(private readonly tournamentsService: TournamentsService) {}
 
     @Post()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, AdminGuard)
     create(@Body() createDto: CreateTournamentDto) {
         return this.tournamentsService.create(createDto);
     }
@@ -30,8 +30,9 @@ export class TournamentsController {
         return this.tournamentsService.findAll();
     }
 
+    /** Freezes the field and generates phase 1's matches. */
     @Post(':id/start')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, AdminGuard)
     start(@Param('id', ParseIntPipe) id: number) {
         return this.tournamentsService.start(id);
     }
@@ -42,24 +43,14 @@ export class TournamentsController {
     }
 
     @Patch(':id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, AdminGuard)
     update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdateTournamentDto) {
         return this.tournamentsService.update(id, updateDto);
     }
 
     @Delete(':id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, AdminGuard)
     remove(@Param('id', ParseIntPipe) id: number) {
         return this.tournamentsService.remove(id);
-    }
-
-    @Post(':id/register')
-    @UseGuards(JwtAuthGuard)
-    register(
-        @Request() req,
-        @Param('id', ParseIntPipe) id: number,
-        @Body() body: { teamName?: string; memberIds?: number[] },
-    ) {
-        return this.tournamentsService.register(req.user.sub, id, body.teamName, body.memberIds);
     }
 }

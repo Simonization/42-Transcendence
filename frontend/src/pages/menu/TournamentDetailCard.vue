@@ -12,7 +12,7 @@ import TournamentRegistrationModal from '../../components/tournaments/Tournament
 import BracketVisualization from '../../components/tournaments/BracketVisualization.vue'
 import { useTournaments } from '../../composables/useTournaments'
 import { toDisplayTournament } from '../../utils/tournamentMapper'
-import type { TournamentBracket, BracketRound } from '../../data/mockBracket'
+import { buildBracket } from '../../utils/bracket'
 
 type TabType = 'overview' | 'bracket' | 'participants' | 'chat'
 
@@ -42,54 +42,7 @@ const tournament = computed(() => {
   return toDisplayTournament(currentTournament.value)
 })
 
-// Build bracket from phases/matches if available
-const bracketData = computed((): TournamentBracket | null => {
-  const bt = currentTournament.value
-  if (!bt?.phases?.length) return null
-
-  // Build team name lookup from tournament teams
-  const teamNameMap = new Map<number, string>()
-  for (const team of bt.teams ?? []) {
-    teamNameMap.set(team.id, team.name)
-  }
-
-  const rounds: BracketRound[] = []
-  for (const phase of bt.phases) {
-    if (!phase.matches?.length) continue
-    // Group matches by round
-    const roundMap = new Map<number, typeof phase.matches>()
-    for (const m of phase.matches) {
-      const arr = roundMap.get(m.round) ?? []
-      arr.push(m)
-      roundMap.set(m.round, arr)
-    }
-    for (const [roundNum, matches] of roundMap) {
-      rounds.push({
-        label: `ROUND ${roundNum}`,
-        matches: matches.map((m, idx) => ({
-          id: String(m.id),
-          roundIndex: roundNum - 1,
-          matchIndex: idx,
-          player1: m.team1_id ? { id: String(m.team1_id), username: teamNameMap.get(m.team1_id) ?? `Team ${m.team1_id}`, avatar: '👤', rating: 0, seed: 0 } : null,
-          player2: m.team2_id ? { id: String(m.team2_id), username: teamNameMap.get(m.team2_id) ?? `Team ${m.team2_id}`, avatar: '👤', rating: 0, seed: 0 } : null,
-          score1: m.team1_score,
-          score2: m.team2_score,
-          status: m.status === 'completed' ? 'completed' as const : m.status === 'live' ? 'live' as const : 'upcoming' as const,
-          winnerId: m.winner_id ? String(m.winner_id) : null,
-          scheduledAt: m.scheduledAt ?? '',
-          completedAt: m.completedAt,
-        })),
-      })
-    }
-  }
-
-  return {
-    tournamentId: String(bt.id),
-    bracketType: bt.phases[0]?.type === 'DOUBLE_ELIMINATION' ? 'double-elimination' : bt.phases[0]?.type === 'ROUND_ROBIN' ? 'round-robin' : 'single-elimination',
-    rounds,
-    champion: null,
-  }
-})
+const bracketData = computed(() => buildBracket(currentTournament.value))
 
 // Teams for participants tab (show teams, not flat members)
 const teamsList = computed(() => {

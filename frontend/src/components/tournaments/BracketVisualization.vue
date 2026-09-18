@@ -5,8 +5,8 @@
  */
 
 import { ref, computed } from 'vue'
-import type { TournamentBracket, BracketMatch } from '../../data/mockBracket'
-import { getWinnerOfMatch } from '../../data/mockBracket'
+import type { TournamentBracket, BracketMatch } from '../../types'
+import { getWinnerOfMatch } from '../../utils/bracket'
 
 const props = defineProps<{
   bracket: TournamentBracket
@@ -60,6 +60,15 @@ function formatDate(iso: string): string {
 
 <template>
   <div class="bracket-container">
+    <!-- Seeded from registrations; the field can still change until an admin starts. -->
+    <div v-if="bracket.provisional" class="provisional-banner">
+      <span class="provisional-tag">PROVISIONAL</span>
+      <span class="provisional-text">
+        Seeded from current registrations. Re-seeds as teams join, and is replaced by the real
+        draw when the tournament starts.
+      </span>
+    </div>
+
     <!-- Champion Banner -->
     <div v-if="champion" class="champion-banner glass-panel">
       <span class="champion-icon">👑</span>
@@ -170,6 +179,32 @@ function formatDate(iso: string): string {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+}
+
+.provisional-banner {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
+  border: var(--hud-border) solid var(--color-warning);
+  background: var(--color-warning-bg, rgba(234, 179, 8, 0.1));
+}
+
+.provisional-tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-warning);
+  white-space: nowrap;
+}
+
+.provisional-text {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  min-width: 0;
 }
 
 /* Champion Banner */

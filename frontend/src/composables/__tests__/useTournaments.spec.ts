@@ -15,7 +15,7 @@ vi.mock('../../api/tournaments', () => ({
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
-    register: vi.fn(),
+    start: vi.fn(),
   },
 }))
 
@@ -152,53 +152,42 @@ describe('useTournaments', () => {
     })
   })
 
-  describe('register', () => {
-    it('should call register API and refresh tournament on success', async () => {
+  describe('startTournament', () => {
+    it('should start the tournament and refresh it', async () => {
       const tournament = makeTournament()
-      vi.mocked(tournamentsApi.register).mockResolvedValue(undefined)
+      vi.mocked(tournamentsApi.start).mockResolvedValue(tournament)
       vi.mocked(tournamentsApi.getById).mockResolvedValue(tournament)
 
-      const { register, currentTournament } = useTournaments()
-      const result = await register(1, { teamName: 'My Team' })
+      const { startTournament, currentTournament } = useTournaments()
+      const result = await startTournament(1)
 
       expect(result).toBe(true)
-      expect(tournamentsApi.register).toHaveBeenCalledWith(1, { teamName: 'My Team' })
+      expect(tournamentsApi.start).toHaveBeenCalledWith(1)
       expect(tournamentsApi.getById).toHaveBeenCalledWith(1)
       expect(currentTournament.value).toEqual(tournament)
     })
 
-    it('should call register with no data', async () => {
-      vi.mocked(tournamentsApi.register).mockResolvedValue(undefined)
-      vi.mocked(tournamentsApi.getById).mockResolvedValue(makeTournament())
-
-      const { register } = useTournaments()
-      await register(1)
-
-      expect(tournamentsApi.register).toHaveBeenCalledWith(1, undefined)
-    })
-
-    it('should return false and set error on registration failure', async () => {
-      vi.mocked(tournamentsApi.register).mockRejectedValue(
-        new ApiError(409, 'ALREADY_REGISTERED', 'Already registered')
+    it('should surface the server message and not refresh on failure', async () => {
+      vi.mocked(tournamentsApi.start).mockRejectedValue(
+        new ApiError(400, 'INSUFFICIENT_TEAMS', 'Insufficient teams. Required: 2, Found: 1')
       )
 
-      const { register, error } = useTournaments()
-      const result = await register(1)
+      const { startTournament, error } = useTournaments()
+      const result = await startTournament(1)
 
       expect(result).toBe(false)
-      expect(error.value).toBe('Already registered')
-      // Should not have tried to refresh
+      expect(error.value).toBe('Insufficient teams. Required: 2, Found: 1')
       expect(tournamentsApi.getById).not.toHaveBeenCalled()
     })
 
-    it('should return false with fallback message on generic error', async () => {
-      vi.mocked(tournamentsApi.register).mockRejectedValue(new Error('oops'))
+    it('should fall back to a generic message', async () => {
+      vi.mocked(tournamentsApi.start).mockRejectedValue(new Error('oops'))
 
-      const { register, error } = useTournaments()
-      const result = await register(1)
+      const { startTournament, error } = useTournaments()
+      const result = await startTournament(1)
 
       expect(result).toBe(false)
-      expect(error.value).toBe('Failed to register for tournament')
+      expect(error.value).toBe('Failed to start tournament')
     })
   })
 })

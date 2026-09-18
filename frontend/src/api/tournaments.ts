@@ -56,12 +56,11 @@ export const tournamentsApi = {
   },
 
   /**
-   * Register for a tournament
+   * Freeze the field and generate phase 1's matches (admin only)
    */
-  register(id: number, data?: RegisterTournamentDto): Promise<void> {
-    return api<void>(`/tournaments/${id}/register`, {
+  start(id: number): Promise<BackendTournament> {
+    return api<BackendTournament>(`/tournaments/${id}/start`, {
       method: 'POST',
-      body: data ?? {},
     })
   },
 }

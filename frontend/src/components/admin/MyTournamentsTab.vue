@@ -22,18 +22,10 @@ const editingId = ref<number | null>(null)
 const editName = ref('')
 const editDescription = ref('')
 const editMaxParticipants = ref<number | undefined>(undefined)
-const editStatus = ref('')
 const editScheduledAt = ref('')
 
 // Confirm delete
 const confirmDeleteId = ref<number | null>(null)
-
-const statusOptions = [
-  TournamentStatus.DRAFT,
-  TournamentStatus.REGISTRATION_OPEN,
-  TournamentStatus.ONGOING,
-  TournamentStatus.COMPLETED,
-]
 
 function statusLabel(status: string): string {
   return status.replace(/_/g, ' ')
@@ -70,7 +62,6 @@ function startEdit(t: BackendTournament) {
   editName.value = t.name
   editDescription.value = t.description ?? ''
   editMaxParticipants.value = t.max_participants ?? undefined
-  editStatus.value = t.status
   editScheduledAt.value = toDatetimeLocal(t.scheduledAt)
 }
 
@@ -84,7 +75,6 @@ async function saveEdit(id: number) {
       name: editName.value.trim(),
       description: editDescription.value.trim() || undefined,
       max_participants: editMaxParticipants.value,
-      status: editStatus.value as TournamentStatus,
       scheduled_at: editScheduledAt.value
         ? new Date(editScheduledAt.value).toISOString()
         : null,
@@ -94,6 +84,16 @@ async function saveEdit(id: number) {
     await fetchTournaments()
   } catch {
     notifications.error('Failed to update tournament')
+  }
+}
+
+async function startTournament(id: number) {
+  try {
+    await tournamentsApi.start(id)
+    notifications.success('Tournament started — phase 1 matches generated.')
+    await fetchTournaments()
+  } catch (err: any) {
+    notifications.error(err?.message ?? 'Failed to start tournament')
   }
 }
 
@@ -146,9 +146,9 @@ onMounted(fetchTournaments)
               <input v-model="editDescription" type="text" class="inline-input inline-input-desc" placeholder="Description" />
             </td>
             <td>
-              <select v-model="editStatus" class="inline-select">
-                <option v-for="s in statusOptions" :key="s" :value="s">{{ statusLabel(s) }}</option>
-              </select>
+              <span class="status-badge" :class="statusClass(tournament.status)">
+                {{ statusLabel(tournament.status) }}
+              </span>
             </td>
             <td>
               <input v-model="editScheduledAt" type="datetime-local" class="inline-input inline-input-datetime" />
@@ -188,6 +188,13 @@ onMounted(fetchTournaments)
                 <button class="action-link" @click="confirmDeleteId = null">{{ t('common.no') }}</button>
               </template>
               <template v-else>
+                <button
+                  v-if="tournament.status === TournamentStatus.REGISTRATION_OPEN"
+                  class="action-link action-start"
+                  @click="startTournament(tournament.id)"
+                >
+                  START
+                </button>
                 <button class="action-link" @click="startEdit(tournament)">{{ t('admin.editAction') }}</button>
                 <button class="action-link action-danger" @click="confirmDeleteId = tournament.id">{{ t('common.delete') }}</button>
               </template>
@@ -200,6 +207,11 @@ onMounted(fetchTournaments)
 </template>
 
 <style scoped>
+.action-start {
+  color: var(--color-success);
+  font-weight: var(--font-bold);
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
