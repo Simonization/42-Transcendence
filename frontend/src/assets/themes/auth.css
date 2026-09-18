@@ -8,7 +8,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #0a0e1a;
+  background: var(--bg-primary);
   padding: var(--space-4);
 }
 
@@ -16,8 +16,8 @@
   width: 100%;
   max-width: 420px;
   padding: var(--space-12) var(--space-8);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-secondary);
+  border: var(--hud-border) solid var(--border-default);
   -webkit-clip-path: polygon(
     0 0,
     calc(100% - var(--chamfer-lg)) 0,
@@ -34,7 +34,6 @@
     var(--chamfer-xs) 100%,
     0 calc(100% - var(--chamfer-xs))
   );
-  box-shadow: 0 0 40px rgba(100, 120, 200, 0.06);
 }
 
 .state-container {
@@ -48,8 +47,8 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 2px solid rgba(255, 255, 255, 0.08);
-  border-top-color: #6b7280;
+  border: 2px solid var(--bg-tertiary);
+  border-top-color: var(--accent-primary);
   -webkit-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   animation: spin 0.8s linear infinite;

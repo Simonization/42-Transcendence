@@ -11,66 +11,71 @@
  */
 
 [data-theme="dragon"] {
-  /* ===== BACKGROUND COLORS ===== */
-  --bg-primary: #0a1628;         /* Main background - deep navy */
-  --bg-secondary: #0f1f38;       /* Card/elevated surfaces */
-  --bg-tertiary: #132743;        /* Subtle sections */
-  --bg-elevated: #162d50;        /* Modals, dropdowns */
-  --bg-hover: rgba(212, 175, 55, 0.08);
-  --bg-selected: rgba(212, 175, 55, 0.15);
+  /* Ground carries a trace of the emission hue; pure #000 kills the sense of a surface. */
+  --bg-primary: #070b0f;
+  --bg-secondary: #0b1117;
+  --bg-tertiary: #101821;
+  --bg-elevated: #131c26;
+  --bg-hover: rgba(0, 229, 255, 0.06);
+  --bg-selected: rgba(0, 229, 255, 0.12);
 
   /* ===== TEXT COLORS ===== */
-  --text-primary: #e8e6e3;       /* Main text - warm off-white */
-  --text-secondary: #9ca3af;     /* Secondary text - muted */
-  --text-tertiary: #6b7280;      /* Disabled, hints */
-  --text-on-accent: #0a1628;     /* Text on gold accent */
+  --text-primary: #e6e9f2;       /* Never pure white */
+  --text-secondary: #8b97a8;
+  --text-tertiary: #5b6675;
+  --text-on-accent: #070b0f;
 
-  /* ===== ACCENT COLORS ===== */
-  /* Primary: Gold (Dragon/Regal color) */
-  --accent-primary: #d4af37;
-  --accent-primary-hover: #e6c54a;
-  --accent-primary-subtle: rgba(212, 175, 55, 0.15);
-  --accent-primary-glow: rgba(212, 175, 55, 0.5);
+  /* ===== ACCENT =====
+     --data is the one emissive hue: it means "this is a value".
+     --live is the single hot accent and means "this is happening now". Not interchangeable. */
+  --data: #00e5ff;
+  --live: #ff2d55;
+  --signal: #c6ff00;             /* Genuine warnings only */
+
+  --accent-primary: var(--data);
+  --accent-primary-hover: #5cefff;
+  --accent-primary-subtle: rgba(0, 229, 255, 0.12);
+  --accent-primary-glow: rgba(0, 229, 255, 0.45);
 
   /* ===== STATUS COLORS ===== */
   --color-success: #34d399;
   --color-success-bg: rgba(52, 211, 153, 0.15);
   --color-success-dark: #059669;     /* High-contrast version for WCAG AA */
-  --color-warning: #fbbf24;
-  --color-warning-bg: rgba(251, 191, 36, 0.15);
+  --color-warning: var(--signal);
+  --color-warning-bg: rgba(198, 255, 0, 0.12);
   --color-warning-dark: #ea580c;     /* High-contrast version for WCAG AA */
-  --color-error: #f87171;
-  --color-error-bg: rgba(248, 113, 113, 0.15);
-  --color-info: #60a5fa;
-  --color-info-bg: rgba(96, 165, 250, 0.15);
+  --color-error: var(--live);
+  --color-error-bg: rgba(255, 45, 85, 0.14);
+  --color-info: var(--data);
+  --color-info-bg: rgba(0, 229, 255, 0.12);
 
-  /* ===== BORDER COLORS ===== */
-  --border-default: #1e3a5f;
-  --border-subtle: #162d50;
-  --border-strong: #2a4a73;
+  /* Structure: rules, ticks, registration marks, dead furniture. */
+  --border-default: #2a2f3e;
+  --border-subtle: #1a1f29;
+  --border-strong: #3d4457;
   --border-error: var(--color-error);
 
   /* ===== SHADOW (with gold glow option) ===== */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.3);
-  --shadow-glow: 0 0 30px var(--accent-primary-glow);
-  --shadow-glow-sm: 0 0 15px rgba(212, 175, 55, 0.3);
+  --shadow-glow: 0 0 2px rgba(0, 229, 255, 0.85);
+  --shadow-glow-sm: 0 0 1px rgba(0, 229, 255, 0.7);
 
   /* ===== SELECTION INDICATOR ===== */
-  --selection-indicator: "◆";    /* Diamond for dragon theme */
+  --selection-indicator: "▸";
   --selection-indicator-color: var(--accent-primary);
 
   /* ===== TIMELINE COLORS ===== */
-  --timeline-line: #1e3a5f;
+  --timeline-line: #2a2f3e;
   --timeline-line-active: var(--accent-primary);
-  --timeline-dot: #4a5568;
+  --timeline-dot: #3d4457;
   --timeline-dot-active: var(--accent-primary);
   --timeline-dot-complete: var(--color-success);
-  --timeline-wave: rgba(212, 175, 55, 0.08);
+  --timeline-wave: rgba(0, 229, 255, 0.06);
 
   /* ===== FORM ELEMENTS ===== */
-  --input-bg: #0f1f38;
+  --input-bg: #0b1117;
   --input-border: var(--border-default);
   --input-border-hover: var(--border-strong);
   --input-border-focus: var(--accent-primary);

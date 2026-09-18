@@ -283,9 +283,11 @@ describe('useThemeStore', () => {
     // The palettes are scoped with unqualified `[data-theme="..."]` selectors, so a second
     // data-theme anywhere below <html> re-declares every colour token for that subtree and
     // out-inherits the store's update — the toggle then only appears to work after a reload.
+    // Only a template *binding* is the defect. A `[data-theme="..."]` CSS selector inside a
+    // scoped block is how a component legitimately varies per theme, so it must not trip this.
     it('is not re-declared by any component', () => {
       const offenders = Object.entries(sources)
-        .filter(([, src]) => src.includes('data-theme'))
+        .filter(([, src]) => /(?<!\[)data-theme\s*=/.test(src))
         .map(([path]) => path)
 
       expect(offenders).toEqual([])

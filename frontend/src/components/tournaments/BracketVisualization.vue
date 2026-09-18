@@ -71,16 +71,18 @@ function formatDate(iso: string): string {
 
     <!-- Champion Banner -->
     <div v-if="champion" class="champion-banner glass-panel">
-      <span class="champion-icon">👑</span>
       <div class="champion-content">
-        <span class="champion-label">TOURNAMENT CHAMPION</span>
+        <span class="champion-label">CHAMPION</span>
         <span class="champion-name">{{ champion.username }}</span>
       </div>
-      <span class="champion-rating">Rating: {{ champion.rating }}</span>
+      <div class="readout">
+        <span class="readout-value">{{ String(champion.seed || 1).padStart(2, '0') }}</span>
+        <span class="readout-label">SEED</span>
+      </div>
     </div>
 
     <!-- Bracket Visualization -->
-    <div ref="bracketRef" class="bracket-viz" role="region" aria-label="Tournament bracket">
+    <div ref="bracketRef" class="bracket-viz reg-marks" role="region" aria-label="Tournament bracket">
       <div class="bracket-grid">
         <!-- Rounds -->
         <div v-for="(round, ri) in bracket.rounds" :key="ri" class="bracket-column" :style="{ animationDelay: `${ri * 100}ms` }">
@@ -103,9 +105,9 @@ function formatDate(iso: string): string {
             >
               <!-- Player 1 -->
               <div class="player-slot" :class="{ winner: match.winnerId === match.player1?.id }">
-                <span class="player-avatar">{{ match.player1?.avatar ?? '?' }}</span>
+                <span class="player-seed">{{ match.player1?.seed ? String(match.player1!.seed).padStart(2, '0') : '--' }}</span>
                 <span class="player-name">{{ match.player1?.username ?? 'TBD' }}</span>
-                <span class="player-score">{{ match.score1 ?? '-' }}</span>
+                <span class="player-score">{{ match.score1 ?? '·' }}</span>
               </div>
 
               <!-- Divider with status indicator -->
@@ -115,9 +117,9 @@ function formatDate(iso: string): string {
 
               <!-- Player 2 -->
               <div class="player-slot" :class="{ winner: match.winnerId === match.player2?.id }">
-                <span class="player-avatar">{{ match.player2?.avatar ?? '?' }}</span>
+                <span class="player-seed">{{ match.player2?.seed ? String(match.player2!.seed).padStart(2, '0') : '--' }}</span>
                 <span class="player-name">{{ match.player2?.username ?? 'TBD' }}</span>
-                <span class="player-score">{{ match.score2 ?? '-' }}</span>
+                <span class="player-score">{{ match.score2 ?? '·' }}</span>
               </div>
 
               <!-- Expanded Detail Panel -->
@@ -377,41 +379,90 @@ function formatDate(iso: string): string {
 /* Player Slots */
 .player-slot {
   display: grid;
-  grid-template-columns: 32px 1fr 32px;
-  align-items: center;
-  gap: var(--space-2);
+  grid-template-columns: 2.25ch 1fr 2.5ch;
+  align-items: baseline;
+  gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  transition: all var(--duration-fast) var(--ease-default);
+  transition: background-color var(--duration-fast) var(--ease-default);
 }
 
 .player-slot.winner {
   background: var(--accent-primary-subtle);
   color: var(--accent-primary);
-  font-weight: var(--font-bold);
-  text-shadow: 0 0 8px var(--accent-primary-subtle);
 }
 
-.player-avatar {
-  font-size: var(--text-lg);
-  text-align: center;
+/* The seed whispers. */
+.player-seed {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-micro);
+  font-weight: var(--font-thin);
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
 }
 
 .player-name {
   font-family: var(--font-display);
-  font-size: var(--text-xs);
+  font-size: var(--t-body);
+  font-weight: var(--font-thin);
   color: inherit;
   letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.player-slot.winner .player-name {
+  font-weight: var(--font-heavy);
+}
+
+/* The number dominates, and never reflows as digits change. */
 .player-score {
   font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  font-weight: var(--font-bold);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.375rem;
+  font-weight: var(--font-heavy);
+  line-height: 1;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+.player-slot.winner .player-score {
   color: var(--accent-primary);
-  text-align: center;
+}
+
+[data-theme='dragon'] .player-slot.winner .player-score {
+  text-shadow: var(--shadow-glow);
+}
+
+/* A bracket reticle marks the live match: attention without occlusion. */
+.match-live {
+  position: relative;
+}
+
+.match-live::before,
+.match-live::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: var(--live);
+  pointer-events: none;
+}
+
+.match-live::before {
+  top: -1px;
+  left: -1px;
+  border-top: var(--hud-border-thick) solid var(--live);
+  border-left: var(--hud-border-thick) solid var(--live);
+}
+
+.match-live::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: var(--hud-border-thick) solid var(--live);
+  border-right: var(--hud-border-thick) solid var(--live);
 }
 
 /* Match Divider */

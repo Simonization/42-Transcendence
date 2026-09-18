@@ -8,6 +8,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getAccessToken } from '../../api'
+import HudIcon from '../hud/HudIcon.vue'
 import { TournamentStatus } from '../../types'
 import type { BackendTournament } from '../../types'
 
@@ -99,7 +100,7 @@ function getGameName(bt: BackendTournament): string {
 
     <!-- Empty -->
     <div v-else-if="tournaments.length === 0" class="featured-empty">
-      <span class="featured-empty-icon">🏆</span>
+      <HudIcon name="tournament" :size="28" class="featured-empty-icon" />
       <p class="featured-empty-text">{{ $t('tournament.noTournamentsFound') }}</p>
     </div>
 
@@ -115,7 +116,7 @@ function getGameName(bt: BackendTournament): string {
         >
           <!-- Card Header -->
           <div class="featured-card-header">
-            <span class="featured-game-icon" aria-hidden="true">🏆</span>
+            <HudIcon name="tournament" :size="15" class="featured-game-icon" />
             <div class="featured-game-info">
               <h3 class="featured-game-name">{{ getGameName(bt) }}</h3>
               <span class="featured-status" :class="getStatusBadgeClass(bt.status)">
@@ -337,14 +338,14 @@ function getGameName(bt: BackendTournament): string {
 }
 
 .status-open {
-  background: var(--color-success-dark);
-  color: white;
+  background: transparent;
+  color: var(--accent-primary);
+  border: var(--hud-border) solid var(--accent-primary);
 }
 
 .status-live {
-  background: var(--color-warning-dark);
-  color: white;
-  animation: pulse-badge 2s ease-in-out infinite;
+  background: var(--live);
+  color: var(--bg-primary);
 }
 
 .status-draft {
@@ -353,10 +354,6 @@ function getGameName(bt: BackendTournament): string {
   border: var(--hud-border) solid var(--border-default);
 }
 
-@keyframes pulse-badge {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
 
 .featured-tournament-name {
   margin: 0;

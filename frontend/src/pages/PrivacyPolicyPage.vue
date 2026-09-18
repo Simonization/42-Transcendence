@@ -9,7 +9,6 @@ const router = useRouter()
   <div class="legal-page">
     <div class="legal-background">
       <div class="bg-pattern"></div>
-      <div class="bg-gradient"></div>
     </div>
 
     <header class="legal-header glass-header">
@@ -127,12 +126,6 @@ const router = useRouter()
   opacity: 0.15;
 }
 
-.bg-gradient {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 20% 30%, var(--accent-primary-glow) 0%, transparent 50%);
-  opacity: 0.2;
-}
 
 .legal-header {
   display: flex;

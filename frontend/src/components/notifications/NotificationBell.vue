@@ -11,6 +11,7 @@ import { teamsApi } from '../../api/teams'
 import { useChat } from '../../composables/useChat'
 import type { Notification, NotificationType } from '../../api/notifications'
 import NotificationPanel from './NotificationPanel.vue'
+import HudIcon from '../hud/HudIcon.vue'
 
 const router = useRouter()
 
@@ -157,7 +158,7 @@ defineExpose({ onSocketNotification, fetchUnreadCount })
       :title="$t('notifications.bell')"
       @click.stop="togglePanel"
     >
-      <span class="bell-icon">&#128276;</span>
+      <HudIcon name="bell" :size="16" class="bell-icon" />
       <span v-if="unreadCount > 0" class="notif-badge">
         {{ unreadCount > 99 ? '99+' : unreadCount }}
       </span>
@@ -217,7 +218,7 @@ defineExpose({ onSocketNotification, fetchUnreadCount })
 }
 
 .bell-icon {
-  font-size: var(--text-sm);
+  color: currentColor;
 }
 
 .notif-badge {

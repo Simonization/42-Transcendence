@@ -31,33 +31,54 @@
   --font-sans: 'Exo 2 Variable', 'Exo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
-  /* Font sizes */
-  --text-xs: 0.75rem;     /* 12px */
-  --text-sm: 0.875rem;    /* 14px */
-  --text-base: 1rem;      /* 16px */
-  --text-lg: 1.125rem;    /* 18px */
-  --text-xl: 1.25rem;     /* 20px */
-  --text-2xl: 1.5rem;     /* 24px */
-  --text-3xl: 1.875rem;   /* 30px */
-  --text-4xl: 2.25rem;    /* 36px */
-  --text-5xl: 3rem;       /* 48px */
-  --text-6xl: 3.75rem;    /* 60px - for large stats like "49%" */
+  /* ===== TYPE SCALE =====
+     Four steps with large gaps. A closely-spaced ramp cannot establish hierarchy: the rule is
+     few sizes, decisive contrast. Each step carries its own leading and tracking, because the
+     bigger the type the tighter both get — display type must never ship at body settings. */
+  --t-display: 5.5rem;    /* 88px - one per page: champion, hero, the big numeral */
+  --t-head: 2.5rem;       /* 40px - section and card headings */
+  --t-body: 0.9375rem;    /* 15px - everything readable */
+  --t-micro: 0.6875rem;   /* 11px - instrument labels, in caps, only */
 
-  /* Font weights */
-  --font-medium: 500;
-  --font-semibold: 600;
-  --font-bold: 700;
+  --lead-display: 0.92;
+  --lead-head: 1;
+  --lead-body: 1.35;
+  --lead-micro: 1.2;
+
+  --track-display: -0.03em;
+  --track-head: -0.01em;
+  --track-body: 0;
+  --track-micro: 0.16em;
+
+  /* Legacy aliases, mapped onto the four steps above. New work should use --t-*. */
+  --text-xs: var(--t-micro);
+  --text-sm: var(--t-body);
+  --text-base: var(--t-body);
+  --text-lg: 1.25rem;     /* 20px - nav and wordmark; the one intermediate step */
+  --text-xl: 1.25rem;
+  --text-2xl: var(--t-head);
+  --text-3xl: var(--t-head);
+  --text-4xl: var(--t-head);
+  --text-5xl: var(--t-head);
+  --text-6xl: var(--t-display);
+
+  /* Weight extremes only. 400/600 is the timid middle that reads as untuned. */
+  --font-thin: 200;
+  --font-heavy: 800;
+  --font-medium: 200;
+  --font-semibold: 800;
+  --font-bold: 800;
 
   /* Line heights */
   --leading-none: 1;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.625;
+  --leading-normal: var(--lead-body);
+  --leading-relaxed: 1.5;
 
   /* Letter spacing */
-  --tracking-tight: -0.025em;
-  --tracking-wide: 0.025em;
-  --tracking-wider: 0.05em;
-  --tracking-widest: 0.1em;    /* For ALL CAPS text */
+  --tracking-tight: var(--track-display);
+  --tracking-wide: 0.06em;
+  --tracking-wider: 0.1em;
+  --tracking-widest: var(--track-micro);
 
   /* ===== CHAMFER SYSTEM (replaces border-radius) ===== */
   /* Cut sizes for clip-path polygon corners */
@@ -371,20 +392,26 @@ body {
   --overlay-backdrop: rgba(0, 0, 0, 0.5);
   --overlay-blur: blur(4px);
 
-  /* Enhanced glow effects */
-  --glow-subtle: 0 0 20px var(--accent-primary-glow, var(--accent-primary));
-  --glow-strong: 0 0 40px var(--accent-primary-glow, var(--accent-primary));
-  --glow-pulse: 0 0 30px var(--accent-primary-glow, var(--accent-primary));
+  /* No decorative haze: emission is tight and comes from the readout itself. */
+  --glow-subtle: none;
+  --glow-strong: none;
+  --glow-pulse: none;
 }
 
 [data-theme="stellar"] {
-  --glass-bg: rgba(248, 249, 250, 0.7);
-  --glass-bg-elevated: rgba(255, 255, 255, 0.8);
-  --accent-primary-glow: rgba(255, 140, 0, 0.6);
+  --glass-bg: var(--bg-secondary);
+  --glass-bg-elevated: var(--bg-elevated);
+  --glass-border: var(--border-default);
+  --backdrop-blur-light: none;
+  --backdrop-blur-medium: none;
+  --backdrop-blur-heavy: none;
 }
 
 [data-theme="dragon"] {
-  --glass-bg: rgba(10, 22, 40, 0.75);
-  --glass-bg-elevated: rgba(15, 31, 56, 0.85);
-  --accent-primary-glow: rgba(218, 165, 32, 0.6);
+  --glass-bg: var(--bg-secondary);
+  --glass-bg-elevated: var(--bg-tertiary);
+  --glass-border: var(--border-default);
+  --backdrop-blur-light: none;
+  --backdrop-blur-medium: none;
+  --backdrop-blur-heavy: none;
 }

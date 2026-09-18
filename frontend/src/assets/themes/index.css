@@ -725,3 +725,153 @@
   transform: translateY(-10px) scale(1.02);
   filter: blur(2px);
 }
+
+/* ============================================================================
+   HUD FURNITURE
+   Print-production marks used as ornament: the tDR signature, and the thing
+   that distinguishes this from a near-black page with one accent. See
+   ../../DESIGN.md.
+   ========================================================================= */
+
+/* Every numeral, everywhere. A readout whose digits reflow as they change is broken. */
+.num,
+.hud-serial,
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Numbers dominate; their labels whisper. */
+.readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.readout-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-head);
+  font-weight: var(--font-heavy);
+  line-height: var(--lead-head);
+  letter-spacing: var(--track-head);
+  color: var(--accent-primary);
+  text-align: right;
+}
+
+/* Emissive only where the thing has a reason to emit, with a tight falloff that
+   increases legibility. Decorative glow around a shape is forbidden. */
+[data-theme='dragon'] .readout-value {
+  text-shadow: var(--shadow-glow);
+}
+
+.readout-label {
+  font-family: var(--font-display);
+  font-size: var(--t-micro);
+  font-weight: var(--font-thin);
+  letter-spacing: var(--track-micro);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+/* A tick rule, not a border: a hairline interrupted by measurement marks. */
+.tick-rule {
+  position: relative;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.tick-rule::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -2px;
+  width: 64px;
+  height: 5px;
+  border-left: 1px solid var(--border-strong);
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+/* Registration marks. Corner-anchored, centre left for the content. */
+.reg-marks {
+  position: relative;
+}
+
+.reg-marks::before,
+.reg-marks::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.reg-marks::before {
+  top: 0;
+  left: 0;
+  border-top: 1px solid var(--accent-primary);
+  border-left: 1px solid var(--accent-primary);
+}
+
+.reg-marks::after {
+  bottom: 0;
+  right: 0;
+  border-bottom: 1px solid var(--accent-primary);
+  border-right: 1px solid var(--accent-primary);
+}
+
+/* A segmented bar quantises: you read "about two thirds" without reading a number.
+   Segments are lit or unlit, never tweened. */
+.segbar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+}
+
+.segbar-seg {
+  flex: 1;
+  background: var(--border-subtle);
+}
+
+.segbar-seg-on {
+  background: var(--accent-primary);
+}
+
+[data-theme='dragon'] .segbar-seg-on {
+  box-shadow: var(--shadow-glow-sm);
+}
+
+/* The one orchestrated moment: the HUD boots panel by panel, in a deliberate
+   order. Slide and clip, never fade. Not a per-section entrance. */
+@keyframes hud-boot {
+  from {
+    clip-path: inset(0 100% 0 0);
+    transform: translateX(-6px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    transform: translateX(0);
+  }
+}
+
+.hud-boot > * {
+  animation: hud-boot 180ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.hud-boot > *:nth-child(1) { animation-delay: 0ms; }
+.hud-boot > *:nth-child(2) { animation-delay: 60ms; }
+.hud-boot > *:nth-child(3) { animation-delay: 120ms; }
+.hud-boot > *:nth-child(4) { animation-delay: 180ms; }
+.hud-boot > *:nth-child(n + 5) { animation-delay: 240ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-boot > * {
+    animation: none;
+  }
+}

@@ -6,6 +6,7 @@
 
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import HudIcon from '../../components/hud/HudIcon.vue'
 import TournamentCard from '../../components/tournaments/TournamentCard.vue'
 import TournamentFilters from '../../components/tournaments/TournamentFilters.vue'
 import { useTournaments } from '../../composables/useTournaments'
@@ -188,7 +189,7 @@ const getPageNumbers = () => {
 
         <!-- No Results Message -->
         <div v-else-if="filteredTournaments.length === 0" class="no-results">
-          <div class="no-results-icon">🏆</div>
+          <HudIcon name="tournament" :size="28" class="no-results-icon" />
           <h2 class="no-results-title">{{ $t('tournament.noTournamentsFound') }}</h2>
           <p class="no-results-text">{{ $t('tournament.noTournamentsHint') }}</p>
         </div>

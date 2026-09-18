@@ -87,6 +87,25 @@ describe('buildBracket', () => {
         ...over,
       }) as BackendMatch
 
+    it('carries seeds from registration order into a started bracket', () => {
+      const teams = [team(7, 'Alpha'), team(9, 'Bravo')]
+      const t = tournament({
+        teams,
+        phases: [
+          {
+            id: 1,
+            order: 1,
+            type: PhaseType.SINGLE_ELIMINATION,
+            matches: [match({ teams })],
+          },
+        ],
+      } as Partial<BackendTournament>)
+
+      const m = buildBracket(t)!.rounds[0].matches[0]
+      expect(m.player1?.seed).toBe(1)
+      expect(m.player2?.seed).toBe(2)
+    })
+
     it('prefers real matches over the provisional seeding', () => {
       const t = tournament({
         teams: [team(1, 'Alpha'), team(2, 'Bravo')],

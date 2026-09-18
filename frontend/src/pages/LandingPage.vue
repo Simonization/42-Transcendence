@@ -25,11 +25,10 @@ onMounted(fetchTournaments)
 </script>
 
 <template>
-  <div class="landing">
+  <div class="landing hud-boot">
     <!-- Animated background layer -->
     <div class="landing-background">
       <div class="bg-pattern"></div>
-      <div class="bg-gradient"></div>
     </div>
 
     <!-- Glass header -->
@@ -109,30 +108,8 @@ onMounted(fetchTournaments)
   background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%23ffffff' fill-opacity='0.03'/%3E%3C/svg%3E");
   background-size: 60px 60px;
   opacity: 0.15;
-  animation: pattern-drift 60s linear infinite;
 }
 
-@keyframes pattern-drift {
-  from { transform: translate(0, 0); }
-  to { transform: translate(60px, 60px); }
-}
-
-.bg-gradient {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at 20% 30%,
-    var(--accent-primary-glow) 0%,
-    transparent 50%
-  );
-  opacity: 0.2;
-  animation: gradient-pulse 8s ease-in-out infinite;
-}
-
-@keyframes gradient-pulse {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.3; }
-}
 
 .landing-header {
   display: flex;

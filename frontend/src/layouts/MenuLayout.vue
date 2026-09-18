@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import HudIcon from '../components/hud/HudIcon.vue'
 import SearchModal from '../components/common/SearchModal.vue'
 import NotificationBell from '../components/notifications/NotificationBell.vue'
 import { useChat } from '@/composables/useChat'
@@ -49,18 +50,18 @@ const handleLogout = async () => {
 const navItems = computed(() => {
 
   const baseItems = [
-    { to: '/', label: t('nav.home'), icon: '⚡︎' },
-    { to: '/menu/user', label: t('nav.user'), icon: '👤', badge: null },
-    { to: '/menu/friend', label: t('nav.friend'), icon: '👥', badge: null },
-    { to: '/menu/chat', label: t('nav.chat'), icon: '💬', badge: null },
-    { to: '/menu/tournaments', label: t('nav.tourn'), icon: '🏆' },
-    { to: '/menu/history', label: t('nav.history'), icon: '📊' },
-    { to: '/menu/brackets', label: t('nav.brackets'), icon: '🏅' },
-    { to: '/menu/organizations', label: t('nav.orgs'), icon: '🏢' },
+    { to: '/', label: t('nav.home'), icon: 'home' },
+    { to: '/menu/user', label: t('nav.user'), icon: 'user', badge: null },
+    { to: '/menu/friend', label: t('nav.friend'), icon: 'friend', badge: null },
+    { to: '/menu/chat', label: t('nav.chat'), icon: 'chat', badge: null },
+    { to: '/menu/tournaments', label: t('nav.tourn'), icon: 'tournament' },
+    { to: '/menu/history', label: t('nav.history'), icon: 'history' },
+    { to: '/menu/brackets', label: t('nav.brackets'), icon: 'brackets' },
+    { to: '/menu/organizations', label: t('nav.orgs'), icon: 'orgs' },
   ]
 
   if (authStore.isAdmin) {
-    baseItems.push({ to: '/menu/admin', label: t('nav.admin'), icon: '⚙️' })
+    baseItems.push({ to: '/menu/admin', label: t('nav.admin'), icon: 'admin' })
   }
 
   return baseItems
@@ -68,11 +69,10 @@ const navItems = computed(() => {
 </script>
 
 <template>
-  <div class="menu-layout">
+  <div class="menu-layout hud-boot">
     <!-- Animated background layer -->
     <div class="menu-background">
       <div class="bg-pattern"></div>
-      <div class="bg-gradient"></div>
     </div>
 
     <!-- Glass header -->
@@ -84,7 +84,9 @@ const navItems = computed(() => {
         <span class="hud-serial">SYS::ONLINE</span>
       </div>
       <div class="menu-header-actions">
-        <button class="menu-search-btn" @click="openSearch" :title="$t('search.open')">&#9906;</button>
+        <button class="menu-search-btn" @click="openSearch" :title="$t('search.open')" :aria-label="$t('search.open')">
+          <HudIcon name="search" :size="15" />
+        </button>
         <NotificationBell />
         <ThemeToggle />
         <button @click="handleLogout" class="menu-quit-btn">{{ $t('common.quit') }}</button>
@@ -100,7 +102,7 @@ const navItems = computed(() => {
         class="module-btn"
         active-class="module-btn-active"
       >
-        <span class="module-icon">{{ item.icon }}</span>
+        <HudIcon :name="item.icon" class="module-icon" />
         <span class="module-label">{{ item.label }}</span>
         <span v-if="item.badge" class="module-badge">{{ item.badge }}</span>
       </RouterLink>
@@ -158,30 +160,8 @@ const navItems = computed(() => {
   background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%23ffffff' fill-opacity='0.03'/%3E%3C/svg%3E");
   background-size: 60px 60px;
   opacity: 0.15;
-  animation: pattern-drift 60s linear infinite;
 }
 
-@keyframes pattern-drift {
-  from { transform: translate(0, 0); }
-  to { transform: translate(60px, 60px); }
-}
-
-.bg-gradient {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at 20% 30%,
-    var(--accent-primary-glow) 0%,
-    transparent 50%
-  );
-  opacity: 0.2;
-  animation: gradient-pulse 8s ease-in-out infinite;
-}
-
-@keyframes gradient-pulse {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.3; }
-}
 
 .menu-header {
   display: flex;
@@ -357,7 +337,7 @@ const navItems = computed(() => {
 }
 
 .module-icon {
-  font-size: var(--text-lg);
+  color: currentColor;
 }
 
 .module-label {

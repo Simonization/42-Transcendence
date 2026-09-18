@@ -33,7 +33,7 @@ const tournamentName = computed(() => currentTournament.value?.name ?? '')
   <div class="card card-page glass-panel">
     <div class="card-header">
       <h2 class="card-title">{{ $t('tournament.brackets') }}</h2>
-      <span class="hud-serial">MODULE::ACTIVE</span>
+      <span v-if="tournamentName" class="hud-serial">{{ tournamentName }}</span>
     </div>
 
     <div class="card-body">

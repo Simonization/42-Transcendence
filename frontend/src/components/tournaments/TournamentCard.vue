@@ -193,14 +193,14 @@ const getProgressPercentage = (current: number, max: number) => {
 }
 
 .status-open {
-  background: var(--color-success);
-  color: white;
+  background: transparent;
+  color: var(--accent-primary);
+  border: var(--hud-border) solid var(--accent-primary);
 }
 
 .status-live {
-  background: var(--color-warning);
-  color: white;
-  animation: pulse-status 2s ease-in-out infinite;
+  background: var(--live);
+  color: var(--bg-primary);
 }
 
 .status-finished {
@@ -208,10 +208,6 @@ const getProgressPercentage = (current: number, max: number) => {
   color: white;
 }
 
-@keyframes pulse-status {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
 
 .tournament-card-details {
   display: flex;

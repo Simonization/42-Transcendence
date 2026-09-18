@@ -72,6 +72,13 @@ function fromMatches(tournament: BackendTournament): TournamentBracket | null {
   const matches = (tournament.phases ?? []).flatMap(p => p.matches ?? [])
   if (!matches.length) return null
 
+  // Seeds come from the registration order, so a started bracket still shows real numbers
+  // rather than placeholders. An instrument with no numerals is not an instrument.
+  const seedOf = new Map<number, number>()
+  ;[...(tournament.teams ?? [])]
+    .sort((a, b) => a.id - b.id)
+    .forEach((t, i) => seedOf.set(t.id, i + 1))
+
   const byRound = new Map<number, BackendMatch[]>()
   for (const m of matches) {
     const round = m.round_order ?? 1
@@ -88,8 +95,8 @@ function fromMatches(tournament: BackendTournament): TournamentBracket | null {
         id: String(m.id),
         roundIndex,
         matchIndex,
-        player1: t1 ? toPlayer(t1, 0) : null,
-        player2: t2 ? toPlayer(t2, 0) : null,
+        player1: t1 ? toPlayer(t1, seedOf.get(t1.id) ?? 0) : null,
+        player2: t2 ? toPlayer(t2, seedOf.get(t2.id) ?? 0) : null,
         score1,
         score2,
         status: statusOf(m),
