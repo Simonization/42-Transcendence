@@ -11,3 +11,9 @@ export class KickMemberDto {
     @IsPositive()
     userId: number;
 }
+
+export class SetAdminDto {
+    @IsInt()
+    @IsPositive()
+    userId: number;
+}

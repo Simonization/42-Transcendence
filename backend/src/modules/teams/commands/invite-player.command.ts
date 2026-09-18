@@ -6,6 +6,7 @@ import { InvitationStatus, TeamInvitation } from '../entities/team-invitation.en
 import { User } from '../../users/entities/user.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
+import { TeamPermissionsService } from '../services/team-permissions.service';
 
 @Injectable()
 export class InvitePlayerCommand {
@@ -14,6 +15,7 @@ export class InvitePlayerCommand {
         @InjectRepository(TeamInvitation) private inviteRepo: Repository<TeamInvitation>,
         @InjectRepository(User) private userRepo: Repository<User>,
         private readonly notificationsService: NotificationsService,
+        private readonly permissions: TeamPermissionsService,
     ) {}
 
     async execute(teamId: number, targetUserId: number, actorId: number) {
@@ -25,10 +27,8 @@ export class InvitePlayerCommand {
 
         if (!team) throw new NotFoundException('Team not found');
 
-        // 2. Security: Only the captain can invite
-        if (team.captain_id !== actorId) {
-            throw new ForbiddenException('Only the captain can invite players');
-        }
+        // 2. Security: the captain or any team admin can invite
+        await this.permissions.assertAdmin(teamId, team.captain_id, actorId);
 
         // 3. Validation: Can't invite if team is locked
         if (team.status === TeamStatus.LOCKED) {
@@ -65,19 +65,19 @@ export class InvitePlayerCommand {
 
         // 7. Send notification to the invited player (BELL only)
         try {
-            const captain = await this.userRepo.findOne({ where: { id: actorId } });
-            const captainName = captain?.username || 'Unknown';
+            const actor = await this.userRepo.findOne({ where: { id: actorId } });
+            const actorName = actor?.username || 'Unknown';
 
             await this.notificationsService.sendNotification(
                 targetUserId,
                 'team_invite',
-                `${captainName} invited you to join team "${team.name}"`,
+                `${actorName} invited you to join team "${team.name}"`,
                 undefined,
                 {
                     teamId: team.id,
                     teamName: team.name,
-                    captainId: actorId,
-                    captainName: captainName,
+                    inviterId: actorId,
+                    inviterName: actorName,
                     invitationId: savedInvitation.id,
                 },
                 NotificationDestination.BELL,

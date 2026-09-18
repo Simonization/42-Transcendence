@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
@@ -20,12 +20,30 @@ export class AcceptInvitationCommand {
         try {
             const invite = await queryRunner.manager.findOne(TeamInvitation, {
                 where: { id: invitationId, receiver_id: userId, status: InvitationStatus.PENDING },
-                relations: ['team', 'team.members', 'team.tournament']
+                relations: [
+                    'team',
+                    'team.members',
+                    'team.tournament',
+                    'team.tournament.phases',
+                    'team.tournament.phases.game',
+                ]
             });
 
             if (!invite) throw new NotFoundException('Invitation not found or already processed');
 
             const team = invite.team;
+
+            // Without these two guards a stale invitation can inflate a roster past the size the
+            // game requires, and `lock` compares for equality — leaving the team unlockable.
+            if (team.status === TeamStatus.LOCKED) {
+                throw new BadRequestException('That team is locked and cannot take new members');
+            }
+
+            const phase1 = team.tournament?.phases?.find(p => p.order === 1);
+            const maxSize = phase1?.game?.teamSize ?? 1;
+            if (team.members.length >= maxSize) {
+                throw new BadRequestException(`That team is already full (${maxSize} players)`);
+            }
 
             invite.status = InvitationStatus.ACCEPTED;
             await queryRunner.manager.save(invite);

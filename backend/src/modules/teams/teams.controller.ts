@@ -2,7 +2,7 @@ import { Controller, Post, Body, UseGuards, Req, Patch, Param, ParseIntPipe, Get
 import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { InviteMemberDto, KickMemberDto } from './dto/manage-member.dto';
+import { InviteMemberDto, KickMemberDto, SetAdminDto } from './dto/manage-member.dto';
 
 @Controller('teams')
 export class TeamsController {
@@ -40,13 +40,33 @@ export class TeamsController {
         return await this.teamsService.lock(id, req.user.id);
     }
 
-    /** Returns pending invitations for a team (captain only) */
+    /** Grants admin rights to a member. Captain or an existing admin. */
+    @Patch(':id/promote')
+    @UseGuards(JwtAuthGuard)
+    async promote(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: SetAdminDto,
+        @Req() req,
+    ) {
+        return await this.teamsService.promote(id, dto.userId, req.user.id);
+    }
+
+    /** Revokes admin rights. The captain can demote anyone; an admin can only step down. */
+    @Patch(':id/demote')
+    @UseGuards(JwtAuthGuard)
+    async demote(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: SetAdminDto,
+        @Req() req,
+    ) {
+        return await this.teamsService.demote(id, dto.userId, req.user.id);
+    }
+
+    /** Returns pending invitations for a team. Members only. */
     @Get(':id/pending-invitations')
     @UseGuards(JwtAuthGuard)
     async getPendingInvitations(@Param('id', ParseIntPipe) id: number, @Req() req) {
-        const status = await this.teamsService.getTeamPendingInvitations(id);
-        // Verify the requester is involved (service-level guard is enough but keep it simple)
-        return status;
+        return await this.teamsService.getTeamPendingInvitations(id, req.user.id);
     }
 
     @Get('invitations/my')

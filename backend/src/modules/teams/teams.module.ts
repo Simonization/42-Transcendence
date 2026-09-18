@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Team } from './entities/team.entity';
+import { TeamAdmin } from './entities/team-admin.entity';
 import { TeamInvitation } from './entities/team-invitation.entity';
 import { User } from '../users/entities/user.entity';
 import { Tournament } from '../tournaments/entities/tournament.entity';
@@ -18,15 +19,19 @@ import { DeleteTeamCommand } from './commands/delete-team.command';
 import { LeaveTeamCommand } from './commands/leave-team.command';
 import { GetMyInvitationsQuery } from './queries/get-my-invitations.query';
 import { GetMyTeamForTournamentQuery } from './queries/get-my-team-for-tournament.query';
+import { SetAdminCommand } from './commands/set-admin.command';
+import { TeamPermissionsService } from './services/team-permissions.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Team, TeamInvitation, User, Tournament]),
+    TypeOrmModule.forFeature([Team, TeamAdmin, TeamInvitation, User, Tournament]),
     NotificationsModule,
   ],
   controllers: [TeamsController],
   providers: [
     TeamsService,
+    TeamPermissionsService,
+    SetAdminCommand,
     CreateTeamCommand,
     InvitePlayerCommand,
     KickPlayerCommand,

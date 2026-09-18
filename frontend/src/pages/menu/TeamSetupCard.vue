@@ -55,6 +55,18 @@ const isCaptain = computed(() =>
   myTeam.value !== null && myTeam.value.captain_id === me.value?.id
 )
 
+/** Promoted members only; the captain holds admin rights through captain_id. */
+const adminIds = computed(
+  () => new Set(myTeam.value?.admins?.map(a => a.userId) ?? []),
+)
+
+const canManage = computed(
+  () => isCaptain.value || (me.value != null && adminIds.value.has(me.value.id)),
+)
+
+const isAdminOf = (userId: number) =>
+  userId === myTeam.value?.captain_id || adminIds.value.has(userId)
+
 const isLocked = computed(() =>
   myTeam.value?.status === TeamStatus.LOCKED
 )
@@ -64,7 +76,7 @@ const memberCount = computed(() => myTeam.value?.members?.length ?? 0)
 const pendingCount = computed(() => pendingInvitations.value.length)
 
 const canLock = computed(() =>
-  isCaptain.value &&
+  canManage.value &&
   !isLocked.value &&
   memberCount.value === requiredSize.value
 )
@@ -110,7 +122,7 @@ async function load() {
     myTeam.value = statusData.team
     myInvitation.value = statusData.invitation
 
-    if (myTeam.value && isCaptain.value) {
+    if (myTeam.value && canManage.value) {
       pendingInvitations.value = await teamsApi.getTeamInvitations(myTeam.value.id)
     }
   } catch {
@@ -184,6 +196,37 @@ async function lockTeam() {
     notifications.success('Team locked! You are registered.')
   } catch (err: any) {
     notifications.error(err?.message ?? 'Failed to lock team')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// ─── Roster management (captain or admin) ─────────────────────────────────────
+
+async function setAdmin(userId: number, makeAdmin: boolean) {
+  if (!myTeam.value) return
+  isSubmitting.value = true
+  try {
+    if (makeAdmin) await teamsApi.promote(myTeam.value.id, userId)
+    else await teamsApi.demote(myTeam.value.id, userId)
+    await load()
+    notifications.success(makeAdmin ? 'Member promoted to admin.' : 'Admin rights revoked.')
+  } catch (err: any) {
+    notifications.error(err?.message ?? 'Failed to change admin rights')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+async function kickMember(userId: number) {
+  if (!myTeam.value) return
+  isSubmitting.value = true
+  try {
+    myTeam.value = await teamsApi.kickPlayer(myTeam.value.id, userId)
+    await load()
+    notifications.info('Member removed from the team.')
+  } catch (err: any) {
+    notifications.error(err?.message ?? 'Failed to remove member')
   } finally {
     isSubmitting.value = false
   }
@@ -347,6 +390,42 @@ async function leaveTeam() {
                 <span v-if="slot.user.id === myTeam.captain_id" class="ts-slot-tag ts-tag-captain">
                   {{ t('tournament.captain') }}
                 </span>
+                <span v-else-if="adminIds.has(slot.user.id)" class="ts-slot-tag ts-tag-admin">
+                  ADMIN
+                </span>
+              </div>
+
+              <div
+                v-if="canManage && !isLocked && slot.user.id !== myTeam.captain_id"
+                class="ts-slot-actions"
+              >
+                <button
+                  v-if="!adminIds.has(slot.user.id)"
+                  class="ts-slot-action"
+                  :disabled="isSubmitting"
+                  title="Grant admin rights"
+                  @click="setAdmin(slot.user.id, true)"
+                >
+                  + ADMIN
+                </button>
+                <button
+                  v-else-if="isCaptain || slot.user.id === me?.id"
+                  class="ts-slot-action"
+                  :disabled="isSubmitting"
+                  title="Revoke admin rights"
+                  @click="setAdmin(slot.user.id, false)"
+                >
+                  &minus; ADMIN
+                </button>
+                <button
+                  v-if="isCaptain || !isAdminOf(slot.user.id)"
+                  class="ts-slot-action ts-slot-action-danger"
+                  :disabled="isSubmitting"
+                  title="Remove from team"
+                  @click="kickMember(slot.user.id)"
+                >
+                  KICK
+                </button>
               </div>
             </template>
 
@@ -365,7 +444,7 @@ async function leaveTeam() {
               <div class="ts-slot-info">
                 <span class="ts-slot-empty-label">{{ t('tournament.emptySlot') }}</span>
                 <button
-                  v-if="isCaptain && !isLocked"
+                  v-if="canManage && !isLocked"
                   class="ts-invite-btn"
                   @click="showInvitePanel = true"
                 >
@@ -377,7 +456,7 @@ async function leaveTeam() {
         </div>
 
         <!-- Invite panel (captain only) -->
-        <div v-if="isCaptain && !isLocked" class="ts-invite-panel">
+        <div v-if="canManage && !isLocked" class="ts-invite-panel">
           <button class="ts-invite-toggle" @click="showInvitePanel = !showInvitePanel">
             {{ showInvitePanel ? '▲' : '▼' }} {{ t('tournament.invitePlayer') }}
           </button>
@@ -413,8 +492,8 @@ async function leaveTeam() {
           </div>
         </div>
 
-        <!-- Lock button (captain only) -->
-        <div v-if="isCaptain" class="ts-lock-row">
+        <!-- Lock button (captain or admin) -->
+        <div v-if="canManage" class="ts-lock-row">
           <p v-if="!isLocked && memberCount < requiredSize" class="ts-lock-hint">
             {{ t('tournament.lockHint', { needed: requiredSize - memberCount }) }}
           </p>
@@ -744,6 +823,42 @@ async function leaveTeam() {
 }
 .ts-tag-captain { color: var(--accent-primary); background: var(--bg-selected); border: var(--hud-border) solid var(--accent-primary-subtle); }
 .ts-tag-pending { color: var(--color-warning); background: rgba(234,179,8,0.1); border: var(--hud-border) solid var(--color-warning); }
+.ts-tag-admin { color: var(--color-info); background: var(--bg-tertiary); border: var(--hud-border) solid var(--color-info); }
+
+.ts-slot-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.ts-slot-action {
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-secondary);
+  background: transparent;
+  border: var(--hud-border) solid var(--border-default);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.ts-slot-action:hover:not(:disabled) {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.ts-slot-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ts-slot-action-danger:hover:not(:disabled) {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
 
 .ts-invite-btn {
   margin-left: auto;

@@ -8,6 +8,7 @@ import type {
   BackendTeam,
   CreateTeamDto,
   InvitePlayerDto,
+  TeamAdminState,
   TeamInvitation,
 } from '../types'
 
@@ -39,10 +40,30 @@ export const teamsApi = {
   },
 
   /**
-   * Kick a player from a team (captain only)
+   * Kick a player from a team (captain or team admin)
    */
   kickPlayer(teamId: number, userId: number): Promise<BackendTeam> {
     return api<BackendTeam>(`/teams/${teamId}/kick`, {
+      method: 'PATCH',
+      body: { userId },
+    })
+  },
+
+  /**
+   * Grant admin rights to a member (captain or an existing admin)
+   */
+  promote(teamId: number, userId: number): Promise<TeamAdminState> {
+    return api<TeamAdminState>(`/teams/${teamId}/promote`, {
+      method: 'PATCH',
+      body: { userId },
+    })
+  },
+
+  /**
+   * Revoke admin rights. The captain can demote anyone; an admin can only step down.
+   */
+  demote(teamId: number, userId: number): Promise<TeamAdminState> {
+    return api<TeamAdminState>(`/teams/${teamId}/demote`, {
       method: 'PATCH',
       body: { userId },
     })

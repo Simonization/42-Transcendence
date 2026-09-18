@@ -11,11 +11,13 @@ import { DeleteTeamCommand } from './commands/delete-team.command';
 import { LeaveTeamCommand } from './commands/leave-team.command';
 import { GetMyInvitationsQuery } from './queries/get-my-invitations.query';
 import { GetMyTeamForTournamentQuery } from './queries/get-my-team-for-tournament.query';
+import { SetAdminCommand } from './commands/set-admin.command';
 
 @Injectable()
 export class TeamsService {
     constructor(
         private readonly createCmd: CreateTeamCommand,
+        private readonly setAdminCmd: SetAdminCommand,
         private readonly inviteCmd: InvitePlayerCommand,
         private readonly kickCmd: KickPlayerCommand,
         private readonly lockCmd: LockTeamCommand,
@@ -43,6 +45,14 @@ export class TeamsService {
         return await this.lockCmd.execute(teamId, actorId);
     }
 
+    async promote(teamId: number, targetId: number, actorId: number) {
+        return await this.setAdminCmd.promote(teamId, targetId, actorId);
+    }
+
+    async demote(teamId: number, targetId: number, actorId: number) {
+        return await this.setAdminCmd.demote(teamId, targetId, actorId);
+    }
+
     async getMyInvitations(userId: number) {
         return await this.getInvitesQuery.execute(userId);
     }
@@ -67,7 +77,7 @@ export class TeamsService {
         return await this.getMyTeamQuery.execute(tournamentId, userId);
     }
 
-    async getTeamPendingInvitations(teamId: number) {
-        return await this.getMyTeamQuery.getPendingInvitations(teamId);
+    async getTeamPendingInvitations(teamId: number, requesterId: number) {
+        return await this.getMyTeamQuery.getPendingInvitations(teamId, requesterId);
     }
 }

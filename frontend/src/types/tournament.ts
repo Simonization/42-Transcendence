@@ -74,6 +74,14 @@ export interface BackendTeamMember {
   avatarUrl?: string | null
 }
 
+export interface BackendTeamAdmin {
+  id: number
+  userId: number
+  teamId: number
+  grantedBy: number
+  grantedAt: string
+}
+
 export interface BackendTeam {
   id: number
   name: string
@@ -81,7 +89,16 @@ export interface BackendTeam {
   captain_id: number
   captain?: BackendTeamMember
   members: BackendTeamMember[]
+  /** Promoted members only; the captain is an admin via captain_id and is never listed here. */
+  admins?: BackendTeamAdmin[]
   tournament?: BackendTournament
+}
+
+/** Returned by the promote/demote endpoints. */
+export interface TeamAdminState {
+  teamId: number
+  captainId: number
+  adminIds: number[]
 }
 
 export interface TeamInvitation {

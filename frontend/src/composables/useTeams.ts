@@ -51,7 +51,41 @@ export function useTeams() {
   }
 
   /**
-   * Lock the team (captain only, team must match game's teamSize)
+   * Remove a member (captain or team admin)
+   */
+  const kickPlayer = async (teamId: number, userId: number): Promise<boolean> => {
+    error.value = ''
+    try {
+      myTeam.value = await teamsApi.kickPlayer(teamId, userId)
+      return true
+    } catch (e) {
+      error.value = getErrorMessage(e, 'Failed to remove player')
+      return false
+    }
+  }
+
+  /**
+   * Grant or revoke admin rights on the current team
+   */
+  const setAdmin = async (
+    teamId: number,
+    userId: number,
+    isAdmin: boolean,
+  ): Promise<number[] | null> => {
+    error.value = ''
+    try {
+      const state = isAdmin
+        ? await teamsApi.promote(teamId, userId)
+        : await teamsApi.demote(teamId, userId)
+      return state.adminIds
+    } catch (e) {
+      error.value = getErrorMessage(e, isAdmin ? 'Failed to promote' : 'Failed to demote')
+      return null
+    }
+  }
+
+  /**
+   * Lock the team (captain or admin, team must match game's teamSize)
    */
   const lockTeam = async (teamId: number): Promise<boolean> => {
     isLoading.value = true
@@ -122,6 +156,8 @@ export function useTeams() {
     error,
     createTeam,
     invitePlayer,
+    kickPlayer,
+    setAdmin,
     lockTeam,
     fetchMyInvitations,
     acceptInvitation,

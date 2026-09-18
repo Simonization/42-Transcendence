@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from '../entities/team.entity';
@@ -24,6 +24,7 @@ export class GetMyTeamForTournamentQuery {
             .innerJoin('team.members', 'memberFilter', 'memberFilter.id = :userId', { userId })
             .leftJoinAndSelect('team.members', 'member')
             .leftJoinAndSelect('team.captain', 'captain')
+            .leftJoinAndSelect('team.admins', 'admin')
             .getOne();
 
         // Always check for a pending invitation (even if already in a team — user may want to switch)
@@ -44,7 +45,16 @@ export class GetMyTeamForTournamentQuery {
         return { team, invitation };
     }
 
-    async getPendingInvitations(teamId: number): Promise<TeamInvitation[]> {
+    /** Restricted to team members: the roster reveals who has been invited. */
+    async getPendingInvitations(teamId: number, requesterId: number): Promise<TeamInvitation[]> {
+        const isMember = await this.teamRepo.existsBy({
+            id: teamId,
+            members: { id: requesterId },
+        });
+        if (!isMember) {
+            throw new ForbiddenException('Only team members can view pending invitations');
+        }
+
         return this.inviteRepo.find({
             where: { team_id: teamId, status: InvitationStatus.PENDING },
             relations: ['receiver'],

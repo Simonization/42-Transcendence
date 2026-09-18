@@ -8,6 +8,8 @@ export type NotificationType =
   | 'friend_request'
   | 'friend_request_accepted'
   | 'team_invite'
+  | 'team_admin_granted'
+  | 'team_admin_revoked'
   | 'tournament_started'
   | 'match_result';
 
