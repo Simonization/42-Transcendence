@@ -239,7 +239,9 @@
     "ratingAndSeed": "Classement : {rating} | Tête de série : #{seed}",
     "matchStatus": "STATUT",
     "matchCompleted": "TERMINÉ",
-    "matchScheduled": "PLANIFIÉ"
+    "matchScheduled": "PLANIFIÉ",
+    "bracketGuidance": "Créez un tournoi, inscrivez des équipes, puis lancez-le pour générer le tableau.",
+    "goToAdmin": "ALLER À L’ADMIN"
   },
   "friends": {
     "title": "AMIS",

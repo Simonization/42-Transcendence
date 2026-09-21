@@ -458,6 +458,12 @@ const navItems = computed(() => {
   flex: 1;
   display: flex;
   justify-content: center;
+  /*
+   * Default `stretch` pulled every page card to the full height of the viewport, so a short
+   * page (a three-team bracket, an empty roster) rendered 277px of framed emptiness below its
+   * last row. Cards size to their content; a page that genuinely wants the height asks for it.
+   */
+  align-items: flex-start;
   padding: var(--space-8) var(--space-8) var(--space-8) calc(100px + var(--space-8));
   position: relative;
   z-index: 1;

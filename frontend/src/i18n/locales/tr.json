@@ -239,7 +239,9 @@
     "ratingAndSeed": "Puan: {rating} | Sıralama: #{seed}",
     "matchStatus": "DURUM",
     "matchCompleted": "TAMAMLANDI",
-    "matchScheduled": "PLANLANMIŞ"
+    "matchScheduled": "PLANLANMIŞ",
+    "bracketGuidance": "Bir turnuva oluşturun, takımları kaydedin, ardından eşleşmeleri oluşturmak için başlatın.",
+    "goToAdmin": "YÖNETİME GİT"
   },
   "friends": {
     "title": "ARKADAŞLAR",

@@ -239,7 +239,9 @@
     "deleteTeam": "DELETE TEAM",
     "leaveTeam": "LEAVE TEAM",
     "acceptWillDeleteTeam": "Accepting will disband your current team.",
-    "acceptWillLeaveTeam": "Accepting will remove you from your current team."
+    "acceptWillLeaveTeam": "Accepting will remove you from your current team.",
+    "bracketGuidance": "Create a tournament, register teams, then start it to generate the bracket.",
+    "goToAdmin": "GO TO ADMIN"
   },
   "friends": {
     "title": "FRIENDS",

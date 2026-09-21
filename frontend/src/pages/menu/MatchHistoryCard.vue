@@ -151,7 +151,7 @@ const formatDate = (date: string) => {
       <div class="filters-bar glass-panel">
         <div class="filter-group">
           <label for="filter-game" class="filter-label">{{ $t('match.game') }}</label>
-          <select id="filter-game" v-model="filterGame" class="filter-select">
+          <select id="filter-game" v-model="filterGame" class="input select filter-select">
             <option value="all">{{ $t('match.allGames') }}</option>
             <option v-for="game in uniqueGames" :key="game" :value="game">
               {{ game }}
@@ -161,7 +161,7 @@ const formatDate = (date: string) => {
 
         <div class="filter-group">
           <label for="filter-result" class="filter-label">{{ $t('match.result') }}</label>
-          <select id="filter-result" v-model="filterResult" class="filter-select">
+          <select id="filter-result" v-model="filterResult" class="input select filter-select">
             <option value="all">{{ $t('match.allResults') }}</option>
             <option value="win">{{ $t('match.winsOnly') }}</option>
             <option value="loss">{{ $t('match.lossesOnly') }}</option>
@@ -171,7 +171,7 @@ const formatDate = (date: string) => {
 
         <div class="filter-group">
           <label for="sort-by" class="filter-label">{{ $t('match.sortBy') }}</label>
-          <select id="sort-by" v-model="sortBy" class="filter-select">
+          <select id="sort-by" v-model="sortBy" class="input select filter-select">
             <option value="date">{{ $t('match.dateNewest') }}</option>
             <option value="result">{{ $t('match.result') }}</option>
           </select>

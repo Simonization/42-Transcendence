@@ -281,7 +281,7 @@ onUnmounted(() => {
             @click="handleGameInvite"
             :title="$t('chat.inviteToGame')"
           >
-            &#127918;
+            <HudIcon name="game" :size="15" />
           </button>
           <button
             v-if="dmPartnerId"
@@ -289,7 +289,7 @@ onUnmounted(() => {
             @click="handleViewProfile(dmPartnerId)"
             :title="$t('chat.viewProfile')"
           >
-            &#128100;
+            <HudIcon name="user" :size="15" />
           </button>
           <button
             v-if="dmPartnerId && !isActiveRoomBlocked"
@@ -297,7 +297,7 @@ onUnmounted(() => {
             @click="showBlockConfirm = true"
             :title="$t('chat.blockUser')"
           >
-            &#128683;
+            <HudIcon name="block" :size="15" />
           </button>
         </div>
 
@@ -364,6 +364,8 @@ onUnmounted(() => {
 
 .chat-layout {
   display: flex;
+  /* The conversation pane is the one page that should fill the viewport. */
+  align-self: stretch;
   min-height: 400px;
   max-height: 80vh;
   overflow: hidden;

@@ -68,7 +68,7 @@ const saveSettings = async () => {
         <div class="setting-label">
           <label for="language-select" class="label-caps">{{ $t('settings.language') }}</label>
         </div>
-        <select id="language-select" v-model="language" class="input setting-select">
+        <select id="language-select" v-model="language" class="input select setting-select">
           <option v-for="lang in SUPPORTED_LANGUAGES" :key="lang" :value="lang">
             {{ languageLabels[lang] || lang }}
           </option>

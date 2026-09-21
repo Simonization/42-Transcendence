@@ -270,7 +270,7 @@ onMounted(() => fetchUsers())
           <p class="ban-message">{{ $t('admin.confirmBan') }}</p>
 
           <label class="ban-label" for="ban-unit">{{ $t('admin.banDurationType') }}</label>
-          <select id="ban-unit" v-model="banUnit" class="ban-input">
+          <select id="ban-unit" v-model="banUnit" class="input select ban-input">
             <option value="hours">{{ $t('admin.banHours') }}</option>
             <option value="days">{{ $t('admin.banDays') }}</option>
             <option value="permanent">{{ $t('admin.banPermanent') }}</option>
@@ -278,7 +278,7 @@ onMounted(() => fetchUsers())
 
           <template v-if="banUnit !== 'permanent'">
             <label class="ban-label" for="ban-value">{{ $t('admin.banDurationValue') }}</label>
-            <input id="ban-value" v-model.number="banValue" type="number" min="1" class="ban-input" />
+            <input id="ban-value" v-model.number="banValue" type="number" min="1" class="input select ban-input" />
           </template>
 
           <div class="ban-actions">

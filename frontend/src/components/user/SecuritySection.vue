@@ -31,7 +31,7 @@ onMounted(() => {
       <div class="security-row">
         <div class="security-info">
           <span class="label-caps">{{ $t('security.twoFactorAuth') }}</span>
-          <span class="badge" :class="enabled ? 'badge-success' : 'badge-warning'">
+          <span class="badge" :class="enabled ? 'badge-success' : 'badge-muted'">
             {{ enabled ? $t('common.enabled') : $t('common.disabled') }}
           </span>
         </div>

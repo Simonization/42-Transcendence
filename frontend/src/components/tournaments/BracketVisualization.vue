@@ -335,6 +335,12 @@ function formatDate(iso: string): string {
 
 .bracket-grid {
   display: flex;
+  /*
+   * A small field has fewer columns than the frame is wide. Left-packed, that reads as a
+   * bracket that failed to load; centred, it reads as a two-round bracket. `safe` keeps a
+   * large field scrollable from its first round rather than clipping it off the left edge.
+   */
+  justify-content: safe center;
   gap: var(--space-4);
   padding: 0 var(--space-4);
   overflow-x: auto;

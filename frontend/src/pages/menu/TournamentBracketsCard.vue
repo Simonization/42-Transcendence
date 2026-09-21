@@ -7,6 +7,7 @@
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BracketVisualization from '../../components/tournaments/BracketVisualization.vue'
+import HudIcon from '../../components/hud/HudIcon.vue'
 import { useTournaments } from '../../composables/useTournaments'
 import { buildBracket } from '../../utils/bracket'
 
@@ -37,18 +38,17 @@ const tournamentName = computed(() => currentTournament.value?.name ?? '')
     </div>
 
     <div class="card-body">
-      <div v-if="isLoading" style="text-align: center; padding: var(--space-8); color: var(--text-tertiary);">
-        {{ $t('common.loading') }}
+      <div v-if="isLoading" class="bracket-loading">
+        <div class="segbar" aria-hidden="true"></div>
+        <span>{{ $t('common.loading') }}</span>
       </div>
       <BracketVisualization v-else-if="bracket" :bracket="bracket" :tournament-name="tournamentName" />
       <div v-else class="bracket-guidance">
-        <div class="guidance-icon">&#127942;</div>
+        <HudIcon name="brackets" :size="28" class="guidance-icon" />
         <h3 class="guidance-title">{{ $t('tournament.noBracketData') }}</h3>
-        <p class="guidance-text">
-          To view a bracket, first create a tournament (Admin &gt; Create), register teams, and start the tournament.
-        </p>
+        <p class="guidance-text">{{ $t('tournament.bracketGuidance') }}</p>
         <button class="guidance-btn" @click="router.push('/menu/admin')">
-          Go to Admin
+          {{ $t('tournament.goToAdmin') }}
         </button>
       </div>
     </div>
@@ -98,8 +98,19 @@ const tournamentName = computed(() => currentTournament.value?.name ?? '')
 }
 
 .guidance-icon {
-  font-size: var(--text-4xl);
-  opacity: 0.6;
+  color: var(--text-tertiary);
+}
+
+.bracket-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
 }
 
 .guidance-title {

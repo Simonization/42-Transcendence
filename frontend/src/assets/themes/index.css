@@ -283,6 +283,28 @@
   cursor: not-allowed;
 }
 
+/*
+ * Selects had no styling at all, so three screens rendered a stock OS control — rounded, white,
+ * with the platform's own chevron — against a chamfered flat-field HUD. Same box as .input,
+ * with the native arrow replaced by a drawn one.
+ */
+.select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: var(--space-8);
+  /* A single stroked chevron, matching HudIcon's weight. A data URI can't read a custom
+     property, so this grey is picked to sit on both the Stellar and Dragon fields. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7' fill='none' stroke='%23808898' stroke-width='1.4'%3E%3Cpath d='M1 1.5 L5 5.5 L9 1.5'/%3E%3C/svg%3E");
+  background-position: right var(--space-4) center;
+  background-size: 10px 7px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.select::-ms-expand {
+  display: none;
+}
+
 .input-error {
   border-color: var(--border-error);
 }
@@ -427,6 +449,12 @@
 .badge-error {
   background: var(--color-error-bg);
   color: var(--color-error);
+}
+
+/* An "off" state is not an alert. Reporting it in amber spends a hue the screen hasn't got. */
+.badge-muted {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 /* ---------- TEXT UTILITIES ---------- */
