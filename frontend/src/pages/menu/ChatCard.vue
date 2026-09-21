@@ -12,6 +12,7 @@ import { storeToRefs } from 'pinia'
 import { usersApi } from '../../api/users'
 import DemoBanner from '../../components/common/DemoBanner.vue'
 import type { User } from '../../types'
+import HudIcon from '../../components/hud/HudIcon.vue'
 
 const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
@@ -409,7 +410,6 @@ onUnmounted(() => {
 
 .ws-dot-on {
   background: var(--color-success);
-  box-shadow: 0 0 6px var(--color-success);
 }
 
 .ws-dot-off {

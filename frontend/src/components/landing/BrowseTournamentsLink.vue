@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 import { getAccessToken } from '../../api'
 import { TournamentStatus } from '../../types'
 import type { BackendTournament } from '../../types'
+import HudIcon from '../hud/HudIcon.vue'
 
 const props = defineProps<{
   tournaments: BackendTournament[]
@@ -40,7 +41,7 @@ const handleBrowse = () => {
 <template>
   <section class="browse-card glass-panel" @click="handleBrowse">
     <div class="browse-content">
-      <div class="browse-icon">🏆</div>
+      <div class="browse-icon"><HudIcon name="tournament" :size="26" /></div>
       <h2 class="browse-title">{{ $t('landing.browseAll') }}</h2>
       <p class="browse-subtitle">{{ $t('landing.browseSubtitle') }}</p>
 
@@ -58,7 +59,6 @@ const handleBrowse = () => {
 
       <div class="browse-cta">
         <span class="browse-cta-text">{{ $t('landing.viewAllTournaments') }}</span>
-        <span class="browse-cta-arrow">→</span>
       </div>
     </div>
   </section>
@@ -68,24 +68,15 @@ const handleBrowse = () => {
 .browse-card {
   cursor: pointer;
   padding: var(--space-8);
-  background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
-  border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all var(--duration-normal) var(--ease-default);
+  background: var(--bg-secondary);
+  border: var(--hud-border) solid var(--border-default);
+  transition: border-color var(--duration-fast) var(--ease-default);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .browse-card:hover {
-  box-shadow:
-    0 0 20px var(--accent-primary-subtle),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transform: translateY(-4px);
   border-color: var(--accent-primary);
 }
 
@@ -103,13 +94,7 @@ const handleBrowse = () => {
 }
 
 .browse-icon {
-  font-size: var(--text-5xl);
-  animation: bounce-icon 3s ease-in-out infinite;
-}
-
-@keyframes bounce-icon {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  color: var(--accent-primary);
 }
 
 .browse-title {
@@ -179,7 +164,6 @@ const handleBrowse = () => {
 
 .browse-card:hover .browse-cta {
   background: var(--bg-selected);
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
 .browse-cta-text {
@@ -190,14 +174,7 @@ const handleBrowse = () => {
   text-transform: uppercase;
 }
 
-.browse-cta-arrow {
-  font-size: var(--text-sm);
-  transition: transform var(--duration-fast) var(--ease-default);
-}
 
-.browse-card:hover .browse-cta-arrow {
-  transform: translateX(4px);
-}
 
 /* Responsive - mobile */
 @media (max-width: 768px) {
@@ -226,10 +203,6 @@ const handleBrowse = () => {
 @media (max-width: 480px) {
   .browse-card {
     padding: var(--space-4);
-  }
-
-  .browse-icon {
-    font-size: var(--text-4xl);
   }
 
   .browse-title {

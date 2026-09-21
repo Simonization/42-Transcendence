@@ -191,7 +191,6 @@ const goBackToLogin = () => {
 
 .code-input:focus {
   border-color: rgba(100, 120, 200, 0.5);
-  box-shadow: 0 0 12px rgba(100, 120, 200, 0.1);
 }
 
 .auth-btn {
@@ -213,7 +212,6 @@ const goBackToLogin = () => {
 
 .auth-btn:hover:not(:disabled) {
   background: var(--bg-secondary);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
 .auth-btn:disabled {

@@ -163,12 +163,10 @@ const sizeClass = computed(() => `shader-btn-${props.size}`)
 .shader-btn-secondary {
   background: transparent;
   color: var(--btn-secondary-text);
-  box-shadow: inset 0 0 0 var(--hud-border) var(--btn-secondary-border);
 }
 
 .shader-btn-secondary:hover:not(:disabled) {
   background: var(--bg-hover);
-  box-shadow: inset 0 0 0 var(--hud-border) var(--accent-primary);
 }
 
 .shader-btn-ghost {

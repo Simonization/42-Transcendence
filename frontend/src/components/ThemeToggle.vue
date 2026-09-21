@@ -104,14 +104,12 @@ const toggleTheme = () => {
   left: 2px;
   background: var(--accent-primary);
   color: white;
-  box-shadow: 0 2px 4px rgba(255, 106, 0, 0.3);
 }
 
 .theme-toggle-indicator.dragon {
   left: calc(100% - 24px);
   background: var(--accent-primary);
   color: var(--bg-primary);
-  box-shadow: var(--shadow-glow-sm);
 }
 
 .theme-icon {

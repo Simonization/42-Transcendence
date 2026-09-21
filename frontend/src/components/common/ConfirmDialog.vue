@@ -91,8 +91,6 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.5);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
 }
 
 .dialog-panel {
@@ -117,7 +115,6 @@ onUnmounted(() => {
     var(--chamfer-xs) 100%,
     0 calc(100% - var(--chamfer-xs))
   );
-  box-shadow: var(--shadow-xl);
 }
 
 .dialog-title {

@@ -32,6 +32,24 @@ const champion = computed(() => {
   return null
 })
 
+const fieldSize = computed(() => {
+  const first = props.bracket.rounds[0]
+  if (!first) return 0
+  return first.matches
+    .flatMap(m => [m.player1, m.player2])
+    .filter(p => p && p.id !== 'bye').length
+})
+
+const liveCount = computed(() =>
+  props.bracket.rounds.flatMap(r => r.matches).filter(m => m.status === 'live').length,
+)
+
+const stageLabel = computed(() => {
+  if (props.bracket.provisional) return 'SEEDING'
+  if (champion.value) return 'COMPLETE'
+  return liveCount.value > 0 ? 'LIVE' : 'READY'
+})
+
 function matchStatusClass(match: BracketMatch) {
   return {
     'match-completed': match.status === 'completed',
@@ -79,6 +97,27 @@ function formatDate(iso: string): string {
         <span class="readout-value">{{ String(champion.seed || 1).padStart(2, '0') }}</span>
         <span class="readout-label">SEED</span>
       </div>
+    </div>
+
+    <!-- Corner-anchored instrument cluster: values read off the bracket itself. -->
+    <div class="bracket-cluster">
+      <div class="readout">
+        <span class="readout-value">{{ String(fieldSize).padStart(2, '0') }}</span>
+        <span class="readout-label">Field</span>
+      </div>
+      <div class="cluster-rule" aria-hidden="true"></div>
+      <div class="readout">
+        <span class="readout-value">{{ String(bracket.rounds.length).padStart(2, '0') }}</span>
+        <span class="readout-label">Rounds</span>
+      </div>
+      <div class="cluster-rule" aria-hidden="true"></div>
+      <div class="readout">
+        <span class="readout-value" :class="{ 'readout-live': liveCount > 0 }">
+          {{ String(liveCount).padStart(2, '0') }}
+        </span>
+        <span class="readout-label">Live</span>
+      </div>
+      <span class="cluster-stage">{{ stageLabel }}</span>
     </div>
 
     <!-- Bracket Visualization -->
@@ -180,7 +219,39 @@ function formatDate(iso: string): string {
 .bracket-container {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
+}
+
+.bracket-cluster {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border-top: var(--hud-border) solid var(--border-default);
+  border-bottom: var(--hud-border) solid var(--border-default);
+}
+
+.cluster-rule {
+  align-self: stretch;
+  width: 1px;
+  background: var(--border-subtle);
+}
+
+.cluster-stage {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: var(--t-micro);
+  font-weight: var(--font-heavy);
+  letter-spacing: var(--track-micro);
+  color: var(--text-secondary);
+}
+
+.readout-live {
+  color: var(--live);
+}
+
+[data-theme='dragon'] .readout-live {
+  text-shadow: 0 0 2px rgba(255, 45, 85, 0.85);
 }
 
 .provisional-banner {
@@ -216,12 +287,7 @@ function formatDate(iso: string): string {
   gap: var(--space-4);
   padding: var(--space-4) var(--space-6);
   background: linear-gradient(135deg, var(--glass-bg-elevated) 0%, var(--accent-primary-subtle) 100%);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--accent-primary-subtle);
-  box-shadow:
-    0 0 20px var(--accent-primary-subtle),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .champion-icon {
@@ -259,13 +325,8 @@ function formatDate(iso: string): string {
 /* Bracket Container */
 .bracket-viz {
   position: relative;
-  background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
-  border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
+  border: var(--hud-border) solid var(--border-default);
   border-radius: 4px;
   padding: var(--space-6) 0;
   overflow-x: auto;
@@ -274,13 +335,12 @@ function formatDate(iso: string): string {
 
 .bracket-grid {
   display: flex;
-  gap: var(--space-6);
-  padding: 0 var(--space-6);
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  min-height: 500px;
 
   /* Hide scrollbar but keep functionality */
   scrollbar-width: none;
@@ -295,22 +355,16 @@ function formatDate(iso: string): string {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  min-width: 220px;
+  min-width: 200px;
   flex-shrink: 0;
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  animation: bracket-round-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation: bracket-round-in 180ms cubic-bezier(0.2, 0, 0, 1) backwards;
 }
 
 @keyframes bracket-round-in {
-  from {
-    opacity: 0;
-    transform: translateX(-12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
 }
 
 .round-heading {
@@ -328,9 +382,9 @@ function formatDate(iso: string): string {
 .round-matches {
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+  justify-content: center;
   flex: 1;
-  gap: var(--space-4);
+  gap: var(--space-2);
 }
 
 /* Match Cards */
@@ -340,8 +394,6 @@ function formatDate(iso: string): string {
   gap: 0;
   padding: 0;
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-medium);
-  backdrop-filter: var(--backdrop-blur-medium);
   border: var(--hud-border) solid var(--glass-border);
   border-radius: 4px;
   cursor: pointer;
@@ -352,7 +404,6 @@ function formatDate(iso: string): string {
 }
 
 .match-card:hover {
-  box-shadow: 0 0 15px var(--accent-primary-subtle);
   border-color: var(--accent-primary);
 }
 
@@ -368,7 +419,6 @@ function formatDate(iso: string): string {
 
 .match-card.match-live {
   border-color: var(--color-warning);
-  box-shadow: 0 0 12px var(--color-warning-subtle);
   animation: hud-pulse 2s ease-in-out infinite;
 }
 

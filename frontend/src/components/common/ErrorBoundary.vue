@@ -40,7 +40,6 @@ const retry = () => {
   padding: var(--space-3) var(--space-6);
   background: var(--glass-bg);
   border: 1px solid var(--color-error);
-  backdrop-filter: var(--backdrop-blur-medium);
   clip-path: var(--clip-card);
   max-width: 600px;
   width: 100%;

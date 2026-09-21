@@ -109,6 +109,5 @@ const displayInitials = computed(() => {
   background: var(--color-success);
   -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-  box-shadow: 0 0 6px var(--color-success);
 }
 </style>

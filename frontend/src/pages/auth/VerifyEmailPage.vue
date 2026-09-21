@@ -129,7 +129,6 @@ const redirectToLogin = () => {
 
 .auth-btn:hover {
   background: var(--bg-secondary);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
 .auth-btn-secondary {

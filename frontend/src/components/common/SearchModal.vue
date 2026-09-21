@@ -269,7 +269,7 @@ onUnmounted(() => {
                   {{ f.status === 1 ? $t('friends.online') : $t('friends.offline') }}
                 </span>
               </div>
-              <span class="result-action">{{ $t('chat.title') }} →</span>
+              <span class="result-action">{{ $t('chat.title') }}</span>
             </div>
           </template>
 
@@ -326,8 +326,6 @@ onUnmounted(() => {
   justify-content: center;
   padding-top: 10vh;
   background: rgba(0, 0, 0, 0.5);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
 }
 
 .search-modal {
@@ -354,7 +352,6 @@ onUnmounted(() => {
     var(--chamfer-xs) 100%,
     0 calc(100% - var(--chamfer-xs))
   );
-  box-shadow: var(--shadow-xl);
 }
 
 .search-input-row {
@@ -562,16 +559,20 @@ onUnmounted(() => {
   color: var(--color-success);
 }
 
+/* Was opacity:0 until hover — unreachable by keyboard and invisible on touch. */
 .result-action {
+  font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--accent-primary);
-  opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-default);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  transition: color var(--duration-fast) var(--ease-default);
   flex-shrink: 0;
 }
 
-.result-row:hover .result-action {
-  opacity: 1;
+.result-row:hover .result-action,
+.result-row:focus-visible .result-action {
+  color: var(--accent-primary);
 }
 
 .result-unread {

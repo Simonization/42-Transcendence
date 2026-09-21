@@ -42,7 +42,6 @@ export function toDisplayTournament(bt: BackendTournament): Tournament {
     prize: '',
     organizer: {
       name: '',
-      avatar: '🏆',
     },
   }
 }

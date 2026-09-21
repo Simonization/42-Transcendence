@@ -196,8 +196,6 @@ const router = useRouter()
   max-width: 800px;
   padding: var(--space-8);
   background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--backdrop-blur-medium);
-  backdrop-filter: var(--backdrop-blur-medium);
   border: 1px solid var(--glass-border);
 }
 

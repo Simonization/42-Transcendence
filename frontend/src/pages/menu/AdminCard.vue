@@ -6,6 +6,7 @@
 
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import HudIcon from '../../components/hud/HudIcon.vue'
 import { useAuthStore } from '../../stores/auth'
 import DashboardTab from '../../components/admin/DashboardTab.vue'
 import CreateTournamentTab from '../../components/admin/CreateTournamentTab.vue'
@@ -31,14 +32,14 @@ function onTournamentCreated() {
 
 const tabs = computed(() => {
   const base: Array<{ id: AdminTab; label: string; icon: string }> = [
-    { id: 'dashboard', label: t('admin.dashboard'), icon: '📊' },
-    { id: 'create', label: t('admin.create'), icon: '➕' },
-    { id: 'tournaments', label: t('admin.tournaments'), icon: '🏆' },
-    { id: 'games', label: t('admin.gamesTab'), icon: '🎮' },
-    { id: 'users', label: t('admin.usersTab'), icon: '🛡' },
+    { id: 'dashboard', label: t('admin.dashboard'), icon: 'history' },
+    { id: 'create', label: t('admin.create'), icon: 'plus' },
+    { id: 'tournaments', label: t('admin.tournaments'), icon: 'tournament' },
+    { id: 'games', label: t('admin.gamesTab'), icon: 'game' },
+    { id: 'users', label: t('admin.usersTab'), icon: 'shield' },
   ]
   if (authStore.isSuperAdmin) {
-    base.push({ id: 'superadmin', label: t('admin.superAdminTab'), icon: '⚡' })
+    base.push({ id: 'superadmin', label: t('admin.superAdminTab'), icon: 'bolt' })
   }
   return base
 })
@@ -64,7 +65,7 @@ const tabs = computed(() => {
         :class="{ 'tab-btn-active': activeTab === tab.id }"
         @click="activeTab = tab.id"
       >
-        <span class="tab-icon">{{ tab.icon }}</span>
+        <HudIcon :name="tab.icon" :size="15" class="tab-icon" />
         <span class="tab-label">{{ tab.label }}</span>
       </button>
     </nav>
@@ -94,8 +95,6 @@ const tabs = computed(() => {
   padding: var(--space-12);
   text-align: center;
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--color-error);
 }
 
@@ -139,12 +138,7 @@ const tabs = computed(() => {
   justify-content: space-between;
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -177,12 +171,7 @@ const tabs = computed(() => {
   gap: var(--space-2);
   padding: var(--space-4);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -234,12 +223,7 @@ const tabs = computed(() => {
 .tab-pane {
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);

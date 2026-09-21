@@ -343,7 +343,7 @@
     "searchUsers": "Kullanıcı ara...",
     "noUsersFound": "Kullanıcı bulunamadı",
     "userActive": "Aktif",
-    "userBanned": "Yasaklı",
+    "userBanned": "Kullanıcı yasaklandı",
     "confirmBan": "Bu kullanıcıyı yasaklamak istediğinizden emin misiniz?",
     "banDurationType": "Yasak süresi türü",
     "banDurationValue": "Yasak süresi değeri",
@@ -355,7 +355,6 @@
     "unbanAction": "Yasağı Kaldır",
     "removeAvatar": "Avatarı Kaldır",
     "userUpdated": "Kullanıcı güncellendi",
-    "userBanned": "Kullanıcı yasaklandı",
     "userUnbanned": "Kullanıcının yasağı kaldırıldı",
     "avatarRemoved": "Avatar kaldırıldı",
     "accessDenied": "ERİŞİM REDDEDİLDİ",
@@ -678,5 +677,12 @@
   "errors": {
     "backendDown": "Sunucuya ulaşılamıyor — bağlantınızı kontrol edin",
     "retry": "TEKRAR DENE"
+  },
+  "hud": {
+    "link": "BAĞLANTI",
+    "linkUp": "AÇIK",
+    "linkDown": "KAPALI",
+    "msg": "MSJ",
+    "crew": "EKİP"
   }
 }

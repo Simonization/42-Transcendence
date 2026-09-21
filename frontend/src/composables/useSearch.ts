@@ -72,7 +72,7 @@ function toDisplayTournament(bt: BackendTournament): Tournament {
     description: bt.description ?? '',
     rules: '',
     prize: '',
-    organizer: { name: 'Organizer', avatar: '' },
+    organizer: { name: 'Organizer' },
   }
 }
 

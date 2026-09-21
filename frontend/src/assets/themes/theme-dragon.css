@@ -55,10 +55,11 @@
   --border-strong: #3d4457;
   --border-error: var(--color-error);
 
-  /* ===== SHADOW (with gold glow option) ===== */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.3);
+  /* ===== SHADOW =====
+     Elevation shadows are gone: separation comes from a hairline rule and a flat field, which
+     is what makes this read as a panel rather than a floating SaaS card. Only --shadow-glow
+     survives, and only in Dragon, where it is *emissive* — light coming out of a lit readout
+     (see .segbar-seg-on) rather than a halo painted around a shape. See ../../DESIGN.md. */
   --shadow-glow: 0 0 2px rgba(0, 229, 255, 0.85);
   --shadow-glow-sm: 0 0 1px rgba(0, 229, 255, 0.7);
 
@@ -97,7 +98,6 @@
   /* Cards */
   --card-bg: var(--bg-secondary);
   --card-border: var(--border-subtle);
-  --card-shadow: var(--shadow-md);
 
   /* Buttons */
   --btn-primary-bg: var(--accent-primary);
@@ -149,14 +149,6 @@
 [data-theme="dragon"] :focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
-  box-shadow: var(--shadow-glow-sm);
 }
 
-/* Special dragon theme effects */
-[data-theme="dragon"] .glow {
-  box-shadow: var(--shadow-glow);
-}
 
-[data-theme="dragon"] .glow-sm {
-  box-shadow: var(--shadow-glow-sm);
-}

@@ -15,6 +15,7 @@ import { usersApi } from '../../api/users'
 import type { BackendTournament, BackendTeam, TeamInvitation } from '../../types'
 import { TeamStatus } from '../../types'
 import type { User } from '../../types'
+import HudIcon from '../../components/hud/HudIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -312,7 +313,7 @@ async function leaveTeam() {
 
       <!-- ── PENDING INVITATION (shown even if already in a team) ── -->
       <div v-if="myInvitation" class="ts-invitation-card glass-panel">
-        <div class="ts-inv-icon">📨</div>
+        <HudIcon name="mail" :size="28" class="ts-inv-icon" />
         <h3 class="ts-inv-title">{{ t('tournament.invitationReceived') }}</h3>
         <p class="ts-inv-body">
           <strong>{{ myInvitation.sender?.username ?? 'Someone' }}</strong>
@@ -603,7 +604,7 @@ async function leaveTeam() {
 }
 
 /* Invitation */
-.ts-inv-icon { font-size: var(--text-4xl); text-align: center; }
+.ts-inv-icon { color: var(--accent-primary); margin: 0 auto; }
 .ts-inv-title {
   margin: 0;
   font-size: var(--text-base);
@@ -700,7 +701,7 @@ async function leaveTeam() {
   background: var(--accent-primary);
   border-color: var(--accent-primary);
 }
-.ts-btn-accent:not(:disabled):hover { opacity: 0.85; box-shadow: 0 0 12px var(--accent-primary-subtle); }
+.ts-btn-accent:not(:disabled):hover { opacity: 0.85; }
 
 .ts-btn-ghost {
   color: var(--text-secondary);
@@ -715,7 +716,7 @@ async function leaveTeam() {
   border-color: var(--color-success);
   align-self: flex-start;
 }
-.ts-btn-lock:not(:disabled):hover { background: rgba(34,197,94,0.1); box-shadow: 0 0 12px rgba(34,197,94,0.2); }
+.ts-btn-lock:not(:disabled):hover { background: var(--color-success-bg); }
 
 .ts-btn-sm {
   padding: var(--space-1) var(--space-3);
@@ -728,7 +729,7 @@ async function leaveTeam() {
   border-color: var(--color-error);
   align-self: flex-start;
 }
-.ts-btn-danger:not(:disabled):hover { background: rgba(239,68,68,0.1); box-shadow: 0 0 12px rgba(239,68,68,0.2); }
+.ts-btn-danger:not(:disabled):hover { background: var(--color-error-bg); }
 
 /* Team header */
 .ts-team-header {

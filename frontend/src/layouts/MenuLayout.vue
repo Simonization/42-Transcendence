@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -10,35 +10,35 @@ import NotificationBell from '../components/notifications/NotificationBell.vue'
 import { useChat } from '@/composables/useChat'
 import { useSearch } from '@/composables/useSearch'
 import { useFriendsStore } from '../stores/friends'
-import { friendsApi } from '../api/friends'
-import type { Friend, ChatRoom } from '../types'
+import type { ChatRoom } from '../types'
 
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const { logout } = authStore
-const { connectSocket, disconnectSocket, rooms: chatRooms, unreadCount, fetchRooms, onFriendActivity } = useChat()
+const { connectSocket, disconnectSocket, rooms: chatRooms, unreadCount, wsConnected, fetchRooms, onFriendActivity } = useChat()
 const { isOpen: searchOpen, openSearch, closeSearch } = useSearch()
 const friendsStore = useFriendsStore()
 
-const friends = ref<Friend[]>([])
+/*
+ * One source for the roster. This used to keep a local `friends` ref fetched straight from the
+ * API *alongside* the store, so the same list was requested twice and the two could disagree;
+ * the store's copy was also never fetched on mount, only when a friend event happened to fire.
+ */
+const friends = computed(() => friendsStore.acceptedFriends)
+const friendCount = computed(() => friends.value.length)
+
+const loadFriends = () => {
+  if (!authStore.user?.id) return
+  friendsStore.fetchFriends().catch(() => {})
+  friendsStore.fetchBlocks().catch(() => {})
+}
 
 onMounted(async () => {
-    connectSocket()
+  connectSocket()
   await fetchRooms().catch(() => {})
-    
-    // Listen for friend activity events and refresh friends list
-    onFriendActivity(() => {
-      friendsStore.fetchFriends()
-      friendsStore.fetchBlocks()
-      if (authStore.user?.id) {
-        friendsApi.getFriends().then(f => { friends.value = f }).catch(() => {})
-      }
-    })
-    
-    if (authStore.user?.id) {
-      friendsApi.getFriends().then(f => { friends.value = f }).catch(() => {})
-    }
+  onFriendActivity(loadFriends)
+  loadFriends()
 })
 
 const handleLogout = async () => {
@@ -106,6 +106,30 @@ const navItems = computed(() => {
         <span class="module-label">{{ item.label }}</span>
         <span v-if="item.badge" class="module-badge">{{ item.badge }}</span>
       </RouterLink>
+
+      <!--
+        Corner-anchored status cluster. The rail is taller than nine items need, and the answer
+        to dead space is information, not thinner padding. Everything here is live state the
+        layout already holds.
+      -->
+      <div class="rail-cluster">
+        <div class="tick-rule"></div>
+        <div class="rail-stat">
+          <span class="rail-stat-label">{{ $t('hud.link') }}</span>
+          <span class="rail-stat-value num" :class="{ 'rail-stat-on': wsConnected }">
+            {{ wsConnected ? $t('hud.linkUp') : $t('hud.linkDown') }}
+          </span>
+        </div>
+        <div class="rail-stat">
+          <span class="rail-stat-label">{{ $t('hud.msg') }}</span>
+          <span class="rail-stat-value num">{{ String(unreadCount).padStart(2, '0') }}</span>
+        </div>
+        <div class="rail-stat">
+          <span class="rail-stat-label">{{ $t('hud.crew') }}</span>
+          <span class="rail-stat-value num">{{ String(friendCount).padStart(2, '0') }}</span>
+        </div>
+        <div class="reg-marks"></div>
+      </div>
     </nav>
 
     <!-- Content area -->
@@ -154,12 +178,19 @@ const navItems = computed(() => {
   overflow: hidden;
 }
 
+/*
+ * A hairline survey grid rather than the old diamond tile: that tile was a data-URI with a
+ * hardcoded white fill, so it was invisible against Stellar's light ground and only ever
+ * showed up in Dragon. Gradients take custom properties, so this one follows the theme.
+ */
 .bg-pattern {
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%23ffffff' fill-opacity='0.03'/%3E%3C/svg%3E");
-  background-size: 60px 60px;
-  opacity: 0.15;
+  background-image:
+    linear-gradient(to right, var(--border-subtle) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.4;
 }
 
 
@@ -245,7 +276,6 @@ const navItems = computed(() => {
 .menu-search-btn:hover {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 .menu-quit-btn {
@@ -281,7 +311,6 @@ const navItems = computed(() => {
 .menu-quit-btn:hover {
   color: var(--color-error);
   border-color: var(--color-error);
-  box-shadow: 0 0 10px var(--color-error-bg);
 }
 
 /* Vertical module selector on left */
@@ -296,11 +325,41 @@ const navItems = computed(() => {
   gap: var(--space-2);
   padding: var(--space-4) var(--space-3);
   background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--backdrop-blur-medium);
-  backdrop-filter: var(--backdrop-blur-medium);
   border-right: 1px solid var(--glass-border);
   z-index: 9;
   overflow-y: auto;
+}
+
+.rail-cluster {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-3);
+}
+
+.rail-stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.rail-stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+}
+
+.rail-stat-value {
+  font-size: 11px;
+  font-weight: var(--font-bold);
+  color: var(--text-secondary);
+}
+
+.rail-stat-on {
+  color: var(--accent-primary);
 }
 
 .module-btn {

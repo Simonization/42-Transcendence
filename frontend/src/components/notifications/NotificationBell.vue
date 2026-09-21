@@ -214,7 +214,6 @@ defineExpose({ onSocketNotification, fetchUnreadCount })
 .notif-bell-btn:hover {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 .bell-icon {
@@ -253,6 +252,5 @@ defineExpose({ onSocketNotification, fetchUnreadCount })
 .panel-slide-enter-from,
 .panel-slide-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
 }
 </style>

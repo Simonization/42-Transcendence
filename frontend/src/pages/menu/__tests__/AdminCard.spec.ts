@@ -304,13 +304,16 @@ describe('AdminCard', () => {
   })
 
   describe('Icons', () => {
-    it('should display tab icons', () => {
+    // Was asserting the literal emoji 📊➕🏆👥. Those are gone (see DESIGN.md); assert every
+    // tab still carries exactly one glyph, which is what the test was actually protecting.
+    it('should display one icon per tab', () => {
       const wrapper = mount(AdminCard)
 
-      expect(wrapper.text()).toContain('📊')
-      expect(wrapper.text()).toContain('➕')
-      expect(wrapper.text()).toContain('🏆')
-      expect(wrapper.text()).toContain('👥')
+      const tabs = wrapper.findAll('.tab-btn')
+      expect(tabs.length).toBeGreaterThan(0)
+      tabs.forEach(tab => {
+        expect(tab.findAll('svg.hud-icon')).toHaveLength(1)
+      })
     })
 
     it('should display stat icons', () => {

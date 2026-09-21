@@ -645,7 +645,6 @@ const handleSubmit = async () => {
 .game-card-selected {
   border-color: var(--accent-primary);
   background: var(--bg-selected);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 .game-name {
   font-size: var(--text-xs);
@@ -731,7 +730,6 @@ const handleSubmit = async () => {
 .submit-btn:not(:disabled):hover {
   background: var(--bg-selected);
   color: var(--accent-primary);
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 

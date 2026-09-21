@@ -384,7 +384,6 @@ watch(() => logs.value.length, async () => {
 .theme-btn.active {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
-  box-shadow: var(--shadow-glow-sm);
 }
 
 .debug-grid {

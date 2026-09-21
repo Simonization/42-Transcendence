@@ -223,7 +223,6 @@ function getGameName(bt: BackendTournament): string {
 .featured-nav-btn:hover {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 .featured-nav-btn:focus-visible {
@@ -290,16 +289,11 @@ function getGameName(bt: BackendTournament): string {
   flex-direction: column;
   gap: var(--space-4);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow: var(--shadow-xl), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all var(--duration-normal) var(--ease-default);
 }
 
 .featured-card:hover {
-  box-shadow: 0 0 20px var(--accent-primary-subtle), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transform: translateY(-4px);
 }
 
 .featured-card-header {
@@ -419,7 +413,6 @@ function getGameName(bt: BackendTournament): string {
 .featured-cta:hover {
   background: var(--bg-selected);
   color: var(--accent-primary);
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
 .featured-cta:focus-visible {
@@ -444,7 +437,6 @@ function getGameName(bt: BackendTournament): string {
 
 .featured-register:hover {
   opacity: 0.85;
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
 .featured-register:focus-visible {

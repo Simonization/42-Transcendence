@@ -135,6 +135,5 @@ const tournamentName = computed(() => currentTournament.value?.name ?? '')
 
 .guidance-btn:hover {
   background: var(--bg-selected);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 </style>

@@ -332,7 +332,6 @@ const saveProfile = async () => {
 
 .input-error {
   border-color: var(--color-error);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.1);
 }
 
 .field-error {

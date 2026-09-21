@@ -144,7 +144,8 @@ const getPageNumbers = () => {
         @click="filtersOpen = !filtersOpen"
         aria-label="Toggle filters"
       >
-        🔍 {{ $t('common.filters') }}
+        <HudIcon name="search" :size="14" />
+        {{ $t('common.filters') }}
       </button>
     </header>
 
@@ -157,7 +158,7 @@ const getPageNumbers = () => {
         :placeholder="$t('tournament.searchPlaceholder')"
         aria-label="Search tournaments"
       />
-      <span class="search-icon">🔍</span>
+      <HudIcon name="search" :size="14" class="search-icon" />
     </div>
 
     <div class="tournaments-container">
@@ -174,15 +175,17 @@ const getPageNumbers = () => {
       <main class="tournaments-main">
         <!-- Loading State -->
         <div v-if="isLoading" class="no-results">
-          <div class="no-results-icon">⏳</div>
+          <div class="segbar" aria-hidden="true"></div>
           <h2 class="no-results-title">{{ $t('common.loading') }}</h2>
         </div>
 
         <!-- Error State -->
         <div v-else-if="error" class="no-results">
-          <div class="no-results-icon">⚠️</div>
+          <HudIcon name="warning" :size="28" class="no-results-icon" />
           <h2 class="no-results-title">{{ error }}</h2>
-          <button class="tournaments-filter-toggle" @click="fetchTournaments()">
+          <!-- .tournaments-filter-toggle is display:none above 768px — reusing it here hid
+               the retry button entirely on desktop. -->
+          <button class="btn btn-ghost btn-sm" @click="fetchTournaments()">
             {{ $t('common.retry') }}
           </button>
         </div>
@@ -279,12 +282,7 @@ const getPageNumbers = () => {
   justify-content: space-between;
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .tournaments-header-content {
@@ -325,7 +323,6 @@ const getPageNumbers = () => {
 .tournaments-filter-toggle:hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 .tournaments-search {
@@ -340,8 +337,6 @@ const getPageNumbers = () => {
   font-family: var(--font-sans);
   font-size: var(--text-base);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
   color: var(--text-primary);
   transition: all var(--duration-fast) var(--ease-default);
@@ -390,15 +385,12 @@ const getPageNumbers = () => {
   padding: var(--space-16);
   text-align: center;
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) dashed var(--glass-border);
 }
 
 .no-results-icon {
-  font-size: var(--text-6xl);
+  color: var(--text-tertiary);
   margin-bottom: var(--space-4);
-  opacity: 0.5;
 }
 
 .no-results-title {
@@ -440,7 +432,6 @@ const getPageNumbers = () => {
 .pagination-btn:not(:disabled):hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 .pagination-btn:disabled {
@@ -475,7 +466,6 @@ const getPageNumbers = () => {
 .pagination-number:not(:disabled):hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 .pagination-number--active {
@@ -510,7 +500,10 @@ const getPageNumbers = () => {
   }
 
   .tournaments-filter-toggle {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
     order: 3;
     width: 100%;
   }

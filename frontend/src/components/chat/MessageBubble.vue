@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Message } from '../../types'
+import HudIcon from '../hud/HudIcon.vue'
 
 const props = defineProps<{
   message: Message
@@ -22,7 +23,17 @@ const hasReadReceipts = computed(() => {
   return props.message.readBy.some(id => Number(id) !== Number(props.currentUserId));
 })
 
-const isGameInvite = computed(() => props.message.content.startsWith('\u{1F3AE} Game invitation!'))
+/**
+ * A game invite is a plain text message carrying this prefix — there is no invite entity.
+ * The prefix is a wire sentinel, not copy, so it is matched here and stripped before render;
+ * the bubble shows a glyph and the body instead. Kept byte-identical to what ChatCard sends,
+ * so messages already in the database still resolve.
+ */
+const GAME_INVITE_PREFIX = '\u{1F3AE} Game invitation!'
+const isGameInvite = computed(() => props.message.content.startsWith(GAME_INVITE_PREFIX))
+const displayContent = computed(() =>
+  isGameInvite.value ? props.message.content.slice(GAME_INVITE_PREFIX.length).trim() : props.message.content,
+)
 
 const time = computed(() => {
   const d = new Date(props.message.createdAt)
@@ -41,7 +52,10 @@ const time = computed(() => {
       <p v-if="isBlocked" class="bubble-content bubble-content-blocked">
         <em>{{ $t('chat.blockedMessage') }}</em>
       </p>
-      <p v-else class="bubble-content">{{ message.content }}</p>
+      <p v-else class="bubble-content">
+        <HudIcon v-if="isGameInvite" name="game" :size="14" class="invite-mark" />
+        <span>{{ displayContent }}</span>
+      </p>
       <div class="bubble-meta">
         <span class="bubble-time">{{ time }}</span>
         <span v-if="isEdited" class="bubble-edited">{{ $t('chat.edited') }}</span>
@@ -128,6 +142,13 @@ const time = computed(() => {
   margin: 0;
   word-break: break-word;
   line-height: var(--leading-relaxed);
+}
+
+.invite-mark {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: var(--space-2);
+  color: var(--accent-primary);
 }
 
 .bubble-content-blocked {

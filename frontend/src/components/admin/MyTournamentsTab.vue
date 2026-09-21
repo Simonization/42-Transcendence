@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HudIcon from '../hud/HudIcon.vue'
 /**
  * MyTournamentsTab — List, edit, delete tournaments
  * Admin view of all tournaments with inline editing
@@ -120,7 +121,7 @@ onMounted(fetchTournaments)
 
     <!-- Empty state -->
     <div v-else-if="tournaments.length === 0" class="empty-state">
-      <div class="empty-state-icon">🏆</div>
+      <div class="empty-state-icon"><HudIcon name="tournament" :size="26" /></div>
       <h3 class="empty-state-title">{{ t('admin.noTournamentsCreated') }}</h3>
       <p class="empty-state-text">{{ t('admin.noTournamentsHint') }}</p>
     </div>

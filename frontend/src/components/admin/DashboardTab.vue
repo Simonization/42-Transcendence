@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HudIcon from '../hud/HudIcon.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { tournamentsApi } from '../../api/tournaments'
@@ -38,7 +39,7 @@ const stats = computed(() => ({
     <!-- Stats Cards Grid -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon">🏆</div>
+        <HudIcon name="tournament" :size="20" class="stat-icon" />
         <div class="stat-info">
           <span class="stat-label">{{ t('admin.activeTournaments') }}</span>
           <span class="stat-value">{{ stats.activeTournaments }}</span>
@@ -46,7 +47,7 @@ const stats = computed(() => ({
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon">👥</div>
+        <HudIcon name="friend" :size="20" class="stat-icon" />
         <div class="stat-info">
           <span class="stat-label">{{ t('admin.totalParticipants') }}</span>
           <span class="stat-value">{{ stats.totalParticipants }}</span>
@@ -54,7 +55,7 @@ const stats = computed(() => ({
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon">⏳</div>
+        <HudIcon name="clipboard" :size="20" class="stat-icon" />
         <div class="stat-info">
           <span class="stat-label">{{ t('admin.pendingRegistrations') }}</span>
           <span class="stat-value">{{ stats.pendingRegistrations }}</span>
@@ -67,16 +68,16 @@ const stats = computed(() => ({
       <h3 class="quick-actions-title">{{ t('admin.quickActions') }}</h3>
       <div class="action-buttons">
         <button class="action-btn action-btn-disabled">
-          <span class="action-icon">➕</span>
+          <HudIcon name="plus" :size="16" class="action-icon" />
           <span class="action-label">{{ t('admin.createTournament') }}</span>
           <span class="v2-badge-small">V2.0</span>
         </button>
         <button class="action-btn" @click="emit('navigate-tab', 'users')">
-          <span class="action-icon">👥</span>
+          <HudIcon name="friend" :size="16" class="action-icon" />
           <span class="action-label">{{ t('admin.manageUsers') }}</span>
         </button>
         <button class="action-btn action-btn-disabled">
-          <span class="action-icon">📈</span>
+          <HudIcon name="trend" :size="16" class="action-icon" />
           <span class="action-label">{{ t('admin.viewReports') }}</span>
           <span class="v2-badge-small">V2.0</span>
         </button>

@@ -343,7 +343,7 @@
     "searchUsers": "Rechercher des utilisateurs...",
     "noUsersFound": "Aucun utilisateur trouvé",
     "userActive": "Actif",
-    "userBanned": "Banni",
+    "userBanned": "Utilisateur banni",
     "confirmBan": "Êtes-vous sûr de vouloir bannir cet utilisateur ?",
     "banDurationType": "Type de durée du ban",
     "banDurationValue": "Valeur de la durée",
@@ -355,7 +355,6 @@
     "unbanAction": "Débannir",
     "removeAvatar": "Supprimer l'avatar",
     "userUpdated": "Utilisateur mis à jour",
-    "userBanned": "Utilisateur banni",
     "userUnbanned": "Utilisateur débanni",
     "avatarRemoved": "Avatar supprimé",
     "accessDenied": "ACCÈS REFUSÉ",
@@ -678,5 +677,12 @@
   "errors": {
     "backendDown": "Serveur inaccessible — vérifiez votre connexion",
     "retry": "RÉESSAYER"
+  },
+  "hud": {
+    "link": "LIEN",
+    "linkUp": "ACTIF",
+    "linkDown": "COUPÉ",
+    "msg": "MSG",
+    "crew": "AMIS"
   }
 }

@@ -167,7 +167,6 @@ onMounted(fetchTournaments)
 
 .landing-action-btn:hover {
   background: var(--bg-selected);
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
 .landing-action-btn:focus-visible {
@@ -208,12 +207,7 @@ onMounted(fetchTournaments)
 
 .glass-card {
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .landing-footer {

@@ -64,7 +64,7 @@
     "user": "USER",
     "friend": "FRIEND",
     "chat": "CHAT",
-    "tourn": "TOURN",
+    "tourn": "EVENTS",
     "history": "HISTORY",
     "brackets": "BRACKETS",
     "orgs": "ORGS",
@@ -343,7 +343,7 @@
     "searchUsers": "Search users...",
     "noUsersFound": "No users found",
     "userActive": "Active",
-    "userBanned": "Banned",
+    "userBanned": "User banned",
     "confirmBan": "Are you sure you want to ban this user?",
     "banDurationType": "Ban duration type",
     "banDurationValue": "Ban duration value",
@@ -355,7 +355,6 @@
     "unbanAction": "Unban",
     "removeAvatar": "Remove Avatar",
     "userUpdated": "User updated",
-    "userBanned": "User banned",
     "userUnbanned": "User unbanned",
     "avatarRemoved": "Avatar removed",
     "accessDenied": "ACCESS DENIED",
@@ -678,5 +677,12 @@
   "errors": {
     "backendDown": "Server unreachable — check your connection",
     "retry": "RETRY"
+  },
+  "hud": {
+    "link": "LINK",
+    "linkUp": "UP",
+    "linkDown": "DOWN",
+    "msg": "MSG",
+    "crew": "CREW"
   }
 }

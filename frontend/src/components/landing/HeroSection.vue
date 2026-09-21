@@ -116,12 +116,7 @@ const handleCreateAccount = () => {
   margin-bottom: var(--space-12);
   overflow: hidden;
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .hero-background {

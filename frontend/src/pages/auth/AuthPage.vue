@@ -301,12 +301,10 @@ const handleGoogleLogin = () => {
 
 .field-input:focus-visible {
   border-color: rgba(100, 120, 200, 0.5);
-  box-shadow: 0 0 12px rgba(100, 120, 200, 0.1);
 }
 
 .field-input-error {
   border-color: var(--color-error);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.1);
 }
 
 .field-error {
@@ -337,7 +335,6 @@ const handleGoogleLogin = () => {
 
 .auth-btn:hover:not(:disabled) {
   background: var(--bg-secondary);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
 .auth-btn:disabled {

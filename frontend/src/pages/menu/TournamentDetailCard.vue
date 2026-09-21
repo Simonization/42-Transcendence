@@ -13,6 +13,7 @@ import BracketVisualization from '../../components/tournaments/BracketVisualizat
 import { useTournaments } from '../../composables/useTournaments'
 import { toDisplayTournament } from '../../utils/tournamentMapper'
 import { buildBracket } from '../../utils/bracket'
+import HudIcon from '../../components/hud/HudIcon.vue'
 
 type TabType = 'overview' | 'bracket' | 'participants' | 'chat'
 
@@ -95,10 +96,10 @@ const gameInfo = computed(() => {
 })
 
 const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() => [
-  { id: 'overview', label: t('tournament.overview'), icon: '📋' },
-  { id: 'bracket', label: t('tournament.bracket'), icon: '🏆' },
-  { id: 'participants', label: t('tournament.participants'), icon: '👥' },
-  { id: 'chat', label: t('tournament.chat'), icon: '💬' },
+  { id: 'overview', label: t('tournament.overview'), icon: 'clipboard' },
+  { id: 'bracket', label: t('tournament.bracket'), icon: 'tournament' },
+  { id: 'participants', label: t('tournament.participants'), icon: 'friend' },
+  { id: 'chat', label: t('tournament.chat'), icon: 'chat' },
 ])
 </script>
 
@@ -136,7 +137,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
         :class="{ 'tab-btn-active': activeTab === tab.id }"
         @click="activeTab = tab.id"
       >
-        <span class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
+        <HudIcon :name="tab.icon" :size="14" class="tab-icon" />
         <span class="tab-label">{{ tab.label }}</span>
       </button>
     </nav>
@@ -250,7 +251,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
               class="search-input"
               :placeholder="$t('tournament.searchParticipants')"
             />
-            <span class="search-icon" aria-hidden="true">🔍</span>
+            <HudIcon name="search" :size="14" class="search-icon" />
           </div>
 
           <!-- Teams List -->
@@ -277,7 +278,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
                 >
                   <span class="participant-avatar">
                     <img v-if="member.avatarUrl" :src="member.avatarUrl" :alt="member.username" class="avatar-img" />
-                    <span v-else>👤</span>
+                    <HudIcon v-else name="user" :size="18" />
                   </span>
                   <div class="participant-info">
                     <span class="participant-name">
@@ -293,7 +294,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
             </div>
 
             <div v-if="filteredTeams.length === 0" class="no-participants">
-              <span class="no-participants-icon">🔍</span>
+              <HudIcon name="friend" :size="28" class="no-participants-icon" />
               <p class="no-participants-text">{{ $t('tournament.noParticipants') }}</p>
             </div>
           </div>
@@ -314,7 +315,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
         class="tab-pane glass-panel"
       >
         <div class="chat-placeholder">
-          <div class="chat-icon">💬</div>
+          <HudIcon name="chat" :size="28" class="chat-icon" />
           <h3 class="chat-title">{{ $t('tournament.tournamentChat') }}</h3>
           <p class="chat-text">{{ $t('tournament.chatDescription') }}</p>
           <p class="chat-subtext">{{ $t('tournament.chatComingSoon') }}</p>
@@ -325,12 +326,12 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   </div>
 
   <div v-else-if="isLoading" class="tournament-not-found glass-panel">
-    <div class="not-found-icon">⏳</div>
+    <div class="segbar" aria-hidden="true"></div>
     <h2 class="not-found-title">{{ $t('common.loading') }}</h2>
   </div>
 
   <div v-else class="tournament-not-found glass-panel">
-    <div class="not-found-icon">❌</div>
+    <HudIcon name="warning" :size="28" class="not-found-icon" />
     <h2 class="not-found-title">{{ error || $t('tournament.notFound') }}</h2>
   </div>
 
@@ -376,12 +377,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   gap: var(--space-6);
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -441,7 +437,6 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 .detail-cta-btn:hover {
   background: var(--bg-selected);
   color: var(--accent-primary);
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
 .detail-cta-btn:focus-visible {
@@ -455,12 +450,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   gap: var(--space-2);
   padding: var(--space-4);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -512,12 +502,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 .tab-pane {
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   animation: fade-in 200ms ease-out;
 }
 
@@ -731,7 +716,9 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 }
 
 .participant-avatar {
-  font-size: var(--text-2xl);
+  display: flex;
+  align-items: center;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
@@ -837,7 +824,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 }
 
 .no-participants-icon {
-  font-size: var(--text-4xl);
+  color: var(--text-tertiary);
   margin-bottom: var(--space-2);
 }
 
@@ -880,7 +867,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 }
 
 .chat-icon {
-  font-size: var(--text-6xl);
+  color: var(--text-tertiary);
   margin-bottom: var(--space-4);
 }
 
@@ -915,13 +902,11 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   align-items: center;
   gap: var(--space-4);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
 }
 
 .not-found-icon {
-  font-size: var(--text-6xl);
+  color: var(--text-tertiary);
 }
 
 .not-found-title {

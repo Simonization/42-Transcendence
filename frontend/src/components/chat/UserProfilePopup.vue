@@ -51,8 +51,6 @@ const initials = props.username.slice(0, 2).toUpperCase()
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.4);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
 }
 
 .popup-panel {
@@ -77,7 +75,6 @@ const initials = props.username.slice(0, 2).toUpperCase()
     var(--chamfer-xs) 100%,
     0 calc(100% - var(--chamfer-xs))
   );
-  box-shadow: var(--shadow-xl);
 }
 
 .popup-header {

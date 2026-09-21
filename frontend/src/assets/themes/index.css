@@ -90,7 +90,6 @@
 .btn-secondary {
   background: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
-  box-shadow: inset 0 0 0 var(--hud-border) var(--btn-secondary-border);
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -132,7 +131,6 @@
 .card {
   background: var(--card-bg);
   border: var(--hud-border) solid var(--card-border);
-  box-shadow: var(--card-shadow);
   -webkit-clip-path: polygon(
     0 0,
     calc(100% - var(--chamfer-lg)) 0,
@@ -278,7 +276,6 @@
 .input:focus {
   outline: none;
   border-color: var(--input-border-focus);
-  box-shadow: 0 0 0 1px var(--accent-primary-subtle), 0 0 12px var(--accent-primary-subtle);
 }
 
 .input:disabled {
@@ -642,12 +639,7 @@
 /* ---------- GLASS MORPHISM PANELS ---------- */
 .glass-panel {
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   -webkit-clip-path: polygon(
     0 0,
     calc(100% - var(--chamfer-lg)) 0,
@@ -689,8 +681,6 @@
 /* ---------- GLASS HEADER/FOOTER ---------- */
 .glass-header {
   background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--backdrop-blur-medium);
-  backdrop-filter: var(--backdrop-blur-medium);
   border-bottom: var(--hud-border) solid var(--glass-border);
   position: relative;
   z-index: 10;
@@ -698,8 +688,6 @@
 
 .glass-footer {
   background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--backdrop-blur-light);
-  backdrop-filter: var(--backdrop-blur-light);
   border-top: var(--hud-border) solid var(--glass-border);
   position: relative;
   z-index: 10;
@@ -714,16 +702,16 @@
   transition: all calc(var(--duration-fast) * 0.7) var(--ease-in);
 }
 
+/* Slide and clip, never blur-and-scale: the panel arrives as a wipe from its own top edge. */
 .glass-fade-enter-from {
   opacity: 0;
-  transform: translateY(20px) scale(0.98);
-  filter: blur(4px);
+  transform: translateY(8px);
+  clip-path: inset(0 0 100% 0);
 }
 
 .glass-fade-leave-to {
   opacity: 0;
-  transform: translateY(-10px) scale(1.02);
-  filter: blur(2px);
+  transform: translateY(-4px);
 }
 
 /* ============================================================================

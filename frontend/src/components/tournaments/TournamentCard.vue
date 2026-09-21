@@ -7,6 +7,7 @@
 import type { Tournament } from '../../types'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import HudIcon from '../hud/HudIcon.vue'
 
 const props = defineProps<{
   tournament: Tournament
@@ -54,7 +55,7 @@ const getProgressPercentage = (current: number, max: number) => {
   <div class="tournament-card glass-panel">
     <!-- Header -->
     <div class="tournament-card-header">
-      <span class="tournament-game-icon">{{ tournament.organizer.avatar }}</span>
+      <HudIcon name="tournament" :size="22" class="tournament-game-icon" />
       <div class="tournament-card-title-section">
         <h3 class="tournament-card-title">{{ tournament.name }}</h3>
         <span class="tournament-game">{{ tournament.game }}</span>
@@ -93,7 +94,7 @@ const getProgressPercentage = (current: number, max: number) => {
     </div>
 
     <!-- Prize -->
-    <div class="tournament-prize">
+    <div v-if="tournament.prize" class="tournament-prize">
       <span class="prize-label">{{ $t('tournament.prizePoolLabel') }}</span>
       <span class="prize-value">{{ tournament.prize }}</span>
     </div>
@@ -124,12 +125,7 @@ const getProgressPercentage = (current: number, max: number) => {
 .tournament-card {
   padding: var(--space-4);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -137,10 +133,6 @@ const getProgressPercentage = (current: number, max: number) => {
 }
 
 .tournament-card:hover {
-  box-shadow:
-    0 0 20px var(--accent-primary-subtle),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
   border-color: var(--accent-primary);
 }
 
@@ -153,7 +145,7 @@ const getProgressPercentage = (current: number, max: number) => {
 }
 
 .tournament-game-icon {
-  font-size: var(--text-2xl);
+  color: var(--accent-primary);
   flex-shrink: 0;
 }
 
@@ -331,7 +323,6 @@ const getProgressPercentage = (current: number, max: number) => {
 .tournament-card-cta:hover {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 .tournament-card-cta:focus-visible {
@@ -356,7 +347,6 @@ const getProgressPercentage = (current: number, max: number) => {
 
 .tournament-card-register:hover {
   opacity: 0.85;
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
 .tournament-card-register:focus-visible {
@@ -370,8 +360,8 @@ const getProgressPercentage = (current: number, max: number) => {
   font-size: var(--text-xs);
   font-weight: var(--font-bold);
   letter-spacing: var(--tracking-wider);
-  color: var(--color-success);
-  border: var(--hud-border) solid var(--color-success);
+  color: var(--text-secondary);
+  border: var(--hud-border) solid var(--border-strong);
   white-space: nowrap;
 }
 

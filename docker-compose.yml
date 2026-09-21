@@ -55,7 +55,10 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: transcendence_db
     ports:
-      - "5432:5432"
+      # Host-side only: the backend and pgadmin reach this over transcendence-net on 5432.
+      # Published on 5433 so the stack still comes up when another local Postgres (a 42
+      # piscine container, a system install) already holds the default port.
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:

@@ -1,22 +1,33 @@
 <script setup lang="ts">
 /**
  * Esports Links Card
- * Grid of external links to esports games, platforms, and streaming sites
+ * External directory of esports games, platforms, and reference sites.
+ *
+ * Rendered as an indexed readout rather than an icon grid: there is no honest single-stroke
+ * glyph for "RuneScape", and the eleven brand emoji this used to carry were the loudest
+ * colour on the landing page. The index and the class column carry the information instead.
+ * See ../../DESIGN.md.
  */
 
-const links = [
-  { name: 'Counter-Strike', url: 'https://www.counter-strike.net/', icon: '🎯' },
-  { name: 'Chess.com', url: 'https://www.chess.com/', icon: '♟️' },
-  { name: 'League of Legends', url: 'https://www.leagueoflegends.com/', icon: '⚔️' },
-  { name: 'Dota 2', url: 'https://www.dota2.com/', icon: '🎮' },
-  { name: 'World of Warcraft', url: 'https://worldofwarcraft.blizzard.com/', icon: '🐉' },
-  { name: 'RuneScape', url: 'https://www.runescape.com/', icon: '🗡️' },
-  { name: 'StarCraft', url: 'https://starcraft2.blizzard.com/', icon: '🌌' },
-  { name: 'Steam', url: 'https://store.steampowered.com/', icon: '🎮' },
-  { name: 'Twitch', url: 'https://www.twitch.tv/', icon: '📺' },
-  { name: 'HLTV', url: 'https://www.hltv.org/', icon: '🏆' },
-  { name: 'Liquipedia', url: 'https://liquipedia.net/', icon: '📊' },
+import HudIcon from '../hud/HudIcon.vue'
+
+type LinkClass = 'GAME' | 'PLATFORM' | 'MEDIA' | 'DATA'
+
+const links: Array<{ name: string; url: string; class: LinkClass }> = [
+  { name: 'Counter-Strike', url: 'https://www.counter-strike.net/', class: 'GAME' },
+  { name: 'Chess.com', url: 'https://www.chess.com/', class: 'GAME' },
+  { name: 'League of Legends', url: 'https://www.leagueoflegends.com/', class: 'GAME' },
+  { name: 'Dota 2', url: 'https://www.dota2.com/', class: 'GAME' },
+  { name: 'World of Warcraft', url: 'https://worldofwarcraft.blizzard.com/', class: 'GAME' },
+  { name: 'RuneScape', url: 'https://www.runescape.com/', class: 'GAME' },
+  { name: 'StarCraft', url: 'https://starcraft2.blizzard.com/', class: 'GAME' },
+  { name: 'Steam', url: 'https://store.steampowered.com/', class: 'PLATFORM' },
+  { name: 'Twitch', url: 'https://www.twitch.tv/', class: 'MEDIA' },
+  { name: 'HLTV', url: 'https://www.hltv.org/', class: 'DATA' },
+  { name: 'Liquipedia', url: 'https://liquipedia.net/', class: 'DATA' },
 ]
+
+const index = (i: number) => String(i + 1).padStart(2, '0')
 </script>
 
 <template>
@@ -27,16 +38,17 @@ const links = [
     </header>
 
     <ul class="links-list">
-      <li v-for="link in links" :key="link.name" class="link-item">
+      <li v-for="(link, i) in links" :key="link.name" class="link-item">
         <a
           :href="link.url"
           target="_blank"
           rel="noopener noreferrer"
           class="link-anchor clip-btn"
         >
-          <span class="link-icon" aria-hidden="true">{{ link.icon }}</span>
+          <span class="link-index num" aria-hidden="true">{{ index(i) }}</span>
           <span class="link-name">{{ link.name }}</span>
-          <span class="link-arrow" aria-hidden="true">→</span>
+          <span class="link-class">{{ link.class }}</span>
+          <HudIcon name="link" :size="14" class="link-mark" />
         </a>
       </li>
     </ul>
@@ -101,7 +113,6 @@ const links = [
   color: var(--accent-primary);
   border-color: var(--accent-primary);
   background: var(--bg-selected);
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
 .link-anchor:focus-visible {
@@ -109,28 +120,40 @@ const links = [
   outline-offset: 2px;
 }
 
-.link-icon {
-  font-size: var(--text-lg);
-  width: 28px;
-  text-align: center;
-  flex-shrink: 0;
+.link-index {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  flex: none;
 }
 
 .link-name {
   font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
+  font-weight: var(--font-bold);
   letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.link-arrow {
-  font-size: var(--text-sm);
+.link-class {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wider);
   color: var(--text-tertiary);
-  transition: transform var(--duration-fast) var(--ease-default);
+  flex: none;
 }
 
-.link-anchor:hover .link-arrow {
-  transform: translateX(4px);
+.link-mark {
+  color: var(--text-tertiary);
+  flex: none;
+}
+
+.link-anchor:hover .link-class,
+.link-anchor:hover .link-index,
+.link-anchor:hover .link-mark {
   color: var(--accent-primary);
 }
 </style>

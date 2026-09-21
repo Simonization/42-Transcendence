@@ -246,7 +246,6 @@ export interface Tournament {
   prize: string
   organizer: {
     name: string
-    avatar: string
   }
   featured?: boolean
 }

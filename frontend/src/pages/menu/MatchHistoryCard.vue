@@ -10,6 +10,7 @@ import { useMatches } from '../../composables/useMatches'
 import { useAuthStore } from '../../stores/auth'
 import DemoBanner from '../../components/common/DemoBanner.vue'
 import type { GameType, MatchResult } from '../../types'
+import HudIcon from '../../components/hud/HudIcon.vue'
 
 type SortBy = 'date' | 'result'
 
@@ -204,7 +205,7 @@ const formatDate = (date: string) => {
 
         <!-- No Results -->
         <div v-if="filteredMatches.length === 0" class="no-results">
-          <span class="no-results-icon">🔍</span>
+          <HudIcon name="search" :size="28" class="no-results-icon" />
           <p class="no-results-text">{{ $t('match.noMatches') }}</p>
         </div>
       </div>
@@ -252,12 +253,7 @@ const formatDate = (date: string) => {
   justify-content: space-between;
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -287,12 +283,7 @@ const formatDate = (date: string) => {
   justify-content: center;
   padding: var(--space-12);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   text-align: center;
   gap: var(--space-4);
 }
@@ -340,7 +331,6 @@ const formatDate = (date: string) => {
 .retry-btn:hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 /* Stats Grid */
@@ -350,12 +340,7 @@ const formatDate = (date: string) => {
   gap: var(--space-4);
   padding: var(--space-6);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .stat-item {
@@ -392,12 +377,7 @@ const formatDate = (date: string) => {
   gap: var(--space-4);
   padding: var(--space-4);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   flex-wrap: wrap;
 }
 
@@ -438,12 +418,7 @@ const formatDate = (date: string) => {
 .matches-container {
   padding: 0;
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow-x: auto;
 }
 
@@ -516,7 +491,7 @@ const formatDate = (date: string) => {
 }
 
 .no-results-icon {
-  font-size: var(--text-4xl);
+  color: var(--text-tertiary);
   margin-bottom: var(--space-2);
 }
 
@@ -547,12 +522,7 @@ const formatDate = (date: string) => {
   gap: var(--space-4);
   padding: var(--space-4);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow:
-    var(--shadow-xl),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .pagination-btn {
@@ -572,7 +542,6 @@ const formatDate = (date: string) => {
 .pagination-btn:not(:disabled):hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
-  box-shadow: 0 0 10px var(--accent-primary-subtle);
 }
 
 .pagination-btn:disabled {

@@ -13,6 +13,7 @@ import { useFriendsStore } from '../../stores/friends'
 import { useTeams } from '../../composables/useTeams'
 import { useNotificationsStore } from '../../stores/notifications'
 import { TeamStatus } from '../../types'
+import HudIcon from '../hud/HudIcon.vue'
 
 const props = defineProps<{
   tournamentId: number
@@ -220,7 +221,7 @@ const totalSteps = computed(() => isSolo.value ? 1 : 3)
           <div class="modal-content">
             <!-- Solo info banner -->
             <div v-if="isSolo" class="solo-banner">
-              <span class="solo-icon">👤</span>
+              <HudIcon name="user" :size="18" class="solo-icon" />
               <p>{{ $t('teams.soloAutoRegister', { game: gameName }) }}</p>
             </div>
 
@@ -407,10 +408,7 @@ const totalSteps = computed(() => isSolo.value ? 1 : 3)
   max-width: 600px;
   max-height: 90vh;
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   border: var(--hud-border) solid var(--glass-border);
-  box-shadow: 0 0 40px var(--accent-primary-glow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
 }
 
@@ -524,7 +522,7 @@ const totalSteps = computed(() => isSolo.value ? 1 : 3)
 }
 
 .solo-icon {
-  font-size: var(--text-2xl);
+  color: var(--accent-primary);
   flex-shrink: 0;
 }
 
@@ -666,7 +664,6 @@ const totalSteps = computed(() => isSolo.value ? 1 : 3)
 .member-card-selected {
   background: var(--bg-selected);
   border: 2px solid var(--accent-primary);
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
 .member-avatar {
@@ -821,7 +818,6 @@ const totalSteps = computed(() => isSolo.value ? 1 : 3)
 .modal-btn-primary:not(:disabled):hover {
   background: var(--bg-selected);
   color: var(--accent-primary);
-  box-shadow: 0 0 12px var(--accent-primary-subtle);
 }
 
 .modal-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }

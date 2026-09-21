@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HudIcon from '../hud/HudIcon.vue'
 /**
  * Notification Panel
  * Dropdown panel showing notification list with actions
@@ -27,13 +28,18 @@ const hasUnread = computed(() =>
 
 const typeIcon = (type: Notification['type']): string => {
   switch (type) {
-    case 'friend_request': return '👥'
-    case 'match_result': return '🏆'
-    case 'system': return '⚙️'
-    case 'bot_message': return '🤖'
-    case 'team_invite': return '🎮'
+    case 'friend_request':
+    case 'friend_request_accepted': return 'friend'
+    case 'match_result': return 'tournament'
+    case 'system': return 'admin'
+    case 'bot_message': return 'bot'
+    case 'team_invite':
+    case 'team_invite_accepted': return 'mail'
+    case 'team_member_removed': return 'warning'
+    case 'team_admin_granted':
+    case 'team_admin_revoked': return 'shield'
     case 'info':
-    default: return 'ℹ️'
+    default: return 'bell'
   }
 }
 
@@ -77,7 +83,7 @@ const timeAgo = (dateStr: string): string => {
         class="notif-item"
         :class="{ 'notif-unread': !notif.readAt }"
       >
-        <span class="notif-icon">{{ typeIcon(notif.type) }}</span>
+        <HudIcon :name="typeIcon(notif.type)" :size="15" class="notif-icon" />
         <div class="notif-body">
           <p v-if="notif.title" class="notif-title-text">{{ notif.title }}</p>
           <p class="notif-message">{{ notif.body }}</p>
@@ -125,8 +131,6 @@ const timeAgo = (dateStr: string): string => {
   z-index: 100;
   border: var(--hud-border) solid var(--glass-border);
   background: var(--glass-bg-elevated);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  backdrop-filter: var(--backdrop-blur-heavy);
   overflow: hidden;
 }
 

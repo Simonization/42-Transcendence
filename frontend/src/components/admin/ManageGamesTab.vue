@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HudIcon from '../hud/HudIcon.vue'
 /**
  * ManageGamesTab — Admin CRUD for game templates
  * Games define team count/size used by tournaments
@@ -140,7 +141,7 @@ onMounted(fetchGames)
 
     <!-- Empty state -->
     <div v-else-if="games.length === 0" class="empty-state">
-      <div class="empty-state-icon">🎮</div>
+      <div class="empty-state-icon"><HudIcon name="tournament" :size="26" /></div>
       <h3 class="empty-state-title">{{ t('admin.noGamesFound') }}</h3>
       <p class="empty-state-text">{{ t('admin.noGamesHint') }}</p>
     </div>
