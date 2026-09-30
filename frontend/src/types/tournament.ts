@@ -208,6 +208,64 @@ export interface BackendTournament {
   seeding?: SeedingView
   /** Served by GET /tournaments/:id: standings of group / round-robin phases. */
   standings?: PhaseStandings[]
+  /** Final ranking, only once the tournament is COMPLETED. */
+  podium?: Podium | null
+}
+
+export interface PodiumTeam {
+  teamId: number
+  name: string
+}
+
+/** 1st = final winner, 2nd = the other finalist, 3rd = the semi-final losers (no 3rd-place match). */
+export interface Podium {
+  first: PodiumTeam
+  second: PodiumTeam | null
+  third: PodiumTeam[]
+}
+
+/** How a team's run ended; `place` is 1-3 on the podium. */
+export interface TeamPlacement {
+  place: 1 | 2 | 3 | null
+  outcome: 'champion' | 'finalist' | 'semifinalist' | 'eliminated' | 'in_progress' | 'registered'
+}
+
+export interface TeamProfileMember {
+  id: number
+  username: string
+  avatarUrl: string | null
+  isCaptain: boolean
+  /** Bench player: beyond the game's team size, in join order. */
+  isSubstitute: boolean
+}
+
+export interface TeamProfileMatch {
+  id: number
+  status: BackendMatchStatus
+  stage: 'group' | 'knockout'
+  round: number
+  /** Rounds in the knockout tree (0 for group matches). */
+  rounds: number
+  opponent: { id: number; name: string } | null
+  /** From the profiled team's point of view. */
+  score: { for: number; against: number } | null
+  result: 'W' | 'L' | null
+  walkover: boolean
+  finishedAt: string | null
+}
+
+/** GET /teams/:id/profile */
+export interface TeamProfile {
+  id: number
+  name: string
+  status: string
+  tournament: { id: number; name: string; status: string } | null
+  teamSize: number
+  maxMembers: number
+  members: TeamProfileMember[]
+  placement: TeamPlacement | null
+  podium: { first: string; second: string | null; third: string[] } | null
+  matches: TeamProfileMatch[]
 }
 
 /** GET /tournaments/:id/seeding — the same functions build the real bracket at start. */

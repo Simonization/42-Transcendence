@@ -9,6 +9,7 @@ import { NotificationDestination } from '../../notifications/entities/notificati
 import { TeamPermissionsService } from '../services/team-permissions.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
+import { maxRosterSize, teamSizeOf } from '../utils/roster';
 
 @Injectable()
 export class InvitePlayerCommand {
@@ -25,7 +26,7 @@ export class InvitePlayerCommand {
         // 1. Fetch team and validate existence
         const team = await this.teamRepo.findOne({
             where: { id: teamId },
-            relations: ['members', 'tournament']
+            relations: ['members', 'tournament', 'tournament.phases', 'tournament.phases.game']
         });
 
         if (!team) throw new NotFoundException('Team not found');
@@ -36,6 +37,12 @@ export class InvitePlayerCommand {
         // 3. Validation: Can't invite if team is locked
         if (team.status === TeamStatus.LOCKED) {
             throw new BadRequestException('Cannot invite players to a locked team');
+        }
+
+        // 3b. Validation: the bench is capped (teamSize starters + a few substitutes)
+        const maxSize = maxRosterSize(teamSizeOf(team.tournament));
+        if (team.members.length >= maxSize) {
+            throw new BadRequestException(`That team is already full (${maxSize} players including substitutes)`);
         }
 
         // 4. Validation: Check if user is already a member

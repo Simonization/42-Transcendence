@@ -14,6 +14,7 @@ import type { LookingForTeamEntry } from '../../types/tournament'
 import { TeamStatus } from '../../types'
 import TournamentRegistrationModal from '../../components/tournaments/TournamentRegistrationModal.vue'
 import BracketVisualization from '../../components/tournaments/BracketVisualization.vue'
+import TournamentPodium from '../../components/tournaments/TournamentPodium.vue'
 import { useTournaments } from '../../composables/useTournaments'
 import { toDisplayTournament } from '../../utils/tournamentMapper'
 import { buildBracket } from '../../utils/bracket'
@@ -427,6 +428,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
         aria-labelledby="tab-bracket"
         class="tab-pane"
       >
+        <TournamentPodium :podium="currentTournament?.podium" link-teams />
         <BracketVisualization
           v-if="bracketData"
           :bracket="bracketData"

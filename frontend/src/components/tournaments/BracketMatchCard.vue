@@ -18,6 +18,8 @@ const props = defineProps<{
   busy?: boolean
   /** The current user is on one of the two teams: show the match chat button. */
   canChat?: boolean
+  /** Team names open the team's profile (logged-in bracket only). */
+  linkTeams?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -29,6 +31,7 @@ const emit = defineEmits<{
   (e: 'undo'): void
   (e: 'open-chat'): void
   (e: 'withdraw', teamId: number, teamName: string): void
+  (e: 'team', teamId: number): void
 }>()
 
 const { t, locale } = useI18n()
@@ -90,6 +93,17 @@ const name = (slot: 1 | 2) => {
   return p ? (isBye(p) ? t('bracket.bye') : p.username) : t('bracket.tbd')
 }
 
+/** The team behind a slot when its name can open a profile: a real, persisted team. */
+const linkable = (slot: 1 | 2) => {
+  const p = slot === 1 ? props.match.player1 : props.match.player2
+  return props.linkTeams && p && !isBye(p) && Number.isInteger(Number(p.id)) ? Number(p.id) : null
+}
+
+function openTeam(slot: 1 | 2) {
+  const id = linkable(slot)
+  if (id != null) emit('team', id)
+}
+
 const seed = (slot: 1 | 2) => {
   const p = slot === 1 ? props.match.player1 : props.match.player2
   return p?.seed ? String(p.seed).padStart(2, '0') : '--'
@@ -131,7 +145,14 @@ function formatDate(iso: string | null): string {
   >
     <div class="player-slot" :class="{ winner: match.winnerId != null && match.winnerId === match.player1?.id }">
       <span class="player-seed">{{ seed(1) }}</span>
-      <span class="player-name">{{ name(1) }}</span>
+      <span
+        class="player-name"
+        :class="{ 'player-link': linkable(1) != null }"
+        :role="linkable(1) != null ? 'link' : undefined"
+        :tabindex="linkable(1) != null ? 0 : undefined"
+        @click.stop="linkable(1) != null ? openTeam(1) : emit('toggle')"
+        @keydown.enter.stop="openTeam(1)"
+      >{{ name(1) }}</span>
       <span class="player-score">{{ match.score1 ?? '·' }}</span>
     </div>
 
@@ -141,7 +162,14 @@ function formatDate(iso: string | null): string {
 
     <div class="player-slot" :class="{ winner: match.winnerId != null && match.winnerId === match.player2?.id }">
       <span class="player-seed">{{ seed(2) }}</span>
-      <span class="player-name">{{ name(2) }}</span>
+      <span
+        class="player-name"
+        :class="{ 'player-link': linkable(2) != null }"
+        :role="linkable(2) != null ? 'link' : undefined"
+        :tabindex="linkable(2) != null ? 0 : undefined"
+        @click.stop="linkable(2) != null ? openTeam(2) : emit('toggle')"
+        @keydown.enter.stop="openTeam(2)"
+      >{{ name(2) }}</span>
       <span class="player-score">{{ match.score2 ?? '·' }}</span>
     </div>
 
@@ -337,6 +365,16 @@ function formatDate(iso: string | null): string {
   font-weight: var(--font-thin);
   color: var(--text-tertiary);
   letter-spacing: 0.04em;
+}
+
+.player-link {
+  cursor: pointer;
+}
+
+.player-link:hover,
+.player-link:focus-visible {
+  color: var(--accent-primary);
+  text-decoration: underline;
 }
 
 .player-name {

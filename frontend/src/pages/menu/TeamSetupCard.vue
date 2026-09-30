@@ -21,6 +21,7 @@ import { useUserEvents } from '../../composables/useUserEvents'
 import { useCoalescedRefresh } from '../../composables/useCoalescedRefresh'
 import { RealtimeEvents } from '../../types/realtime'
 import HudIcon from '../../components/hud/HudIcon.vue'
+import { maxRosterSize, substituteIds } from '../../utils/roster'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import RegistrationCountdown from '../../components/tournaments/RegistrationCountdown.vue'
 import { useNow } from '../../composables/useNow'
@@ -81,6 +82,14 @@ const requiredSize = computed(() => {
   return phase1?.game?.teamSize ?? 1
 })
 
+/** Starters plus the bench: the most members a team can hold. */
+const maxSize = computed(() => maxRosterSize(requiredSize.value))
+
+/** Members past the first `requiredSize` (captain first, then join order) sit on the bench. */
+const subIds = computed(() =>
+  myTeam.value ? substituteIds(myTeam.value.members ?? [], myTeam.value.captain_id, requiredSize.value) : new Set<number>(),
+)
+
 const isCaptain = computed(() =>
   myTeam.value !== null && myTeam.value.captain_id === me.value?.id
 )
@@ -132,7 +141,8 @@ const canLock = computed(() =>
   !isLocked.value &&
   registrationOpen.value &&
   !tournamentFull.value &&
-  memberCount.value === requiredSize.value
+  memberCount.value >= requiredSize.value &&
+  memberCount.value <= maxSize.value
 )
 
 const canUnlock = computed(() => canManage.value && isLocked.value && registrationOpen.value)
@@ -165,15 +175,16 @@ const slots = computed(() => {
 
   // Pending invitations
   for (const inv of pendingInvitations.value) {
-    if (result.length < requiredSize.value) {
+    if (result.length < maxSize.value) {
       result.push({ kind: 'pending', invitation: inv })
     }
   }
 
-  // Empty slots
+  // Empty slots for the starters, then one open bench slot once the starters are in
   while (result.length < requiredSize.value) {
     result.push({ kind: 'empty' })
   }
+  if (result.length < maxSize.value) result.push({ kind: 'empty' })
 
   return result
 })
@@ -764,7 +775,7 @@ async function leaveTeam() {
               {{ isLocked ? t('tournament.teamLocked') : t('tournament.teamDraft') }}
             </span>
           </div>
-          <div class="ts-team-count">{{ memberCount }} / {{ requiredSize }}</div>
+          <div class="ts-team-count">{{ Math.min(memberCount, requiredSize) }} / {{ requiredSize }}<template v-if="memberCount > requiredSize"> +{{ memberCount - requiredSize }} {{ t('teamProfile.sub') }}</template></div>
         </div>
 
         <!-- Slots grid -->
@@ -791,6 +802,9 @@ async function leaveTeam() {
                 </span>
                 <span v-else-if="adminIds.has(slot.user.id)" class="ts-slot-tag ts-tag-admin">
                   {{ t('teams.adminTag') }}
+                </span>
+                <span v-if="subIds.has(slot.user.id)" class="ts-slot-tag ts-tag-sub" :title="t('teamProfile.subTitle')">
+                  {{ t('teamProfile.sub') }}
                 </span>
               </div>
 
@@ -949,7 +963,7 @@ async function leaveTeam() {
               <div class="ts-slot-actions">
                 <button
                   class="ts-btn ts-btn-sm ts-btn-accent"
-                  :disabled="isSubmitting || memberCount >= requiredSize"
+                  :disabled="isSubmitting || memberCount >= maxSize"
                   @click="answerRequest(req.id, true)"
                 >
                   {{ t('common.accept') }}
@@ -1344,6 +1358,7 @@ async function leaveTeam() {
 }
 .ts-tag-captain { color: var(--accent-primary); background: var(--bg-selected); border: var(--hud-border) solid var(--accent-primary-subtle); }
 .ts-tag-pending { color: var(--color-warning); background: rgba(234,179,8,0.1); border: var(--hud-border) solid var(--color-warning); }
+.ts-tag-sub { color: var(--text-tertiary); background: var(--bg-tertiary); border: var(--hud-border) dashed var(--text-tertiary); }
 .ts-tag-admin { color: var(--color-info); background: var(--bg-tertiary); border: var(--hud-border) solid var(--color-info); }
 
 .ts-slot-actions {

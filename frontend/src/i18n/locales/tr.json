@@ -933,5 +933,54 @@
     "opensAtLabel": "Check-in açılışı",
     "opensAtFieldHint": "İsteğe bağlı. Açıldıktan sonra turnuva başlarken yalnızca check-in yapan takımlar katılır.",
     "opensAfterStart": "Check-in başlangıçtan sonra açılamaz."
+  },
+  "public": {
+    "readOnly": "SADECE OKUNUR",
+    "openApp": "UYGULAMAYI AÇ",
+    "signIn": "GİRİŞ YAP",
+    "loading": "Turnuva yükleniyor...",
+    "notFoundTitle": "Turnuva bulunamadı",
+    "notFoundText": "Bu turnuva mevcut değil ya da henüz herkese açık değil.",
+    "backHome": "ANA SAYFAYA DÖN",
+    "statusLive": "CANLI",
+    "statusCompleted": "TAMAMLANDI",
+    "statusOpen": "KAYITLAR AÇIK",
+    "teams": "takım",
+    "noBracket": "Takımlar kilitlendiğinde eşleşme ağacı burada görünecek."
+  },
+  "share": {
+    "button": "PAYLAŞ",
+    "title": "Sohbete yapıştırıldığında önizleme kartı gösteren bir bağlantı kopyala",
+    "copied": "Bağlantı panoya kopyalandı.",
+    "copyFailed": "Otomatik kopyalanamadı. Bağlantı: {url}"
+  },
+  "podium": {
+    "title": "PODYUM",
+    "first": "1. sıra",
+    "second": "2. sıra",
+    "third": "3. sıra"
+  },
+  "teamProfile": {
+    "title": "TAKIM",
+    "back": "GERİ",
+    "notFound": "Bu takım bulunamadı.",
+    "champion": "ŞAMPİYON",
+    "finalist": "FİNALİST",
+    "semifinalist": "YARI FİNALİST",
+    "eliminated": "ELENDİ",
+    "inProgress": "DEVAM EDİYOR",
+    "registered": "KAYITLI",
+    "record": "G-M",
+    "roster": "KADRO",
+    "captain": "KAPTAN",
+    "sub": "YEDEK",
+    "subTitle": "Yedek oyuncu: ilk kadronun arkasında yedek kulübesinde",
+    "results": "SONUÇLAR",
+    "noMatches": "Henüz oynanmış maç yok.",
+    "colRound": "TUR",
+    "colOpponent": "RAKİP",
+    "colScore": "SKOR",
+    "colResult": "G/M",
+    "pending": "BEKLİYOR"
   }
 }

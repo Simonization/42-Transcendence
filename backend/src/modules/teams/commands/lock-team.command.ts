@@ -6,6 +6,7 @@ import { assertRegistrationOpen } from '../../tournaments/services/registration-
 import { TeamPermissionsService } from '../services/team-permissions.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
+import { maxRosterSize } from '../utils/roster';
 
 @Injectable()
 export class LockTeamCommand {
@@ -37,8 +38,12 @@ export class LockTeamCommand {
     }
     const requiredSize = phase1.game?.teamSize ?? 1;
 
-    if (team.members.length !== requiredSize) {
-      throw new BadRequestException(`Team must have exactly ${requiredSize} players to lock.`);
+    // The starters are required; up to two substitutes may ride along (see utils/roster.ts).
+    if (team.members.length < requiredSize) {
+      throw new BadRequestException(`Team must have at least ${requiredSize} players to lock.`);
+    }
+    if (team.members.length > maxRosterSize(requiredSize)) {
+      throw new BadRequestException(`Team can have at most ${maxRosterSize(requiredSize)} players (${requiredSize} plus substitutes).`);
     }
 
     if (team.tournament.max_participants != null) {

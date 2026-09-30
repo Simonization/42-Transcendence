@@ -10,6 +10,7 @@ import type {
   InvitePlayerDto,
   TeamAdminState,
   TeamInvitation,
+  TeamProfile,
 } from '../types'
 import type { LookingForTeamEntry, TournamentAvailability } from '../types/tournament'
 
@@ -27,6 +28,11 @@ export interface MyTournamentStatus {
 }
 
 export const teamsApi = {
+  /** A team's page: roster, tournament, results and placement (any logged-in user). */
+  getProfile(teamId: number): Promise<TeamProfile> {
+    return api<TeamProfile>(`/teams/${teamId}/profile`)
+  },
+
   /**
    * Create a new team for a tournament
    * Current user becomes captain and first member

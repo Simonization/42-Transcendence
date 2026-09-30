@@ -933,5 +933,54 @@
     "opensAtLabel": "Check-in opens",
     "opensAtFieldHint": "Optional. Once open, only checked-in teams enter the bracket when you start.",
     "opensAfterStart": "Check-in cannot open after the start."
+  },
+  "public": {
+    "readOnly": "READ-ONLY VIEW",
+    "openApp": "OPEN APP",
+    "signIn": "SIGN IN",
+    "loading": "Loading tournament...",
+    "notFoundTitle": "Tournament not found",
+    "notFoundText": "This tournament does not exist or is not public yet.",
+    "backHome": "BACK TO HOME",
+    "statusLive": "LIVE",
+    "statusCompleted": "COMPLETED",
+    "statusOpen": "REGISTRATION OPEN",
+    "teams": "teams",
+    "noBracket": "The bracket will appear once teams have locked in."
+  },
+  "share": {
+    "button": "SHARE",
+    "title": "Copy a link that shows a preview card when pasted in chat",
+    "copied": "Link copied to the clipboard.",
+    "copyFailed": "Could not copy automatically. Link: {url}"
+  },
+  "podium": {
+    "title": "PODIUM",
+    "first": "1st place",
+    "second": "2nd place",
+    "third": "3rd place"
+  },
+  "teamProfile": {
+    "title": "TEAM",
+    "back": "BACK",
+    "notFound": "This team could not be found.",
+    "champion": "CHAMPION",
+    "finalist": "FINALIST",
+    "semifinalist": "SEMI-FINALIST",
+    "eliminated": "ELIMINATED",
+    "inProgress": "IN PROGRESS",
+    "registered": "REGISTERED",
+    "record": "W-L",
+    "roster": "ROSTER",
+    "captain": "CAPTAIN",
+    "sub": "SUB",
+    "subTitle": "Substitute: on the bench behind the starting players",
+    "results": "RESULTS",
+    "noMatches": "No matches played yet.",
+    "colRound": "ROUND",
+    "colOpponent": "OPPONENT",
+    "colScore": "SCORE",
+    "colResult": "W/L",
+    "pending": "PENDING"
   }
 }

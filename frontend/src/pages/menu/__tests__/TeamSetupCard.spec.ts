@@ -370,6 +370,42 @@ describe('TeamSetupCard', () => {
     })
   })
 
+  describe('substitutes', () => {
+    const member = (id: number) => ({ id, username: `p${id}` })
+
+    it('marks members beyond the game team size as SUB and lets the team lock with a bench', async () => {
+      // teamSize is 3: captain + 2 starters, then 2 substitutes.
+      setup({ team: teamFixture({ members: [1, 2, 3, 4, 5].map(member) }) })
+      const wrapper = await mountCard()
+
+      const subs = wrapper.findAll('.ts-tag-sub')
+      expect(subs).toHaveLength(2)
+      expect(subs[0].element.closest('.ts-slot')!.textContent).toContain('p4')
+      expect(subs[1].element.closest('.ts-slot')!.textContent).toContain('p5')
+      expect(wrapper.find('.ts-team-count').text()).toContain('3 / 3')
+      expect(wrapper.find('.ts-team-count').text()).toContain('+2')
+      expect(buttonByText(wrapper, 'LOCK TEAM')!.attributes('disabled')).toBeUndefined()
+    })
+
+    it('offers an open bench slot once the starters are in, but not beyond teamSize + 2', async () => {
+      setup({ team: teamFixture({ members: [1, 2, 3].map(member) }) })
+      const starters = await mountCard()
+      expect(starters.findAll('.ts-slot-empty')).toHaveLength(1)
+      expect(starters.findAll('.ts-tag-sub')).toHaveLength(0)
+      starters.unmount()
+
+      setup({ team: teamFixture({ members: [1, 2, 3, 4, 5].map(member) }) })
+      const fullBench = await mountCard()
+      expect(fullBench.findAll('.ts-slot-empty')).toHaveLength(0)
+    })
+
+    it('still refuses to lock below the team size', async () => {
+      setup()
+      const wrapper = await mountCard()
+      expect(buttonByText(wrapper, 'LOCK TEAM')!.attributes('disabled')).toBeDefined()
+    })
+  })
+
   describe('player search', () => {
     async function openInvitePanel(wrapper: VueWrapper) {
       await wrapper.find('.ts-invite-toggle').trigger('click')

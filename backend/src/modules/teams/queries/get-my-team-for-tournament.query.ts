@@ -5,6 +5,7 @@ import { Team } from '../entities/team.entity';
 import { InvitationDirection, InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
 import { Tournament } from '../../tournaments/entities/tournament.entity';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
+import { maxRosterSize, teamSizeOf } from '../utils/roster';
 import { GetTournamentAvailabilityQuery, TournamentAvailability } from './get-tournament-availability.query';
 
 export interface MyTournamentStatus {
@@ -12,7 +13,7 @@ export interface MyTournamentStatus {
     invitation: TeamInvitation | null;
     /** Pending join requests the user sent to teams of this tournament. */
     requests: TeamInvitation[];
-    /** Roster spots left on my team (game team size minus members), null without a team. */
+    /** Roster spots left on my team (team size plus the bench, minus members), null without a team. */
     teamSpotsLeft: number | null;
     /** Registration capacity of the tournament ("full" state for the UI). */
     availability: TournamentAvailability | null;
@@ -75,9 +76,7 @@ export class GetMyTeamForTournamentQuery {
 
         let teamSpotsLeft: number | null = null;
         if (team && tournament) {
-            const phase1 = tournament.phases?.find((p) => p.order === 1);
-            const size = phase1?.game?.teamSize ?? 1;
-            teamSpotsLeft = Math.max(0, size - (team.members?.length ?? 0));
+            teamSpotsLeft = Math.max(0, maxRosterSize(teamSizeOf(tournament)) - (team.members?.length ?? 0));
         }
 
         const lookingForTeam = await this.lftRepo.findOneBy({ userId, tournamentId });

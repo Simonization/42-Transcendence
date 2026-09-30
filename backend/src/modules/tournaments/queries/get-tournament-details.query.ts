@@ -4,10 +4,13 @@ import { Tournament } from "../entities/tournament.entity";
 import { Repository } from "typeorm";
 import { buildSeedingView, SeedingView } from "../services/seeding-view";
 import { buildStandingsView, PhaseStandingsView } from "../services/standings-view";
+import { computePodium, Podium } from "../public/podium";
 
 export type TournamentDetails = Tournament & {
     seeding: SeedingView;
     standings: PhaseStandingsView[];
+    /** Final ranking once COMPLETED, else null. */
+    podium: Podium | null;
 };
 
 @Injectable()
@@ -35,10 +38,24 @@ export class GetTournamentQuery {
         });
         if (!tournament) throw new NotFoundException();
 
+        const phases = tournament.phases ?? [];
+        const standings = buildStandingsView(tournament, phases, (p) => p.matches ?? []);
+        const names = new Map((tournament.teams ?? []).map((t) => [t.id, t.name]));
+        const podium = computePodium(
+            {
+                status: tournament.status,
+                phases: phases.map((p) => ({ order: p.order, type: p.type, matches: p.matches ?? [] })),
+                standings,
+                seedOrder: tournament.seed_order,
+            },
+            (id) => names.get(id) ?? `#${id}`,
+        );
+
         return {
             ...tournament,
             seeding: buildSeedingView(tournament),
-            standings: buildStandingsView(tournament, tournament.phases ?? [], (p) => p.matches ?? []),
+            standings,
+            podium,
         } as TournamentDetails;
     }
 

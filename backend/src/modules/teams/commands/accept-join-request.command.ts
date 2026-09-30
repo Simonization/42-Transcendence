@@ -11,6 +11,7 @@ import { TeamMembershipService, DepartedTeam } from '../services/team-membership
 import { publishDepartures } from '../utils/publish-departures';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
+import { maxRosterSize, teamSizeOf } from '../utils/roster';
 
 @Injectable()
 export class AcceptJoinRequestCommand {
@@ -45,10 +46,9 @@ export class AcceptJoinRequestCommand {
             }
             assertRegistrationOpen(team.tournament);
 
-            const phase1 = team.tournament?.phases?.find((p) => p.order === 1);
-            const maxSize = phase1?.game?.teamSize ?? 1;
+            const maxSize = maxRosterSize(teamSizeOf(team.tournament));
             if (team.members.length >= maxSize) {
-                throw new BadRequestException(`That team is already full (${maxSize} players)`);
+                throw new BadRequestException(`That team is already full (${maxSize} players including substitutes)`);
             }
 
             const requesterId = request.sender_id;

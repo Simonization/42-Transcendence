@@ -933,5 +933,54 @@
     "opensAtLabel": "Ouverture du check-in",
     "opensAtFieldHint": "Facultatif. Une fois ouvert, seules les équipes présentes entrent dans le tableau au démarrage.",
     "opensAfterStart": "Le check-in ne peut pas ouvrir après le début."
+  },
+  "public": {
+    "readOnly": "LECTURE SEULE",
+    "openApp": "OUVRIR L'APPLI",
+    "signIn": "SE CONNECTER",
+    "loading": "Chargement du tournoi...",
+    "notFoundTitle": "Tournoi introuvable",
+    "notFoundText": "Ce tournoi n'existe pas ou n'est pas encore public.",
+    "backHome": "RETOUR À L'ACCUEIL",
+    "statusLive": "EN DIRECT",
+    "statusCompleted": "TERMINÉ",
+    "statusOpen": "INSCRIPTIONS OUVERTES",
+    "teams": "équipes",
+    "noBracket": "Le tableau apparaîtra dès que des équipes seront verrouillées."
+  },
+  "share": {
+    "button": "PARTAGER",
+    "title": "Copier un lien qui affiche une carte d'aperçu une fois collé dans un chat",
+    "copied": "Lien copié dans le presse-papiers.",
+    "copyFailed": "Copie automatique impossible. Lien : {url}"
+  },
+  "podium": {
+    "title": "PODIUM",
+    "first": "1re place",
+    "second": "2e place",
+    "third": "3e place"
+  },
+  "teamProfile": {
+    "title": "ÉQUIPE",
+    "back": "RETOUR",
+    "notFound": "Cette équipe est introuvable.",
+    "champion": "CHAMPION",
+    "finalist": "FINALISTE",
+    "semifinalist": "DEMI-FINALISTE",
+    "eliminated": "ÉLIMINÉE",
+    "inProgress": "EN COURS",
+    "registered": "INSCRITE",
+    "record": "V-D",
+    "roster": "EFFECTIF",
+    "captain": "CAPITAINE",
+    "sub": "REMPL.",
+    "subTitle": "Remplaçant : sur le banc derrière les joueurs titulaires",
+    "results": "RÉSULTATS",
+    "noMatches": "Aucun match joué pour le moment.",
+    "colRound": "TOUR",
+    "colOpponent": "ADVERSAIRE",
+    "colScore": "SCORE",
+    "colResult": "V/D",
+    "pending": "À JOUER"
   }
 }

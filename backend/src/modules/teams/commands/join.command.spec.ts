@@ -63,8 +63,14 @@ describe('JoinByCodeCommand', () => {
         const closed = teamFixture();
         closed.tournament.status = TournamentStatus.ONGOING;
         await expect(build({ team: closed }).command.execute('x', USER)).rejects.toBeInstanceOf(BadRequestException);
-        await expect(build({ team: teamFixture({ members: [{ id: 1 }, { id: 2 }] }) }).command.execute('x', USER))
+        await expect(build({ team: teamFixture({ members: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }] }) }).command.execute('x', USER))
             .rejects.toThrow(/already full/);
+    });
+
+    it('lets people join as substitutes past teamSize, up to teamSize + 2', async () => {
+        const { command, team } = build({ team: teamFixture({ members: [{ id: 1 }, { id: 2 }] }) });
+        await command.execute('abcDEF2345', USER);
+        expect(team.members.map((m: any) => m.id)).toEqual([1, 2, USER]);
     });
 
     it('refuses someone already locked into another team of this tournament (409) and rolls back', async () => {
@@ -131,7 +137,7 @@ describe('join requests', () => {
 
         it('refuses locked/full teams, existing members and duplicate requests', async () => {
             await expect(build(teamFixture({ status: TeamStatus.LOCKED })).command.execute(5, USER)).rejects.toBeInstanceOf(BadRequestException);
-            await expect(build(teamFixture({ members: [{ id: 1 }, { id: 2 }] })).command.execute(5, USER)).rejects.toThrow(/full/);
+            await expect(build(teamFixture({ members: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }] })).command.execute(5, USER)).rejects.toThrow(/full/);
             await expect(build(teamFixture()).command.execute(5, 1)).rejects.toThrow(/already a member/);
             await expect(build(teamFixture(), { id: 1 }).command.execute(5, USER)).rejects.toThrow(/already have a pending/);
         });
@@ -163,6 +169,17 @@ describe('join requests', () => {
             expect(request.status).toBe(InvitationStatus.ACCEPTED);
             expect(request.team.members.map((m: any) => m.id)).toEqual([1, USER]);
             expect(manager.delete).toHaveBeenCalledWith(LookingForTeam, { userId: USER, tournamentId: 9 });
+        });
+
+        it('accepts up to teamSize + 2 members and refuses beyond', async () => {
+            const bench = teamFixture({ members: [{ id: 1 }, { id: 2 }, { id: 3 }] });
+            const ok = build({ request: { id: 11, sender_id: USER, status: InvitationStatus.PENDING, direction: InvitationDirection.REQUEST, team: bench } });
+            await ok.command.execute(11, 1);
+            expect(bench.members.map((m: any) => m.id)).toEqual([1, 2, 3, USER]);
+
+            const full = teamFixture({ members: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }] });
+            const refused = build({ request: { id: 11, sender_id: USER, status: InvitationStatus.PENDING, direction: InvitationDirection.REQUEST, team: full } });
+            await expect(refused.command.execute(11, 1)).rejects.toThrow(/already full/);
         });
 
         it('refuses non-admins, and rolls back', async () => {
