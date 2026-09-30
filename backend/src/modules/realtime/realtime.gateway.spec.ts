@@ -105,14 +105,25 @@ describe('RealtimeGateway', () => {
             expect(client.join).not.toHaveBeenCalled();
         });
 
-        it('rejects a socket that has no authenticated user', async () => {
+        it('authenticates on demand when the handshake checks have not finished', async () => {
             access.parseTarget.mockReturnValue({ channel: 'tournament', id: 4 });
+            access.canJoin.mockResolvedValue(true);
             const client = makeClient();
+
+            await expect(gateway.handleSubscribe(client, {})).resolves.toEqual({ ok: true });
+            expect(access.canJoin).toHaveBeenCalledWith(7, { channel: 'tournament', id: 4 });
+            expect(client.join).toHaveBeenCalledWith('tournament:4');
+        });
+
+        it('rejects a socket that cannot be authenticated', async () => {
+            access.parseTarget.mockReturnValue({ channel: 'tournament', id: 4 });
+            const client = makeClient({ handshake: { auth: {}, headers: {} } });
 
             await expect(gateway.handleSubscribe(client, {})).resolves.toEqual({
                 ok: false,
-                error: 'invalid_request',
+                error: 'unauthorized',
             });
+            expect(access.canJoin).not.toHaveBeenCalled();
             expect(client.join).not.toHaveBeenCalled();
         });
     });

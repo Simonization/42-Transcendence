@@ -54,8 +54,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
     @SubscribeMessage('subscribe')
     async handleSubscribe(@ConnectedSocket() client: Socket, @MessageBody() body: unknown) {
         const target = this.access.parseTarget(body);
-        const userId = this.userIdOf(client);
-        if (!target || userId === null) return { ok: false, error: 'invalid_request' };
+        if (!target) return { ok: false, error: 'invalid_request' };
+        // A client can emit `subscribe` the moment it connects, before the async handshake
+        // checks in handleConnection have stored the user on the socket, so resolve it here.
+        const userId = await this.resolveUserId(client);
+        if (userId === null) return { ok: false, error: 'unauthorized' };
 
         if (!(await this.access.canJoin(userId, target))) return { ok: false, error: 'forbidden' };
         await client.join(roomName[target.channel](target.id));
@@ -71,9 +74,9 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
         return { ok: true };
     }
 
-    private userIdOf(client: Socket): number | null {
+    private async resolveUserId(client: Socket): Promise<number | null> {
         const sub = client.data?.user?.sub;
-        return Number.isInteger(sub) ? sub : null;
+        return Number.isInteger(sub) ? sub : this.authenticate(client);
     }
 
     private async authenticate(client: Socket): Promise<number | null> {
