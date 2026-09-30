@@ -70,8 +70,22 @@ describe('LockTeamCommand', () => {
         },
     );
 
-    it('still requires exactly teamSize players and admin rights', async () => {
-        await expect(build({ members: 1 }).command.execute(5, 1)).rejects.toThrow(/exactly 2 players/);
+    it('requires at least teamSize players and admin rights', async () => {
+        await expect(build({ members: 1 }).command.execute(5, 1)).rejects.toThrow(/at least 2 players/);
         await expect(build({ allow: false }).command.execute(5, 99)).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('locks a team that carries one or two substitutes (teamSize + 2 at most)', async () => {
+        for (const members of [3, 4]) {
+            const { command, teamRepo } = build({ members });
+            await command.execute(5, 1);
+            expect(teamRepo.save.mock.calls[0][0].status).toBe(TeamStatus.LOCKED);
+        }
+    });
+
+    it('refuses a roster beyond teamSize + 2', async () => {
+        const { command, teamRepo } = build({ members: 5 });
+        await expect(command.execute(5, 1)).rejects.toThrow(/at most 4 players/);
+        expect(teamRepo.save).not.toHaveBeenCalled();
     });
 });

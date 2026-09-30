@@ -9,6 +9,7 @@ import { NotificationDestination } from '../../notifications/entities/notificati
 import { TeamPermissionsService } from '../services/team-permissions.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
+import { maxRosterSize, teamSizeOf } from '../utils/roster';
 
 @Injectable()
 export class CreateJoinRequestCommand {
@@ -37,10 +38,9 @@ export class CreateJoinRequestCommand {
             throw new BadRequestException('You are already a member of this team');
         }
 
-        const phase1 = team.tournament?.phases?.find((p) => p.order === 1);
-        const maxSize = phase1?.game?.teamSize ?? 1;
+        const maxSize = maxRosterSize(teamSizeOf(team.tournament));
         if (team.members.length >= maxSize) {
-            throw new BadRequestException(`That team is already full (${maxSize} players)`);
+            throw new BadRequestException(`That team is already full (${maxSize} players including substitutes)`);
         }
 
         const existing = await this.inviteRepo.findOne({

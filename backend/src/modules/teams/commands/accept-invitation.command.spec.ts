@@ -77,8 +77,15 @@ describe('AcceptInvitationCommand', () => {
     it('refuses a locked or full target team', async () => {
         await expect(build({ team: teamFixture({ status: TeamStatus.LOCKED }) }).command.execute(11, USER))
             .rejects.toBeInstanceOf(BadRequestException);
-        await expect(build({ team: teamFixture({ members: [{ id: 1 }, { id: 2 }] }) }).command.execute(11, USER))
+        // teamSize 2 + 2 substitutes = 4 members is the ceiling.
+        await expect(build({ team: teamFixture({ members: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }] }) }).command.execute(11, USER))
             .rejects.toThrow(/already full/);
+    });
+
+    it('accepts an invitation as a substitute once the starters are in', async () => {
+        const { command, invite } = build({ team: teamFixture({ members: [{ id: 1 }, { id: 2 }, { id: 3 }] }) });
+        await command.execute(11, USER);
+        expect(invite.team.members.map((m: any) => m.id)).toEqual([1, 2, 3, USER]);
     });
 
     it('404s on an unknown or already processed invitation', async () => {
