@@ -98,9 +98,10 @@ const activeRoomTitle = computed(() => {
 
 const dmPartnerId = computed(() => {
 if (!activeRoom.value || activeRoom.value.type !== 0) return null
-  const partner = activeRoom.value.participants.find((p: any) => Number(p.id) !== myId.value)
-  
-  return partner ? Number(partner.userId || partner.user?.id || partner.id) : null
+  const partner = activeRoom.value.participants.find(p => Number(p.id) !== myId.value)
+
+  // participants[].id is already the user id (see GetConversationsQuery)
+  return partner ? Number(partner.id) : null
 })
 
 const blockedIdsArray = computed(() => [...blockedUserIds.value])

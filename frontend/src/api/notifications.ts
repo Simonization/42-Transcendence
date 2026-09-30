@@ -1,14 +1,28 @@
 import { api } from './index';
 
-export type NotificationType = 
+/** Mirrors NotificationType in the backend's notification entity. */
+export type NotificationType =
   | 'info'
   | 'bot_message'
   | 'system'
   | 'friend_request'
   | 'friend_request_accepted'
   | 'team_invite'
+  | 'team_invite_accepted'
+  | 'team_member_removed'
+  | 'team_admin_granted'
+  | 'team_admin_revoked'
+  | 'team_captain_transferred'
+  | 'team_join_request'
+  | 'team_join_request_accepted'
+  | 'team_join_request_declined'
+  | 'team_invite_cancelled'
+  | 'looking_for_team_invite'
   | 'tournament_started'
-  | 'match_result';
+  | 'match_result'
+  | 'match_ready'
+  | 'match_score_reported'
+  | 'match_disputed';
 
 export interface Notification {
   id: number;

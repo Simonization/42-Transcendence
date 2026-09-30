@@ -64,8 +64,8 @@ export function useChat() {
             const response = await chatApi.getMessages(roomId)
             if (activeRoomId.value !== roomId) return
 
-            const rawMessages = Array.isArray(response) ? response : (response?.data || [])
-            messages.value = [...rawMessages].reverse()
+            // The backend returns a plain array, newest first
+            messages.value = [...response].reverse()
 
             await chatApi.markAsRead(roomId).catch(() => { })
             rooms.value = rooms.value.map(r =>

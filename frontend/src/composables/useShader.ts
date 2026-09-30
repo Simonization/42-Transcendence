@@ -1,4 +1,5 @@
 import { ref, onMounted, onUnmounted, type Ref } from 'vue'
+import type { ShaderMount } from '@paper-design/shaders'
 
 export interface ShaderParams {
   u_repetition?: number
@@ -68,8 +69,7 @@ export function useShader(options: UseShaderOptions) {
   const isLoaded = ref(false)
   const error = ref<string | null>(null)
   const webglSupported = ref(hasWebGL())
-  // ShaderMount from @paper-design/shaders — no exported type available
-  let shaderMount: { setSpeed?: (s: number) => void; dispose?: () => void; [k: string]: unknown } | null = null
+  let shaderMount: ShaderMount | null = null
   let currentSpeed = initialSpeed
 
   const setSpeed = (speed: number) => {

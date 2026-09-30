@@ -45,7 +45,7 @@ export function settingToTheme(value: number | null | undefined): ThemeMode | nu
   return null
 }
 
-export function themeToSetting(theme: ThemeMode): number {
+export function themeToSetting(theme: ThemeMode): 1 | 2 {
   return theme === 'dragon' ? 2 : 1
 }
 

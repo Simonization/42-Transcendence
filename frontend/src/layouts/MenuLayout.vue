@@ -47,9 +47,16 @@ const handleLogout = async () => {
   router.push('/')
 }
 
+interface NavItem {
+  to: string
+  label: string
+  icon: string
+  badge?: string | number | null
+}
+
 const navItems = computed(() => {
 
-  const baseItems = [
+  const baseItems: NavItem[] = [
     { to: '/', label: t('nav.home'), icon: 'home' },
     { to: '/menu/user', label: t('nav.user'), icon: 'user', badge: null },
     { to: '/menu/friend', label: t('nav.friend'), icon: 'friend', badge: null },
