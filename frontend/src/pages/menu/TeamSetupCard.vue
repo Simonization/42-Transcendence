@@ -16,6 +16,10 @@ import type { BackendTournament, BackendTeam, TeamInvitation } from '../../types
 import { TeamStatus, TournamentStatus } from '../../types'
 import type { User } from '../../types'
 import type { TournamentAvailability } from '../../types/tournament'
+import { useLiveChannel } from '../../composables/useLiveChannel'
+import { useUserEvents } from '../../composables/useUserEvents'
+import { useCoalescedRefresh } from '../../composables/useCoalescedRefresh'
+import { RealtimeEvents } from '../../types/realtime'
 import HudIcon from '../../components/hud/HudIcon.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
@@ -233,6 +237,29 @@ async function load(silent = false) {
 }
 
 onMounted(() => load())
+
+// ─── Live updates ────────────────────────────────────────────────────────────
+// The server only says "something changed"; the page refetches. No toast here: the backend
+// already sends a bell notification for invitations, join requests and their answers.
+
+const refresh = useCoalescedRefresh(() => load(true))
+
+// `myTeam.value?.id` is null until the user has a team and changes when they join one, so the
+// room is joined (and the server's membership check passes) only once they really are a member.
+useLiveChannel('team', () => myTeam.value?.id, {
+  [RealtimeEvents.TEAM_UPDATED]: refresh,
+})
+
+// Registered count and "full" state, tournament status. This one also carries the reconnect
+// resync for the whole page (one resync is enough; a second would just refetch twice).
+useLiveChannel('tournament', tournamentId, {
+  [RealtimeEvents.TOURNAMENT_UPDATED]: refresh,
+}, { onResync: refresh })
+
+// Personal events: an invitation or join request arrived, mine was answered, I was removed.
+useUserEvents({
+  [RealtimeEvents.INVITATION_RECEIVED]: refresh,
+})
 
 // ─── Create team ─────────────────────────────────────────────────────────────
 
