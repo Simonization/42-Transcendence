@@ -16,6 +16,8 @@ const props = defineProps<{
   expanded: boolean
   permissions: MatchPermissions
   busy?: boolean
+  /** The current user is on one of the two teams: show the match chat button. */
+  canChat?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -25,6 +27,7 @@ const emit = defineEmits<{
   (e: 'confirm'): void
   (e: 'dispute'): void
   (e: 'undo'): void
+  (e: 'open-chat'): void
   (e: 'withdraw', teamId: number, teamName: string): void
 }>()
 
@@ -168,6 +171,12 @@ function formatDate(iso: string | null): string {
         <p v-if="match.state === 'DISPUTED'" class="detail-note detail-note-alert">
           {{ t('match.disputedNotice') }}
         </p>
+
+        <div v-if="canChat" class="action-row chat-row">
+          <button class="action-btn action-primary" :disabled="busy" @click="emit('open-chat')">
+            {{ t('matchChat.open') }}
+          </button>
+        </div>
 
         <div v-if="hasActions" class="match-actions">
           <div v-if="showScoreForm" class="score-form">
@@ -508,6 +517,10 @@ function formatDate(iso: string | null): string {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.chat-row {
+  margin-top: var(--space-3);
 }
 
 .action-btn {

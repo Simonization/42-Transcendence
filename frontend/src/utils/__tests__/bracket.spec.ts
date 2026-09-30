@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildBracket, canActFor, getWinnerOfMatch, isBye, matchPermissions } from '../bracket'
+import { buildBracket, canActFor, getWinnerOfMatch, isBye, matchPermissions, canOpenMatchChat } from '../bracket'
 import { PhaseType, TeamStatus, TournamentStatus } from '../../types'
 import type { BackendTeam, BackendTournament, BracketMatch } from '../../types'
 import type { BackendMatch, SeedingView } from '../../types/tournament'
@@ -325,5 +325,31 @@ describe('match permissions', () => {
   it('offers nothing on a match whose opponent is not known yet', () => {
     const m = view({ team2_id: null, status: 'WAITING' })
     expect(Object.values(matchPermissions(m, 101, false, true)).some(Boolean)).toBe(false)
+  })
+})
+
+describe('canOpenMatchChat', () => {
+  const view = (over: Partial<BackendMatch>): BracketMatch =>
+    buildBracket(
+      withMatches([match({ team1_id: 1, team2_id: 2, status: 'READY', ...over })], { teams: [team(1, 'Alpha'), team(2, 'Bravo')] }),
+    )!.rounds[0].matches[0]
+
+  it('is open to every member of either team, and to nobody else', () => {
+    const m = view({})
+    expect(canOpenMatchChat(m, 101)).toBe(true)
+    expect(canOpenMatchChat(m, 102)).toBe(true)
+    expect(canOpenMatchChat(m, 999)).toBe(false)
+    expect(canOpenMatchChat(m, null)).toBe(false)
+  })
+
+  it('needs a match that has been ready: not while waiting, not a bye or a walkover', () => {
+    expect(canOpenMatchChat(view({ status: 'WAITING', team2_id: null }), 101)).toBe(false)
+    expect(canOpenMatchChat(view({ status: 'BYE', team2_id: null }), 101)).toBe(false)
+    expect(canOpenMatchChat(view({ status: 'FINISHED', winner_id: 1, game_data: { walkover: true } }), 101)).toBe(false)
+  })
+
+  it('stays available for disputes and after the match finished', () => {
+    expect(canOpenMatchChat(view({ status: 'DISPUTED' }), 101)).toBe(true)
+    expect(canOpenMatchChat(view({ status: 'FINISHED', winner_id: 1 }), 102)).toBe(true)
   })
 })

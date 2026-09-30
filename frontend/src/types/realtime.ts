@@ -11,7 +11,10 @@ export const RealtimeEvents = {
   TOURNAMENT_UPDATED: 'tournament:updated',
   /** The bracket moved (started, match finished, team advanced). Room: tournament:<id>. */
   BRACKET_UPDATED: 'bracket:updated',
-  /** One match changed (score reported, confirmed, status). Room: match:<id>. */
+  /**
+   * One match changed (score reported, confirmed, status). Room: match:<id>. Also sent to the
+   * members' user: rooms when a result appears or changes, so their history can refresh.
+   */
   MATCH_UPDATED: 'match:updated',
   /** The current user was invited to a team. Delivered to the personal user: room. */
   INVITATION_RECEIVED: 'invitation:received',

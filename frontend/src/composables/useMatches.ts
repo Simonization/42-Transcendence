@@ -21,8 +21,9 @@ export function useMatches(currentUserId: number) {
     return Array.from(games)
   })
 
-  const fetchMyHistory = async () => {
-    isLoading.value = true
+  /** `silent` refetches without the loading state, for live updates. */
+  const fetchMyHistory = async (silent = false) => {
+    if (!silent) isLoading.value = true
     error.value = ''
     try {
       const raw = await matchesApi.getMyHistory()
@@ -30,7 +31,7 @@ export function useMatches(currentUserId: number) {
         .map(m => transformMatch(m, currentUserId))
         .filter((m): m is Match => m !== null)
     } catch (e) {
-      matches.value = []
+      if (!silent) matches.value = []
       demoMode.value = true
       error.value = getErrorMessage(e, 'Failed to load match history')
     } finally {

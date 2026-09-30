@@ -134,6 +134,10 @@
     "deleteAccountConfirm": "DELETE ACCOUNT",
     "failedToDelete": "Failed to delete account"
   },
+  "matchChat": {
+    "open": "Match chat",
+    "openFailed": "Could not open the match chat."
+  },
   "match": {
     "title": "MATCH HISTORY",
     "loadingHistory": "Loading match history...",

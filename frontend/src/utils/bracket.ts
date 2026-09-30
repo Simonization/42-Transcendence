@@ -58,6 +58,7 @@ function toPlayer(team: Pick<BackendTeam, 'id' | 'name'> & Partial<BackendTeam>,
     seed,
     captainId: team.captain_id,
     adminIds: (team.admins ?? []).map(a => a.userId),
+    memberIds: (team.members ?? []).map(m => m.id),
   }
 }
 
@@ -335,6 +336,16 @@ export function getWinnerOfMatch(match: BracketMatch): BracketPlayer | null {
 export function canActFor(player: BracketPlayer | null, userId: number | null | undefined): boolean {
   if (!player || isBye(player) || userId == null) return false
   return player.captainId === userId || (player.adminIds ?? []).includes(userId)
+}
+
+/** Backend states in which a match has (or had) its chat room: both teams known and played. */
+const CHAT_STATES = ['READY', 'ONGOING', 'AWAITING_CONFIRMATION', 'DISPUTED', 'FINISHED']
+
+/** Whether `userId` is a member of either team of a persisted match and may open its chat. */
+export function canOpenMatchChat(match: BracketMatch, userId: number | null | undefined): boolean {
+  if (userId == null || !match.matchId || !match.state || !CHAT_STATES.includes(match.state)) return false
+  if (match.walkover) return false
+  return [match.player1, match.player2].some(p => !!p && !isBye(p) && (p.memberIds ?? []).includes(userId))
 }
 
 export interface MatchPermissions {
