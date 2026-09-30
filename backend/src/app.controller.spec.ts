@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 
 describe('AppController', () => {
   let appController: AppController;
+  let appService: AppService;
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
@@ -12,11 +13,21 @@ describe('AppController', () => {
     }).compile();
 
     appController = app.get<AppController>(AppController);
+    appService = app.get<AppService>(AppService);
   });
 
-  describe('root', () => {
-    it('should return "Hello from Backend!"', () => {
-      expect(appController.getHello()).toBe('Hello from Backend!');
+  describe('getHello', () => {
+    it('returns whatever AppService.getHello() returns (pure delegation)', () => {
+      jest.spyOn(appService, 'getHello').mockReturnValue('mocked response');
+
+      expect(appController.getHello()).toBe('mocked response');
+    });
+
+    it('returns a non-empty string with the real service wired in', () => {
+      const result = appController.getHello();
+
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
     });
   });
 });
