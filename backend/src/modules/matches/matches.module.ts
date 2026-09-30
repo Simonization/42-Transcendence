@@ -5,10 +5,10 @@ import { UserMatch } from './entities/user-match.entity';
 
 import { MatchesService } from './matches.service';
 import { MatchesController } from './matches.controller';
+import { MatchFlowService } from './services/match-flow.service';
 
 // Commands
 import { CreateMatchCommand } from './commands/create-match.command';
-import { UpdateMatchCommand } from './commands/update-match.command';
 import { DeleteMatchCommand } from './commands/delete-match.command';
 
 // Queries
@@ -17,21 +17,23 @@ import { GetMatchDetailsQuery } from './queries/get-match-details.query';
 
 // External Modules
 import { TournamentsModule } from '../tournaments/tournaments.module';
+import { TeamsModule } from '../teams/teams.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Match, UserMatch]),
         forwardRef(() => TournamentsModule),
+        TeamsModule,
     ],
     controllers: [MatchesController],
     providers: [
         MatchesService,
+        MatchFlowService,
         CreateMatchCommand,
-        UpdateMatchCommand,
         DeleteMatchCommand,
         GetPlayerHistoryQuery,
         GetMatchDetailsQuery,
     ],
-    exports: [MatchesService, UpdateMatchCommand, CreateMatchCommand], 
+    exports: [MatchesService, CreateMatchCommand],
 })
 export class MatchesModule {}

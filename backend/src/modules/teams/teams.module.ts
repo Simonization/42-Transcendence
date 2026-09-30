@@ -43,6 +43,6 @@ import { TeamPermissionsService } from './services/team-permissions.service';
     GetMyInvitationsQuery,
     GetMyTeamForTournamentQuery,
   ],
-  exports: [TeamsService],
+  exports: [TeamsService, TeamPermissionsService],
 })
 export class TeamsModule {}

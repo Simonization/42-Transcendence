@@ -14,7 +14,8 @@ export class GetMatchDetailsQuery {
         const match = await this.matchRepo.findOne({
             where: { id },
             relations: [
-                'teams',
+                'team1',
+                'team2',
                 'userMatches',
                 'userMatches.user',
                 'phase',

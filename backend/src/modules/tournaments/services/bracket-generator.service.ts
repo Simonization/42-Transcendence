@@ -1,34 +1,37 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
 import { Match } from '../../matches/entities/match.entity';
 import { Team } from '../../teams/entities/team.entity';
 import { SingleEliminationGenerator } from './generators/single-elimination.generator';
 import { TournamentPhase } from '../entities/tournament-phase.entity';
 import { GroupStageGenerator } from './generators/group-stage.generator';
 
+/** Phase types that are played as groups and ranked by standings rather than by a tree. */
+export const GROUP_PHASE_TYPES = ['GROUP_STAGE', 'ROUND_ROBIN'];
+
 @Injectable()
 export class BracketGeneratorService {
-    
-    // We pass the whole Phase object to access group_size, swiss_rounds, etc.
-    async generate(queryRunner: any, phase: TournamentPhase, teams: Team[]): Promise<void | Partial<Match>[]> {
+    /** Creates a phase's matches for an already seeded field (seed 1 first). */
+    async generate(
+        manager: EntityManager,
+        phase: TournamentPhase,
+        seeded: Team[],
+        tournamentId: number,
+    ): Promise<Match[]> {
+        const ctx = { phaseId: phase.id, tournamentId, gameId: phase.game_id ?? null };
+
         switch (phase.type) {
             case 'SINGLE_ELIMINATION':
-                const singleElim = new SingleEliminationGenerator(queryRunner);
-                return await singleElim.build(teams, phase.id);
+                return new SingleEliminationGenerator(manager).build(seeded, ctx);
 
             case 'GROUP_STAGE':
-                const groupStage = new GroupStageGenerator(queryRunner);
-                // Accessing the new parameters we added to the entity
-                return await groupStage.build(teams, phase.id, phase.group_size);
+                return new GroupStageGenerator(manager).build(seeded, ctx, phase.group_size || 4);
 
-            // case 'DOUBLE_ELIMINATION':
-            //     return this.buildDoubleElimination(teams, phase.id);
-
-            // case 'SWISS':
-            //     // Using the swiss_rounds parameter
-            //     return this.buildSwissRound(teams, phase.id, phase.swiss_rounds);
+            case 'ROUND_ROBIN':
+                return new GroupStageGenerator(manager).build(seeded, ctx, Math.max(2, seeded.length));
 
             default:
-                throw new Error(`Algorithm for ${phase.type} not implemented.`);
+                throw new BadRequestException(`${phase.type} phases are not supported yet.`);
         }
     }
 }

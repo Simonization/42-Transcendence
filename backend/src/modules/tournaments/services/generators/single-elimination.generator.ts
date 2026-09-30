@@ -1,62 +1,73 @@
-import { Match } from '../../../matches/entities/match.entity';
+import { EntityManager } from 'typeorm';
+import { Match, MatchStatus } from '../../../matches/entities/match.entity';
 import { Team } from '../../../teams/entities/team.entity';
+import { bracketSize, firstRoundPairs } from '../seeding';
 
+export interface GeneratorContext {
+    phaseId: number;
+    tournamentId: number;
+    gameId: number | null;
+}
+
+/**
+ * Builds a single-elimination tree from an already seeded list (seed 1 first).
+ *
+ * Standard seeding: 1 v N, byes to the top seeds, at most one bye per match (see
+ * `firstRoundPairs`). A first-round match with a single team is saved as BYE with that team as
+ * winner; the caller advances it. Rows are saved final-first so each child can point at its
+ * parent through winner_next_match_id / winner_next_match_slot.
+ */
 export class SingleEliminationGenerator {
-    constructor(private readonly queryRunner: any) {}
+    constructor(private readonly manager: EntityManager) {}
 
-    async build(teams: Team[], phaseId: number): Promise<void> {
-        const numTeams = teams.length;
-        const totalSlots = Math.pow(2, Math.ceil(Math.log2(numTeams)));
-        const totalRounds = Math.log2(totalSlots);
-        
-        const teamPool = [...teams];
+    async build(seeded: Team[], ctx: GeneratorContext): Promise<Match[]> {
+        const size = bracketSize(seeded.length);
+        const totalRounds = Math.log2(size);
+        const pairs = firstRoundPairs(seeded.length);
+        const created: Match[] = [];
 
-        await this.generateMatchBranch(
-            phaseId,
-            totalRounds,
-            null,
-            null, 
-            teamPool
-        );
-    }
+        let parents: Match[] = [];
+        for (let round = totalRounds; round >= 1; round--) {
+            const count = size / Math.pow(2, round);
+            const rows: Match[] = [];
 
-    private async generateMatchBranch(
-        phaseId: number,
-        round: number,
-        nextMatchId: number | null,
-        nextMatchSlot: number | null,
-        teams: Team[]
-    ): Promise<number> {
-        const match = this.queryRunner.manager.create(Match, {
-            phase_id: phaseId,
-            round_order: round,
-            winner_next_match_id: nextMatchId,
-            winner_next_match_slot: nextMatchSlot,
-            status: "WAITING",
-            game_data: {},
-            // Initialize with an empty array for teams
-            teams: []
-        });
+            for (let i = 0; i < count; i++) {
+                const parent = parents[Math.floor(i / 2)];
+                const base: Partial<Match> = {
+                    phase_id: ctx.phaseId,
+                    tournament_id: ctx.tournamentId,
+                    game_id: ctx.gameId as number,
+                    round_order: round,
+                    group_index: null,
+                    winner_next_match_id: parent ? parent.id : (null as any),
+                    winner_next_match_slot: parent ? (i % 2) + 1 : (null as any),
+                    status: MatchStatus.WAITING,
+                    game_data: {},
+                    team1_id: null,
+                    team2_id: null,
+                };
 
-        // BASE CASE: Round 1 (Leaf matches)
-        if (round === 1) {
-            const teamA = teams.pop();
-            const teamB = teams.pop();
-            
-            // Push teams into the array relationship instead of team_a_id
-            if (teamA) match.teams.push(teamA);
-            if (teamB) match.teams.push(teamB);
-            
-            const savedLeaf = await this.queryRunner.manager.save(Match, match);
-            return savedLeaf.id;
+                if (round === 1) {
+                    const [a, b] = pairs[i];
+                    const t1 = a !== null ? seeded[a] : null;
+                    const t2 = b !== null ? seeded[b] : null;
+                    base.team1_id = t1?.id ?? null;
+                    base.team2_id = t2?.id ?? null;
+                    if (t1 && t2) {
+                        base.status = MatchStatus.READY;
+                    } else {
+                        base.status = MatchStatus.BYE;
+                        base.winner_id = (t1 ?? t2)!.id;
+                        base.finished_at = new Date();
+                    }
+                }
+                rows.push(this.manager.create(Match, base));
+            }
+
+            parents = await this.manager.save(Match, rows);
+            created.push(...parents);
         }
 
-        // RECURSIVE STEP
-        const savedParent = await this.queryRunner.manager.save(Match, match);
-
-        await this.generateMatchBranch(phaseId, round - 1, savedParent.id, 1, teams);
-        await this.generateMatchBranch(phaseId, round - 1, savedParent.id, 2, teams);
-
-        return savedParent.id;
+        return created;
     }
 }

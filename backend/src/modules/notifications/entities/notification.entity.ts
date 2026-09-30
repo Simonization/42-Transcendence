@@ -13,7 +13,10 @@ export type NotificationType =
   | 'team_admin_granted'
   | 'team_admin_revoked'
   | 'tournament_started'
-  | 'match_result';
+  | 'match_result'
+  | 'match_ready'
+  | 'match_score_reported'
+  | 'match_disputed';
 
 // Destination de la notification
 export enum NotificationDestination {
