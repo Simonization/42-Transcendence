@@ -46,6 +46,30 @@ describe('useTournaments', () => {
     vi.clearAllMocks()
   })
 
+  describe('fetchTournament notFound', () => {
+    it('flags a 404 (deleted tournament) and clears the flag on the next success', async () => {
+      vi.mocked(tournamentsApi.getById)
+        .mockRejectedValueOnce(new ApiError(404, 'NOT_FOUND', 'Not Found'))
+        .mockResolvedValueOnce(makeTournament())
+
+      const { currentTournament, notFound, fetchTournament } = useTournaments()
+      await fetchTournament(1)
+      expect(notFound.value).toBe(true)
+      expect(currentTournament.value).toBeNull()
+
+      await fetchTournament(1)
+      expect(notFound.value).toBe(false)
+      expect(currentTournament.value?.id).toBe(1)
+    })
+
+    it('does not flag other failures', async () => {
+      vi.mocked(tournamentsApi.getById).mockRejectedValue(new ApiError(500, 'SERVER', 'Boom'))
+      const { notFound, fetchTournament } = useTournaments()
+      await fetchTournament(1)
+      expect(notFound.value).toBe(false)
+    })
+  })
+
   describe('fetchTournaments', () => {
     it('should load tournaments list', async () => {
       const list = [makeTournament(), makeTournament({ id: 2, name: 'Winter Cup' })]
