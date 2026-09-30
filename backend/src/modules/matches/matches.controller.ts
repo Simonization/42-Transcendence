@@ -55,6 +55,13 @@ export class MatchesController {
         return await this.matchesService.findOne(id);
     }
 
+    /** Member of either team: open (and join) the group chat of this match. */
+    @Post(':id/chat')
+    @HttpCode(200)
+    async openChat(@Param('id', ParseIntPipe) id: number, @Req() req) {
+        return await this.matchesService.openChat(id, req.user.id);
+    }
+
     /** Captain / team admin of either team: report the score (slot order). */
     @Post(':id/report')
     @HttpCode(200)
