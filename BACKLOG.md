@@ -32,7 +32,7 @@ sync. The backend also refuses to start without `JWT_SECRET`.
       verified email and verification is email-only.
 - [ ] **Google OAuth** needs a client under your own Google Cloud project (the current
       credentials belong to a teammate's).
-- [ ] **Real TypeORM migrations**, so deploys stop needing a one-off `synchronize`.
+- [x] **Real TypeORM migrations**, so deploys stop needing a one-off `synchronize`. — see `docs/migrations.md`
 - [~] **Database backups** for this app's volume. — script updated 2026-09-30 (infra repo), install on the server pending
 - [x] **Committed TLS private key** `nginx/ssl/transcendence.key`. It's the self-signed
       localhost dev cert, but remove it from git and generate it in `make setup`.
