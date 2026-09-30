@@ -3,6 +3,7 @@ import { getAccessToken } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { setActivePinia, createPinia } from 'pinia'
 import { UserRole } from '../types'
+import { isPublicRoute } from './publicRoutes'
 
 declare module 'vue-router' {
   interface RouteMeta { requiredRole?: number }
@@ -94,6 +95,11 @@ const router = createRouter({
           component: () => import('../pages/menu/TeamSetupCard.vue'),
         },
         {
+          path: 'teams/:id',
+          name: 'team-profile',
+          component: () => import('../pages/menu/TeamProfileCard.vue'),
+        },
+        {
           path: 'organizations',
           name: 'organizations',
           component: () => import('../pages/menu/OrganizationsCard.vue'),
@@ -127,6 +133,9 @@ const router = createRouter({
     // remembers the link, sends them to /auth and brings them back afterwards.
     { path: '/join/:code', name: 'join', component: () => import('../pages/JoinPage.vue') },
 
+    // Shareable tournament bracket: read-only, no login. Link unfurlers get /api/share/t/:id instead.
+    { path: '/t/:id', name: 'public-tournament', component: () => import('../pages/PublicTournamentPage.vue') },
+
     // Legal pages (public)
     { path: '/privacy', name: 'privacy', component: () => import('../pages/PrivacyPolicyPage.vue') },
     { path: '/terms', name: 'terms', component: () => import('../pages/TermsOfServicePage.vue') },
@@ -149,11 +158,8 @@ const router = createRouter({
 
 // Auth guard - validates tokens with server before allowing access
 router.beforeEach(async (to) => {
-  const publicPaths = ['/', '/auth', '/auth/verify-email', '/auth/2fa', '/auth/callback', '/privacy', '/terms']
-  const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/') || to.path.startsWith('/join/') || to.name === 'not-found'
-
   // Public routes don't need authentication
-  if (isPublic) {
+  if (isPublicRoute(to)) {
     return true
   }
 

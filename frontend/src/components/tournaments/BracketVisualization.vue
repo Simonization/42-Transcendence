@@ -10,6 +10,7 @@
 
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import type { TournamentBracket, BracketMatch } from '../../types'
 import type { ReportScoreDto } from '../../types/tournament'
 import { getWinnerOfMatch, matchPermissions, type MatchPermissions } from '../../utils/bracket'
@@ -37,6 +38,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const router = useRouter()
 const auth = useAuthStore()
 const { isAdmin } = useRbac()
 const toasts = useNotificationsStore()
@@ -84,6 +86,16 @@ function permissionsFor(match: BracketMatch): MatchPermissions {
     return { report: false, confirm: false, dispute: false, resolve: false, undo: false, withdraw: false }
   }
   return matchPermissions(match, auth.user?.id, isAdmin.value, live.value)
+}
+
+/**
+ * Team names open the team profile, which needs a login: only on the interactive (logged-in)
+ * bracket, never on the public read-only one.
+ */
+const linkTeams = computed(() => !!props.interactive && !props.bracket.provisional)
+
+function openTeam(teamId: number) {
+  router?.push(`/menu/teams/${teamId}`)
 }
 
 function toggleMatch(match: BracketMatch) {
@@ -294,6 +306,8 @@ function standingsKey(groupIndex: number) {
                 :expanded="expandedMatchId === match.id"
                 :permissions="permissionsFor(match)"
                 :busy="busy"
+                :link-teams="linkTeams"
+                @team="openTeam"
                 @toggle="toggleMatch(match)"
                 @report="scores => report(match, scores)"
                 @confirm="pending = { kind: 'confirm', match }"
@@ -333,6 +347,8 @@ function standingsKey(groupIndex: number) {
               :expanded="expandedMatchId === match.id"
               :permissions="permissionsFor(match)"
               :busy="busy"
+              :link-teams="linkTeams"
+              @team="openTeam"
               @toggle="toggleMatch(match)"
               @report="scores => report(match, scores)"
               @confirm="pending = { kind: 'confirm', match }"

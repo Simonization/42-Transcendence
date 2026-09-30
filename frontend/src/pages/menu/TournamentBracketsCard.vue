@@ -10,6 +10,8 @@ import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import BracketVisualization from '../../components/tournaments/BracketVisualization.vue'
+import TournamentPodium from '../../components/tournaments/TournamentPodium.vue'
+import ShareTournamentButton from '../../components/tournaments/ShareTournamentButton.vue'
 import HudIcon from '../../components/hud/HudIcon.vue'
 import { useTournaments } from '../../composables/useTournaments'
 import { tournamentsApi } from '../../api/tournaments'
@@ -73,12 +75,14 @@ function open(id: number) {
     <div class="card-header">
       <h2 class="card-title">{{ $t('tournament.brackets') }}</h2>
       <span v-if="tournamentName" class="hud-serial">{{ tournamentName }}</span>
+      <ShareTournamentButton v-if="tournamentId" :tournament-id="tournamentId" />
       <button v-if="tournamentId" class="back-link" @click="router.push({ name: 'tournament-brackets' })">
         {{ t('bracket.allTournaments') }}
       </button>
     </div>
 
     <div class="card-body">
+      <TournamentPodium v-if="tournamentId && !isLoading" :podium="currentTournament?.podium" link-teams />
       <div v-if="isLoading" class="bracket-loading">
         <div class="segbar" aria-hidden="true"></div>
         <span>{{ $t('common.loading') }}</span>
