@@ -14,10 +14,9 @@ first.
 
 `main` has the redesign merged, but the public deployment has not been updated yet.
 
-Do **not** run the infra repo's `deploy-transcendence.sh` as-is: it pushes the whole local
-Caddyfile (which carries unfinished blocks for other sites) and its default `SRC` path is
-wrong. The step-by-step runbook is kept out of this public repo, in the gitignored local
-`CLAUDE.md` next to this file.
+The infra repo's `deploy-transcendence.sh` has been fixed (no longer pushes the whole
+Caddyfile, correct `SRC`, backup + one-off schema sync built in). The runbook is kept out of
+this public repo, in the gitignored local `CLAUDE.md` next to this file.
 
 The merge changes the schema (new `team_admins` table, the `matches.phaseId` duplicate column
 replaced by a real FK on `phase_id`, `messages.isRead` dropped), and production runs without
@@ -25,7 +24,7 @@ replaced by a real FK on `phase_id`, `messages.isRead` dropped), and production 
 sync. The backend also refuses to start without `JWT_SECRET`.
 
 - [ ] Deploy (runbook in local `CLAUDE.md`)
-- [ ] Fix the deploy script: default `SRC`, and update only this site's Caddy block
+- [x] Fix the deploy script: default `SRC`, and update only this site's Caddy block
 
 ## 1. Ops
 
