@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { databaseOptions } from './database/database-options';
 
 // Entities
 import { User } from './modules/users/entities/user.entity';
@@ -29,16 +30,9 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: (process.env.DB_TYPE as any) || 'postgres',
-      host: process.env.DB_HOST || 'db',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USERNAME || 'user',
-      password: process.env.DB_PASSWORD || 'password',
-      database: process.env.DB_DATABASE || 'transcendence_db',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: process.env.DB_SYNCHRONIZE === 'true',
-    }),
+    // DB_* variables, entities and migrations: see database/database-options.ts. Migrations
+    // run on boot unless DB_SYNCHRONIZE=true or DB_MIGRATIONS_RUN=false (docs/migrations.md).
+    TypeOrmModule.forRoot(databaseOptions()),
     UsersModule,
     AuthModule,
     MailModule,
