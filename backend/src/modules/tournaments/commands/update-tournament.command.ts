@@ -5,6 +5,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
 import { UpdateTournamentDto } from "../dto/update-tournament.dto";
 import { assertScheduleOrder } from "../services/registration-window";
+import { BracketPublisher } from "../services/bracket-publisher.service";
 
 @Injectable()
 export class UpdateTournamentCommand {
@@ -12,6 +13,7 @@ export class UpdateTournamentCommand {
         @InjectRepository(Tournament) private tournamentRepo: Repository<Tournament>,
         @InjectRepository(TournamentPhase) private phaseRepo: Repository<TournamentPhase>,
         private dataSource: DataSource,
+        private publisher: BracketPublisher,
     ) {}
 
     async execute(id: number, dto: UpdateTournamentDto): Promise<Tournament> {
@@ -77,6 +79,7 @@ export class UpdateTournamentCommand {
             }
 
             await queryRunner.commitTransaction();
+            this.publisher.settingsChanged(id, 'tournament_edited');
 
             return await this.tournamentRepo.findOne({ 
                where: { id }, 
