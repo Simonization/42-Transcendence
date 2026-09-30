@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { ChatParticipant } from './entities/chat-participant.entity';
 import { Message } from './entities/message.entity';
 import { User } from '../users/entities/user.entity';
+import { extractTokenFromSocket, isBannedUser } from '../auth/socket-auth.util';
 
 @WebSocketGateway({
     cors: {
@@ -29,12 +30,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     async handleConnection(client: Socket) {
         try {
-            const token = this.extractTokenFromSocket(client);
+            const token = extractTokenFromSocket(client);
             if (!token) throw new UnauthorizedException('No Token found !');
 
             const payload = this.jwtService.verify(token);
             const user = await this.userRepo.findOne({ where: { id: payload.sub } });
-            if (!user || this.isBannedUser(user)) {
+            if (!user || isBannedUser(user)) {
                 throw new UnauthorizedException('User is banned');
             }
             client.data.user = payload;
@@ -43,7 +44,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             client.use(async (_packet, next) => {
                 const latestUser = await this.userRepo.findOne({ where: { id: payload.sub } });
-                if (!latestUser || this.isBannedUser(latestUser)) {
+                if (!latestUser || isBannedUser(latestUser)) {
                     client.emit('force-logout', { reason: 'banned' });
                     client.disconnect(true);
                     return;
@@ -63,22 +64,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleDisconnect(client: Socket) {
         console.log(`Client left: ${client.id}`);
         this.stopPulse(client);
-    }
-
-    private isBannedUser(user: User): boolean {
-        return user.status === 1 || (!!user.banUntil && new Date(user.banUntil) > new Date());
-    }
-
-    private extractTokenFromSocket(client: Socket): string | undefined {
-        const auth = client.handshake.auth;
-        const headers = client.handshake.headers;
-
-        if (auth && auth.token) {
-            return auth.token.split(' ')[1] || auth.token;
-        } else if (headers.authorization) {
-            return headers.authorization.split(' ')[1];
-        }
-        return undefined;
     }
 
     private startPulse(client: Socket) {

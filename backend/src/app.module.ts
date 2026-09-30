@@ -22,6 +22,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { TeamsModule } from './modules/teams/teams.module';
 import { TournamentsModule } from './modules/tournaments/tournaments.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
     TeamsModule,
     TournamentsModule,
     OrganizationsModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

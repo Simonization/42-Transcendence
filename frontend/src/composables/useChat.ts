@@ -1,7 +1,13 @@
 import { ref, computed } from 'vue'
-import { io, Socket } from 'socket.io-client'
 import { chatApi } from '../api/chat'
-import { getAccessToken, clearTokens } from '../api'
+import { clearTokens } from '../api'
+import {
+    connectSocket as connectSharedSocket,
+    disconnectSocket as disconnectSharedSocket,
+    getSocket,
+    onSocketEvent,
+    wsConnected,
+} from '../services/socket'
 import { getErrorMessage } from '../utils/error'
 import { useApiLogger } from './useApiLogger'
 import type { ChatRoom, Message } from '../types'
@@ -14,9 +20,8 @@ const isLoadingMessages = ref(false)
 const isSending = ref(false)
 const error = ref('')
 
-const socket = ref<Socket | null>(null)
-const wsConnected = ref(false)
 const uptime = ref('0.0')
+let handlersRegistered = false
 const friendActivityCallbacks: Array<() => void> = []
 const notificationCallbacks: Array<(data: Record<string, unknown>) => void> = []
 
@@ -50,8 +55,9 @@ export function useChat() {
         error.value = ''
 
         // Join the socket.io room to receive real-time messages
-        if (socket.value && socket.value.connected) {
-            socket.value.emit('joinRoom', { roomId })
+        const socket = getSocket()
+        if (socket && socket.connected) {
+            socket.emit('joinRoom', { roomId })
         }
 
         try {
@@ -125,44 +131,35 @@ export function useChat() {
         }
     }
 
-    const connectSocket = () => {
-        const token = getAccessToken()
+    /**
+     * Listeners for the app shell (rooms, notifications, friend activity, forced logout). Bound
+     * through the shared socket service, so they follow the connection across reconnects and
+     * across logout/login. Registered once for the lifetime of the page.
+     */
+    const registerSocketHandlers = () => {
         const { addWsLog } = useApiLogger()
-        if (!token || (socket.value && socket.value.connected))
-            return
 
-        socket.value = io('/', {
-            path: '/socket.io/',
-            transports: ['websocket'],
-            auth: {
-                token: token
-            },
-            reconnection: true
-        })
-
-        socket.value.on('connect', () => {
-            wsConnected.value = true
+        onSocketEvent('connect', () => {
             addWsLog({ method: 'EVENT', endpoint: 'connect', direction: 'in' })
             // Sync rooms after (re)connect to reflect any missed messages.
             fetchRooms().catch(() => { })
 
             // Rejoin currently opened room after reconnect.
             if (activeRoomId.value) {
-                socket.value?.emit('joinRoom', { roomId: activeRoomId.value })
+                getSocket()?.emit('joinRoom', { roomId: activeRoomId.value })
             }
         })
 
-        socket.value.on('disconnect', () => {
-            wsConnected.value = false
+        onSocketEvent('disconnect', () => {
             addWsLog({ method: 'EVENT', endpoint: 'disconnect', direction: 'in' })
         })
 
-        socket.value.on('friendActivity', (payload: Record<string, unknown>) => {
+        onSocketEvent('friendActivity', (payload: Record<string, unknown>) => {
             addWsLog({ method: 'EVENT', endpoint: 'friendActivity', direction: 'in', responseBody: payload })
             friendActivityCallbacks.forEach(cb => cb())
         })
 
-        socket.value.on('newMessage', (payload: Record<string, unknown>) => {
+        onSocketEvent('newMessage', (payload: Record<string, unknown>) => {
             addWsLog({ method: 'EVENT', endpoint: 'newMessage', direction: 'in', responseBody: payload })
             if (typeof payload === 'object' && payload !== null) {
                 const roomId = (payload.roomId ?? payload.chatId) as number
@@ -197,26 +194,34 @@ export function useChat() {
             }
         })
 
-        socket.value.on('connect_error', () => {
-            wsConnected.value = false
+        onSocketEvent('connect_error', () => {
             addWsLog({ method: 'EVENT', endpoint: 'connect_error', direction: 'in' })
         })
 
-        socket.value.on('time-pulse', (serverTime: string) => {
+        onSocketEvent('time-pulse', (serverTime: string) => {
             uptime.value = serverTime
             addWsLog({ method: 'EVENT', endpoint: 'time-pulse', direction: 'in', responseBody: serverTime })
         })
 
-        socket.value.on('notification', (data: Record<string, unknown>) => {
+        onSocketEvent('notification', (data: Record<string, unknown>) => {
             addWsLog({ method: 'EVENT', endpoint: 'notification', direction: 'in', responseBody: data })
             notificationCallbacks.forEach(cb => cb(data))
         })
 
-        socket.value.on('force-logout', () => {
+        onSocketEvent('force-logout', () => {
             addWsLog({ method: 'EVENT', endpoint: 'force-logout', direction: 'in' })
             clearTokens()
             window.location.href = '/auth'
         })
+    }
+
+    /** Make sure the one shared connection is open (idempotent; needs an access token). */
+    const connectSocket = () => {
+        if (!handlersRegistered) {
+            handlersRegistered = true
+            registerSocketHandlers()
+        }
+        connectSharedSocket()
     }
 
     const onNotification = (cb: (data: Record<string, unknown>) => void) => {
@@ -231,12 +236,9 @@ export function useChat() {
         }
     }
 
+    /** Close the shared connection and reset chat state. The session owner (logout) calls this. */
     const disconnectSocket = () => {
-        if (socket.value) {
-            socket.value.disconnect()
-            socket.value = null
-            wsConnected.value = false
-        }
+        disconnectSharedSocket()
         uptime.value = '0.0'
         activeRoomId.value = null
         messages.value = []
@@ -254,7 +256,6 @@ export function useChat() {
         unreadCount,
         wsConnected,
         uptime,
-        socket,
         fetchRooms,
         selectRoom,
         sendMessage,
