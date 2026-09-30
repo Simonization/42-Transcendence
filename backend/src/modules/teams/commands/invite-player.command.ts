@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
-import { InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
+import { InvitationDirection, InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
 import { User } from '../../users/entities/user.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
@@ -45,7 +45,8 @@ export class InvitePlayerCommand {
             where: {
                 team_id: teamId,
                 receiver_id: targetUserId,
-                status: InvitationStatus.PENDING
+                status: InvitationStatus.PENDING,
+                direction: InvitationDirection.INVITE,
             }
         });
 
@@ -58,7 +59,8 @@ export class InvitePlayerCommand {
             team_id: teamId,
             receiver_id: targetUserId,
             sender_id: actorId,
-            status: InvitationStatus.PENDING
+            status: InvitationStatus.PENDING,
+            direction: InvitationDirection.INVITE,
         });
 
         const savedInvitation = await this.inviteRepo.save(invitation);
