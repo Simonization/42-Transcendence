@@ -56,3 +56,4 @@ Requires `.env` file (copied from root `.env` during `make setup`). See root `do
 
 - [Backend Architecture](../docs/backend_architecture.md) - Complete API documentation
 - [Type System Guide](../docs/TYPE_SYSTEM_GUIDE.md) - Shared type conventions
+- [Database migrations](../docs/migrations.md) - Generating, running and reverting schema migrations
