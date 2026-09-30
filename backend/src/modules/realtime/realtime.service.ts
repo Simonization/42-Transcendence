@@ -37,6 +37,19 @@ export class RealtimeService {
         this.emit(roomName.match(matchId), event, payload);
     }
 
+    /**
+     * Takes every socket of the user out of `team:<id>`. Rooms are only authorised at subscribe
+     * time, so without this a kicked or departed member would keep receiving that team's events.
+     */
+    leaveTeamRoom(userId: number, teamId: number): void {
+        if (!this.server) return;
+        try {
+            this.server.in(roomName.user(userId)).socketsLeave(roomName.team(teamId));
+        } catch (err) {
+            this.logger.warn(`leave ${roomName.team(teamId)} for user ${userId} failed: ${(err as Error).message}`);
+        }
+    }
+
     private emit(room: string, event: string, payload: RealtimePayload): void {
         if (!this.server) return;
         try {

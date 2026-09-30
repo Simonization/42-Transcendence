@@ -30,6 +30,23 @@ describe('RealtimeService', () => {
         expect(emit).toHaveBeenCalledWith('match:updated', { id: 7, reason: 'test' });
     });
 
+    it('leaveTeamRoom removes the user\'s sockets from the team room', () => {
+        const socketsLeave = jest.fn();
+        const inFn = jest.fn(() => ({ socketsLeave }));
+        service.setServer({ in: inFn } as any);
+
+        service.leaveTeamRoom(7, 12);
+
+        expect(inFn).toHaveBeenCalledWith('user:7');
+        expect(socketsLeave).toHaveBeenCalledWith('team:12');
+    });
+
+    it('leaveTeamRoom never throws', () => {
+        expect(() => service.leaveTeamRoom(1, 2)).not.toThrow();
+        service.setServer({ in: () => { throw new Error('boom'); } } as any);
+        expect(() => service.leaveTeamRoom(1, 2)).not.toThrow();
+    });
+
     it('defaults the payload to an empty object', () => {
         const { server, emit } = mockServer();
         service.setServer(server);
