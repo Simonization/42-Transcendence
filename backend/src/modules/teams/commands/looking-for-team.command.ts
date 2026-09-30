@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
 import { Team } from '../entities/team.entity';
 import { Tournament, TournamentStatus } from '../../tournaments/entities/tournament.entity';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class LookingForTeamCommand {
@@ -11,6 +13,7 @@ export class LookingForTeamCommand {
         @InjectRepository(LookingForTeam) private lftRepo: Repository<LookingForTeam>,
         @InjectRepository(Team) private teamRepo: Repository<Team>,
         @InjectRepository(Tournament) private tournamentRepo: Repository<Tournament>,
+        private readonly realtime: RealtimeService,
     ) {}
 
     /** Flags (or updates the note of) the user as looking for a team in this tournament. */
@@ -30,18 +33,17 @@ export class LookingForTeamCommand {
         }
 
         const existing = await this.lftRepo.findOneBy({ userId, tournamentId });
-        if (existing) {
-            existing.note = note ?? null;
-            return await this.lftRepo.save(existing);
-        }
+        const saved = existing
+            ? await this.lftRepo.save(Object.assign(existing, { note: note ?? null }))
+            : await this.lftRepo.save(this.lftRepo.create({ userId, tournamentId, note: note ?? null }));
 
-        return await this.lftRepo.save(
-            this.lftRepo.create({ userId, tournamentId, note: note ?? null }),
-        );
+        this.realtime.toTournament(tournamentId, RealtimeEvents.TOURNAMENT_UPDATED, { id: tournamentId, reason: 'looking_for_team_changed' });
+        return saved;
     }
 
     async unflag(tournamentId: number, userId: number): Promise<{ message: string }> {
         await this.lftRepo.delete({ userId, tournamentId });
+        this.realtime.toTournament(tournamentId, RealtimeEvents.TOURNAMENT_UPDATED, { id: tournamentId, reason: 'looking_for_team_changed' });
         return { message: 'Removed from the looking-for-team board' };
     }
 }

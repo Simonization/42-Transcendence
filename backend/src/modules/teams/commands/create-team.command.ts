@@ -7,6 +7,8 @@ import { User } from '../../users/entities/user.entity';
 import { Tournament, TournamentStatus } from '../../tournaments/entities/tournament.entity';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
 import { generateJoinCode } from '../utils/join-code';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class CreateTeamCommand {
@@ -14,6 +16,7 @@ export class CreateTeamCommand {
         @InjectRepository(Team) private teamRepo: Repository<Team>,
         @InjectRepository(Tournament) private tournamentRepo: Repository<Tournament>,
         private dataSource: DataSource,
+        private readonly realtime: RealtimeService,
     ) {}
 
     async execute(dto: CreateTeamDto, user: User): Promise<Team> {
@@ -49,6 +52,9 @@ export class CreateTeamCommand {
 
         // Creating a team means the user is no longer "looking for one" in this tournament.
         await this.dataSource.manager.delete(LookingForTeam, { userId: user.id, tournamentId: tournament.id });
+
+        // The tournament's team list changed, and the creator left the LFT board.
+        this.realtime.toTournament(tournament.id, RealtimeEvents.TOURNAMENT_UPDATED, { id: tournament.id, reason: 'team_created' });
 
         return saved;
     }

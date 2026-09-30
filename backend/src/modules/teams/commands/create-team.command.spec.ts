@@ -3,7 +3,7 @@ import { CreateTeamCommand } from './create-team.command';
 import { TeamStatus } from '../entities/team.entity';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
-import { mockDataSource, mockQueryBuilder, mockRepo } from '../testing/test-mocks-spec';
+import { mockDataSource, mockQueryBuilder, mockRealtime, mockRepo } from '../testing/test-mocks-spec';
 
 describe('CreateTeamCommand', () => {
     const user: any = { id: 7, username: 'neo' };
@@ -20,7 +20,7 @@ describe('CreateTeamCommand', () => {
             .mockReturnValue(mockQueryBuilder({ exists: false }));
         const tournamentRepo = mockRepo({ findOneBy: jest.fn().mockResolvedValue(tournament) });
         const ctx = mockDataSource();
-        return { ...ctx, teamRepo, command: new CreateTeamCommand(teamRepo, tournamentRepo, ctx.dataSource) };
+        return { ...ctx, teamRepo, command: new CreateTeamCommand(teamRepo, tournamentRepo, ctx.dataSource, mockRealtime()) };
     }
 
     it('creates a DRAFT team with the user as captain/member and a fresh join code', async () => {

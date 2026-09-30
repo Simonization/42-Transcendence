@@ -5,7 +5,7 @@ import { TeamStatus } from '../entities/team.entity';
 import { TeamAdmin } from '../entities/team-admin.entity';
 import { InvitationStatus } from '../entities/team-invitation.entity';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
-import { mockDataSource, mockNotifications, mockQueryBuilder, mockRepo } from '../testing/test-mocks-spec';
+import { mockDataSource, mockNotifications, mockQueryBuilder, mockRealtime, mockRepo } from '../testing/test-mocks-spec';
 
 describe('AcceptInvitationCommand', () => {
     const USER = 7;
@@ -34,6 +34,7 @@ describe('AcceptInvitationCommand', () => {
             mockRepo(),
             notifications,
             new TeamMembershipService(),
+            mockRealtime(),
         );
         return { ...ctx, command, notifications, invite };
     }

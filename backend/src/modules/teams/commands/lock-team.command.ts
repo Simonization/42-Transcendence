@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class LockTeamCommand {
   constructor(
     @InjectRepository(Team) private teamRepo: Repository<Team>,
     private readonly permissions: TeamPermissionsService,
+    private readonly realtime: RealtimeService,
   ) {}
 
   async execute(teamId: number, actorId: number) {
@@ -50,6 +53,10 @@ export class LockTeamCommand {
     }
 
     team.status = TeamStatus.LOCKED;
-    return await this.teamRepo.save(team);
+    const saved = await this.teamRepo.save(team);
+
+    this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'team_locked' });
+    this.realtime.toTournament(team.tournament.id, RealtimeEvents.TOURNAMENT_UPDATED, { id: team.tournament.id, reason: 'team_locked' });
+    return saved;
   }
 }

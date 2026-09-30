@@ -6,6 +6,8 @@ import { TeamAdmin } from '../entities/team-admin.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class KickPlayerCommand {
@@ -14,6 +16,7 @@ export class KickPlayerCommand {
     @InjectRepository(TeamAdmin) private adminRepo: Repository<TeamAdmin>,
     private readonly permissions: TeamPermissionsService,
     private readonly notificationsService: NotificationsService,
+    private readonly realtime: RealtimeService,
   ) {}
 
   async execute(teamId: number, targetUserId: number, actorId: number) {
@@ -43,6 +46,10 @@ export class KickPlayerCommand {
     await this.adminRepo.delete({ teamId, userId: targetUserId });
     team.members = team.members.filter(m => m.id !== targetUserId);
     const saved = await this.teamRepo.save(team);
+
+    this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'member_kicked' });
+    this.realtime.toUser(targetUserId, RealtimeEvents.INVITATION_RECEIVED, { id: teamId, reason: 'kicked' });
+    this.realtime.leaveTeamRoom(targetUserId, teamId);
 
     try {
       await this.notificationsService.sendNotification(

@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { Team } from '../entities/team.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class RenameTeamCommand {
     constructor(
         @InjectRepository(Team) private teamRepo: Repository<Team>,
         private readonly permissions: TeamPermissionsService,
+        private readonly realtime: RealtimeService,
     ) {}
 
     async execute(teamId: number, name: string, actorId: number): Promise<Team> {
@@ -26,6 +29,12 @@ export class RenameTeamCommand {
         }
 
         team.name = name;
-        return await this.teamRepo.save(team);
+        const saved = await this.teamRepo.save(team);
+
+        this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'team_renamed' });
+        if (team.tournament?.id) {
+            this.realtime.toTournament(team.tournament.id, RealtimeEvents.TOURNAMENT_UPDATED, { id: team.tournament.id, reason: 'team_renamed' });
+        }
+        return saved;
     }
 }

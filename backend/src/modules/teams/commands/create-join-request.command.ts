@@ -7,6 +7,8 @@ import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class CreateJoinRequestCommand {
@@ -15,6 +17,7 @@ export class CreateJoinRequestCommand {
         @InjectRepository(TeamInvitation) private inviteRepo: Repository<TeamInvitation>,
         private readonly notificationsService: NotificationsService,
         private readonly permissions: TeamPermissionsService,
+        private readonly realtime: RealtimeService,
     ) {}
 
     async execute(teamId: number, userId: number, note?: string): Promise<TeamInvitation> {
@@ -65,6 +68,7 @@ export class CreateJoinRequestCommand {
         const admins = await this.permissions.listAdminIds(teamId);
         const notifyIds = [team.captain_id, ...admins];
         for (const adminId of notifyIds) {
+            this.realtime.toUser(adminId, RealtimeEvents.INVITATION_RECEIVED, { id: saved.id, reason: 'join_request' });
             try {
                 await this.notificationsService.sendNotification(
                     adminId,

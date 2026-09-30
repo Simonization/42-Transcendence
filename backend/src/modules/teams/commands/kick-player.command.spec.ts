@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { KickPlayerCommand } from './kick-player.command';
 import { TeamStatus } from '../entities/team.entity';
-import { mockNotifications, mockPermissions, mockRepo } from '../testing/test-mocks-spec';
+import { mockNotifications, mockPermissions, mockRealtime, mockRepo } from '../testing/test-mocks-spec';
 
 describe('KickPlayerCommand', () => {
     const CAPTAIN = 1;
@@ -19,7 +19,7 @@ describe('KickPlayerCommand', () => {
         const teamRepo = mockRepo({ findOne: jest.fn().mockResolvedValue(team) });
         const adminRepo = mockRepo({ existsBy: jest.fn().mockResolvedValue(opts.targetIsAdmin ?? false) });
         const notifications = mockNotifications();
-        const command = new KickPlayerCommand(teamRepo, adminRepo, mockPermissions(opts.allow ?? true), notifications);
+        const command = new KickPlayerCommand(teamRepo, adminRepo, mockPermissions(opts.allow ?? true), notifications, mockRealtime());
         return { command, teamRepo, adminRepo, notifications };
     }
 

@@ -7,6 +7,8 @@ import { User } from '../../users/entities/user.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination, NotificationType } from '../../notifications/entities/notification.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class SetAdminCommand {
@@ -16,6 +18,7 @@ export class SetAdminCommand {
         @InjectRepository(User) private userRepo: Repository<User>,
         private readonly notificationsService: NotificationsService,
         private readonly permissions: TeamPermissionsService,
+        private readonly realtime: RealtimeService,
     ) {}
 
     async promote(teamId: number, targetUserId: number, actorId: number) {
@@ -35,6 +38,8 @@ export class SetAdminCommand {
         await this.adminRepo.save(
             this.adminRepo.create({ teamId, userId: targetUserId, grantedBy: actorId }),
         );
+
+        this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'admin_granted' });
 
         await this.notify(
             targetUserId,
@@ -63,6 +68,8 @@ export class SetAdminCommand {
         if (!removed.affected) {
             throw new NotFoundException('User is not an admin of this team');
         }
+
+        this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'admin_revoked' });
 
         await this.notify(
             targetUserId,
