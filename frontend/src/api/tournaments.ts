@@ -10,6 +10,7 @@ import type {
   UpdateTournamentDto,
   RegisterTournamentDto,
 } from '../types'
+import type { PhaseStandings, SeedingView } from '../types/tournament'
 
 export const tournamentsApi = {
   /**
@@ -62,5 +63,31 @@ export const tournamentsApi = {
     return api<BackendTournament>(`/tournaments/${id}/start`, {
       method: 'POST',
     })
+  },
+
+  /**
+   * The teams that would enter (or entered), seed 1 first, with the first-round layout.
+   * The bracket preview draws this, so it matches the real bracket exactly.
+   */
+  getSeeding(id: number): Promise<SeedingView> {
+    return api<SeedingView>(`/tournaments/${id}/seeding`)
+  },
+
+  /** Set the seed order before start (admin only). */
+  setSeeding(id: number, teamIds: number[]): Promise<SeedingView> {
+    return api<SeedingView>(`/tournaments/${id}/seeding`, {
+      method: 'PUT',
+      body: { teamIds },
+    })
+  },
+
+  /** Group / round-robin standings. */
+  getStandings(id: number): Promise<PhaseStandings[]> {
+    return api<PhaseStandings[]>(`/tournaments/${id}/standings`)
+  },
+
+  /** Withdraw a team from a running tournament: its opponents win by walkover (admin only). */
+  withdrawTeam(id: number, teamId: number): Promise<{ teamId: number; matchIds: number[]; tournamentCompleted: boolean }> {
+    return api(`/tournaments/${id}/teams/${teamId}/withdraw`, { method: 'POST' })
   },
 }

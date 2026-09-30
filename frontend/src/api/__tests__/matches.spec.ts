@@ -154,6 +154,60 @@ describe('Matches API', () => {
     })
   })
 
+  describe('transformMatch (tournament matches, through the team slots)', () => {
+    const slotted = (overrides: Partial<BackendMatch> = {}): BackendMatch =>
+      makeBackendMatch({
+        userMatches: [],
+        game: null,
+        status: 'FINISHED',
+        team1: { id: 1, name: 'Alpha', members: [{ id: 42, username: 'simon' }] },
+        team2: { id: 2, name: 'Bravo', members: [{ id: 17, username: 'other' }] },
+        team1_score: 1,
+        team2_score: 3,
+        winner_id: 2,
+        finished_at: '2026-02-08T10:00:00.000Z',
+        phase: { game: { id: 1, name: 'Pong' }, tournament: { id: 5, name: 'Cup' } },
+        ...overrides,
+      })
+
+    it('finds my side and scores it from there', () => {
+      expect(transformMatch(slotted(), 42)).toEqual({
+        id: 1,
+        opponent: 'Bravo',
+        game: 'Pong',
+        result: 'loss',
+        date: '2026-02-08T10:00:00.000Z',
+        score: '1 - 3',
+        tournament: 'Cup',
+      })
+      expect(transformMatch(slotted(), 17)).toMatchObject({ opponent: 'Alpha', result: 'win', score: '3 - 1' })
+    })
+
+    it('shows a walkover without a score', () => {
+      const walkover = slotted({ team1_score: null, team2_score: null, winner_id: 1 })
+      expect(transformMatch(walkover, 42)).toMatchObject({ result: 'win', score: null })
+    })
+
+    it('skips matches that are not finished, and matches of other teams', () => {
+      expect(transformMatch(slotted({ status: 'AWAITING_CONFIRMATION', winner_id: null }), 42)).toBeNull()
+      expect(transformMatch(slotted(), 999)).toBeNull()
+    })
+  })
+
+  describe('match loop endpoints', () => {
+    it.each([
+      ['report', () => matchesApi.report(4, { team1Score: 2, team2Score: 1 }), { method: 'POST', body: { team1Score: 2, team2Score: 1 } }],
+      ['confirm', () => matchesApi.confirm(4), { method: 'POST' }],
+      ['dispute', () => matchesApi.dispute(4), { method: 'POST' }],
+      ['resolve', () => matchesApi.resolve(4, { team1Score: 0, team2Score: 2 }), { method: 'POST', body: { team1Score: 0, team2Score: 2 } }],
+      ['undo', () => matchesApi.undo(4), { method: 'POST' }],
+    ])('%s posts to /matches/:id/%s', async (action, call, options) => {
+      mockApi.mockResolvedValueOnce({})
+      await call()
+      expect(mockApi).toHaveBeenCalledWith(`/matches/4/${action}`, options)
+    })
+  })
+
   describe('computeStats', () => {
     it('should compute stats for a list of matches', () => {
       const matches: Match[] = [

@@ -138,4 +138,30 @@ describe('Tournaments API', () => {
       expect(result).toEqual(tournament)
     })
   })
+
+  describe('seeding, standings, withdraw', () => {
+    it('reads the seeding', async () => {
+      mockApi.mockResolvedValueOnce({ teams: [] })
+      await tournamentsApi.getSeeding(3)
+      expect(mockApi).toHaveBeenCalledWith('/tournaments/3/seeding')
+    })
+
+    it('writes the seed order', async () => {
+      mockApi.mockResolvedValueOnce({ teams: [] })
+      await tournamentsApi.setSeeding(3, [9, 4, 7])
+      expect(mockApi).toHaveBeenCalledWith('/tournaments/3/seeding', { method: 'PUT', body: { teamIds: [9, 4, 7] } })
+    })
+
+    it('reads the standings', async () => {
+      mockApi.mockResolvedValueOnce([])
+      await tournamentsApi.getStandings(3)
+      expect(mockApi).toHaveBeenCalledWith('/tournaments/3/standings')
+    })
+
+    it('withdraws a team', async () => {
+      mockApi.mockResolvedValueOnce({ teamId: 5, matchIds: [1], tournamentCompleted: false })
+      await tournamentsApi.withdrawTeam(3, 5)
+      expect(mockApi).toHaveBeenCalledWith('/tournaments/3/teams/5/withdraw', { method: 'POST' })
+    })
+  })
 })

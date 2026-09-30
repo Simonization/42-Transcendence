@@ -43,21 +43,37 @@ export type BackendMatchStatus =
   | 'WAITING'
   | 'READY'
   | 'ONGOING'
+  | 'AWAITING_CONFIRMATION'
+  | 'DISPUTED'
   | 'FINISHED'
   | 'CANCELLED'
   | 'BYE'
 
 /**
- * The real `matches` row. Teams come through a join table rather than team1_id/team2_id, and
- * the score is one string rather than a pair of numbers.
+ * The real `matches` row. The two teams sit in explicit slots (team1 / team2): a winner moves
+ * into the slot its match feeds, so the order is meaningful.
  */
 export interface BackendMatch {
   id: number
   phase_id: number
+  tournament_id?: number | null
   round_order: number | null
+  /** Group stage only: 0 = group A. */
+  group_index?: number | null
   status: BackendMatchStatus
-  teams?: BackendTeam[]
+  team1_id: number | null
+  team2_id: number | null
+  team1?: BackendTeam | null
+  team2?: BackendTeam | null
+  team1_score: number | null
+  team2_score: number | null
+  reported_by_team_id?: number | null
+  reported_at?: string | null
+  finished_at?: string | null
   winner_id: number | null
+  winner_next_match_id?: number | null
+  winner_next_match_slot?: number | null
+  /** Display form of the score ("2-1"). */
   score: string | null
   created_at: string
   game_data?: Record<string, unknown> | null
@@ -133,6 +149,56 @@ export interface BackendTournament {
   scheduledAt?: string | null
   createdAt: string
   updatedAt?: string
+  finished_at?: string | null
+  /** Team ids, seed 1 first. Admin-set before start, frozen to the entrants at start. */
+  seed_order?: number[] | null
+  /** Served by GET /tournaments/:id: what the bracket preview draws before start. */
+  seeding?: SeedingView
+  /** Served by GET /tournaments/:id: standings of group / round-robin phases. */
+  standings?: PhaseStandings[]
+}
+
+/** GET /tournaments/:id/seeding — the same functions build the real bracket at start. */
+export interface SeedingView {
+  tournamentId: number
+  started: boolean
+  phaseType: PhaseType | null
+  /** Teams that enter (LOCKED only), seed 1 first. */
+  teams: { id: number; name: string; status: string; seed: number; memberCount: number }[]
+  /** Knockout first round as team ids, null for a bye. */
+  pairs: [number | null, number | null][]
+  /** Group phases: team ids per group. */
+  groups: number[][]
+  /** Registered teams that will not enter (not LOCKED). */
+  excluded: { id: number; name: string; status: string }[]
+}
+
+export interface StandingRow {
+  teamId: number
+  name: string
+  rank: number
+  played: number
+  wins: number
+  losses: number
+  points: number
+  scoreFor: number
+  scoreAgainst: number
+  scoreDiff: number
+  seed: number | null
+  withdrawn: boolean
+}
+
+export interface PhaseStandings {
+  phaseId: number
+  phaseOrder: number
+  type: PhaseType
+  qualifiersPerGroup: number | null
+  groups: { index: number; label: string; rows: StandingRow[] }[]
+}
+
+export interface ReportScoreDto {
+  team1Score: number
+  team2Score: number
 }
 
 export interface CreatePhaseDto {
@@ -200,6 +266,9 @@ export interface BracketPlayer {
   avatar: string
   rating: number
   seed: number
+  /** Who may report / confirm for this team: its captain and promoted admins. */
+  captainId?: number
+  adminIds?: number[]
 }
 
 export interface BracketMatch {
@@ -214,6 +283,13 @@ export interface BracketMatch {
   winnerId: string | null
   scheduledAt: string
   completedAt: string | null
+  /** The backend status, for actions. Absent on provisional (not yet persisted) matches. */
+  state?: BackendMatchStatus
+  /** Numeric match id for API calls; absent on provisional matches. */
+  matchId?: number
+  reportedByTeamId?: string | null
+  /** Won by walkover (a team withdrew). */
+  walkover?: boolean
 }
 
 export interface BracketRound {
@@ -221,13 +297,28 @@ export interface BracketRound {
   matches: BracketMatch[]
 }
 
+export interface BracketGroup {
+  index: number
+  label: string
+  /** Standings, best first; empty before the group has results or while provisional. */
+  standings: StandingRow[]
+  /** Teams in the group, when there are no standings yet. */
+  players: BracketPlayer[]
+  rounds: BracketRound[]
+  qualifiersPerGroup: number | null
+}
+
 export interface TournamentBracket {
   tournamentId: string
   bracketType: BracketType
+  /** Knockout rounds, first round first. Empty while only a group stage exists. */
   rounds: BracketRound[]
+  /** Group stage, when the tournament has one. */
+  groups?: BracketGroup[]
   champion: BracketPlayer | null
   /** True while the field can still change: seeded from registrations, not persisted matches. */
   provisional?: boolean
+  completedAt?: string | null
 }
 
 /** View-model a tournament card renders; produced from BackendTournament by tournamentMapper. */
