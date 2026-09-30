@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
@@ -13,7 +14,10 @@ import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
-const { user, checkAuth, logout } = authStore
+// Destructuring the store state directly would freeze `user` at its setup-time value
+// (and make `user.value` undefined), so keep it reactive with storeToRefs.
+const { user } = storeToRefs(authStore)
+const { checkAuth, logout } = authStore
 
 const showDeleteDialog = ref(false)
 const isDeleting = ref(false)

@@ -49,11 +49,11 @@ describe('useMatches', () => {
       const rawMatches: BackendMatch[] = [
         {
           id: 1,
-          game_type: 'CHESS',
+          game: { id: 1, name: 'CHESS' },
           created_at: '2026-02-07T10:00:00.000Z',
           userMatches: [
-            { userId: 42, result: 'WIN', user: { id: 42, username: 'simon' } },
-            { userId: 17, result: 'LOSS', user: { id: 17, username: 'opponent' } },
+            { user_id: 42, result: 'WIN', user: { id: 42, username: 'simon' } },
+            { user_id: 17, result: 'LOSS', user: { id: 17, username: 'opponent' } },
           ],
         },
       ]
@@ -83,8 +83,8 @@ describe('useMatches', () => {
 
     it('should filter out null (PENDING) matches', async () => {
       mockGetMyHistory.mockResolvedValueOnce([
-        { id: 1, game_type: 'CHESS', created_at: '', userMatches: [] },
-        { id: 2, game_type: 'CHESS', created_at: '', userMatches: [] },
+        { id: 1, game: { id: 1, name: 'CHESS' }, created_at: '', userMatches: [] },
+        { id: 2, game: { id: 1, name: 'CHESS' }, created_at: '', userMatches: [] },
       ] as BackendMatch[])
       mockTransformMatch
         .mockReturnValueOnce({ id: 1, opponent: 'a', game: 'Chess', result: 'win', date: '' })
@@ -145,9 +145,9 @@ describe('useMatches', () => {
   describe('computed properties', () => {
     it('should compute unique games from matches', async () => {
       mockGetMyHistory.mockResolvedValueOnce([
-        { id: 1, game_type: 'CHESS', created_at: '', userMatches: [] },
-        { id: 2, game_type: 'LEAGUE', created_at: '', userMatches: [] },
-        { id: 3, game_type: 'CHESS', created_at: '', userMatches: [] },
+        { id: 1, game: { id: 1, name: 'CHESS' }, created_at: '', userMatches: [] },
+        { id: 2, game: { id: 2, name: 'LEAGUE' }, created_at: '', userMatches: [] },
+        { id: 3, game: { id: 1, name: 'CHESS' }, created_at: '', userMatches: [] },
       ] as BackendMatch[])
       mockTransformMatch
         .mockReturnValueOnce({ id: 1, opponent: 'a', game: 'Chess', result: 'win', date: '' })

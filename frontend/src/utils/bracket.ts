@@ -17,7 +17,7 @@ import type {
   BracketPlayer,
   BracketRound,
   BracketType,
-  MatchStatus,
+  BracketMatchStatus,
   TournamentBracket,
 } from '../types'
 import type {
@@ -62,7 +62,7 @@ function toPlayer(team: Pick<BackendTeam, 'id' | 'name'> & Partial<BackendTeam>,
   }
 }
 
-function statusOf(match: BackendMatch): MatchStatus {
+function statusOf(match: BackendMatch): BracketMatchStatus {
   if (match.status === 'FINISHED' || match.status === 'BYE' || match.status === 'CANCELLED') return 'completed'
   if (match.status === 'ONGOING' || match.status === 'AWAITING_CONFIRMATION' || match.status === 'DISPUTED') {
     return 'live'

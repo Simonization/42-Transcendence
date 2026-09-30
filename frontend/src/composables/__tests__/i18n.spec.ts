@@ -26,8 +26,8 @@ describe('i18n', () => {
 
     it('all nested keys in FR match EN', () => {
       for (const section of Object.keys(en)) {
-        const enSection = (en as Record<string, Record<string, string>>)[section]
-        const frSection = (fr as Record<string, Record<string, string>>)[section]
+        const enSection = (en as unknown as Record<string, Record<string, string>>)[section]
+        const frSection = (fr as unknown as Record<string, Record<string, string>>)[section]
         const enSubKeys = Object.keys(enSection).sort()
         const frSubKeys = Object.keys(frSection).sort()
 
@@ -37,8 +37,8 @@ describe('i18n', () => {
 
     it('all nested keys in TR match EN', () => {
       for (const section of Object.keys(en)) {
-        const enSection = (en as Record<string, Record<string, string>>)[section]
-        const trSection = (tr as Record<string, Record<string, string>>)[section]
+        const enSection = (en as unknown as Record<string, Record<string, string>>)[section]
+        const trSection = (tr as unknown as Record<string, Record<string, string>>)[section]
         const enSubKeys = Object.keys(enSection).sort()
         const trSubKeys = Object.keys(trSection).sort()
 

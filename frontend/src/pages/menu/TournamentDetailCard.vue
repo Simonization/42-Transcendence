@@ -38,7 +38,7 @@ const { success: showSuccess, error: showError } = notificationsStore
 const activeTab = ref<TabType>('overview')
 const registrationModalOpen = ref(false)
 
-const { currentTournament, isLoading, error, fetchTournament, register } = useTournaments()
+const { currentTournament, isLoading, error, fetchTournament } = useTournaments()
 
 const tournamentId = computed(() => Number(route.params.id))
 

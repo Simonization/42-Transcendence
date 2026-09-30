@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import * as adminApiModule from '../../api/admin'
+import type { User } from '../../types'
 
 vi.mock('../../api/admin', () => ({
   adminApi: {
@@ -17,12 +18,12 @@ const mockUpdateUser = vi.mocked(adminApiModule.adminApi.updateUser)
 
 import { useAdminUsers } from '../useAdminUsers'
 
-const mockUser = (overrides = {}) => ({
+const mockUser = (overrides: Partial<User> = {}): User => ({
   id: 1,
   username: 'testuser',
   mail: 'test@test.com',
   twoFactorEnabled: false,
-  role: 0,
+  role: 0 as const,
   status: 0,
   profile: { userId: 1, displayName: null, avatarUrl: null, bio: null, createdAt: '' },
   settings: { userId: 1, language: 'en' as const, timezone: null, theme: 0 as const, openMessage: false, createdAt: '' },
