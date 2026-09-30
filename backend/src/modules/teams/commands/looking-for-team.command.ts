@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
 import { Team } from '../entities/team.entity';
-import { Tournament, TournamentStatus } from '../../tournaments/entities/tournament.entity';
+import { Tournament } from '../../tournaments/entities/tournament.entity';
+import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
 
@@ -20,9 +21,7 @@ export class LookingForTeamCommand {
     async flag(tournamentId: number, userId: number, note?: string): Promise<LookingForTeam> {
         const tournament = await this.tournamentRepo.findOneBy({ id: tournamentId });
         if (!tournament) throw new NotFoundException('Tournament not found');
-        if (tournament.status !== TournamentStatus.REGISTRATION_OPEN) {
-            throw new BadRequestException('Tournament is not open for registration');
-        }
+        assertRegistrationOpen(tournament);
 
         const alreadyOnTeam = await this.teamRepo.existsBy({
             tournament: { id: tournamentId },

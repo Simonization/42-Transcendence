@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
-import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
+import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 import { TeamPermissionsService } from '../services/team-permissions.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
@@ -26,11 +26,10 @@ export class UnlockTeamCommand {
         if (team.status !== TeamStatus.LOCKED) {
             throw new BadRequestException('Team is not locked');
         }
-        if (team.tournament?.status !== TournamentStatus.REGISTRATION_OPEN) {
-            throw new BadRequestException('Cannot unlock once registration has closed');
-        }
+        assertRegistrationOpen(team.tournament, 'Cannot unlock once registration has closed');
 
         team.status = TeamStatus.DRAFT;
+        team.checked_in_at = null;
         const saved = await this.teamRepo.save(team);
 
         this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'team_unlocked' });

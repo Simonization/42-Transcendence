@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { DataSource } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { User } from '../../users/entities/user.entity';
-import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
+import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 import { TeamMembershipService, DepartedTeam } from '../services/team-membership.service';
 import { publishDepartures } from '../utils/publish-departures';
 import { RealtimeService } from '../../realtime/realtime.service';
@@ -39,9 +39,7 @@ export class JoinByCodeCommand {
             if (team.status !== TeamStatus.DRAFT) {
                 throw new BadRequestException('This team is not open to new members');
             }
-            if (team.tournament?.status !== TournamentStatus.REGISTRATION_OPEN) {
-                throw new BadRequestException('Tournament is not open for registration');
-            }
+            assertRegistrationOpen(team.tournament);
 
             const phase1 = team.tournament?.phases?.find((p) => p.order === 1);
             const maxSize = phase1?.game?.teamSize ?? 1;

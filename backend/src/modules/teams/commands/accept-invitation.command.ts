@@ -6,6 +6,7 @@ import { User } from '../../users/entities/user.entity';
 import { InvitationDirection, InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
+import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 import { TeamMembershipService, DepartedTeam } from '../services/team-membership.service';
 import { publishDepartures } from '../utils/publish-departures';
 import { RealtimeService } from '../../realtime/realtime.service';
@@ -54,6 +55,9 @@ export class AcceptInvitationCommand {
             if (team.status === TeamStatus.LOCKED) {
                 throw new BadRequestException('That team is locked and cannot take new members');
             }
+
+            // A pending invitation must not smuggle a player in after the deadline or the start.
+            assertRegistrationOpen(team.tournament);
 
             const phase1 = team.tournament?.phases?.find(p => p.order === 1);
             const maxSize = phase1?.game?.teamSize ?? 1;

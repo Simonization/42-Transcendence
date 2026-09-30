@@ -4,7 +4,8 @@ import { DataSource, Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { CreateTeamDto } from '../dto/create-team.dto';
 import { User } from '../../users/entities/user.entity';
-import { Tournament, TournamentStatus } from '../../tournaments/entities/tournament.entity';
+import { Tournament } from '../../tournaments/entities/tournament.entity';
+import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
 import { generateJoinCode } from '../utils/join-code';
 import { RealtimeService } from '../../realtime/realtime.service';
@@ -24,9 +25,7 @@ export class CreateTeamCommand {
         const tournament = await this.tournamentRepo.findOneBy({ id: dto.tournament_id });
         if (!tournament) throw new NotFoundException('Tournament not found');
 
-        if (tournament.status !== TournamentStatus.REGISTRATION_OPEN) {
-            throw new BadRequestException('Tournament is not open for registration');
-        }
+        assertRegistrationOpen(tournament);
 
         // 2. One team per user per tournament
         const existing = await this.teamRepo

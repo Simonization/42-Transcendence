@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
-import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
+import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 import { TeamPermissionsService } from '../services/team-permissions.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
@@ -28,9 +28,7 @@ export class LockTeamCommand {
       throw new BadRequestException('Team is already locked');
     }
 
-    if (team.tournament?.status !== TournamentStatus.REGISTRATION_OPEN) {
-      throw new BadRequestException('Tournament is not open for registration');
-    }
+    assertRegistrationOpen(team.tournament);
 
     // Look at Phase 1's game to see required team size
     const phase1 = team.tournament?.phases?.find(p => p.order === 1);

@@ -4,6 +4,7 @@ import { CreateTournamentDto } from "../dto/create-tournament.dto";
 import { TournamentPhase } from "../entities/tournament-phase.entity";
 import { Tournament, TournamentStatus } from "../entities/tournament.entity";
 import { InjectRepository } from "@nestjs/typeorm";
+import { assertScheduleOrder } from "../services/registration-window";
 
 @Injectable()
 export class CreateTournamentCommand {
@@ -15,6 +16,11 @@ export class CreateTournamentCommand {
 
     async execute(dto: CreateTournamentDto): Promise<Tournament> {
         this.validatePhaseChain(dto.phases);
+        assertScheduleOrder({
+            scheduledAt: dto.scheduled_at,
+            registrationClosesAt: dto.registration_closes_at,
+            checkinOpensAt: dto.checkin_opens_at,
+        });
 
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
@@ -29,6 +35,8 @@ export class CreateTournamentCommand {
                 current_phase_order: 1,
                 status: TournamentStatus.REGISTRATION_OPEN,
                 scheduledAt: dto.scheduled_at ? new Date(dto.scheduled_at) : null,
+                registration_closes_at: dto.registration_closes_at ? new Date(dto.registration_closes_at) : null,
+                checkin_opens_at: dto.checkin_opens_at ? new Date(dto.checkin_opens_at) : null,
             });
             const savedTournament = await queryRunner.manager.save(tournament);
 

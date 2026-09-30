@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
-import { Tournament, TournamentStatus } from '../../tournaments/entities/tournament.entity';
+import { Tournament } from '../../tournaments/entities/tournament.entity';
+import { CheckinState, checkinState, isRegistrationOpen } from '../../tournaments/services/registration-window';
 
 export interface TournamentAvailability {
     tournamentId: number;
@@ -14,7 +15,14 @@ export interface TournamentAvailability {
     spotsLeft: number | null;
     /** True when no more team can lock in (cap reached) or registration is closed. */
     full: boolean;
+    /** Status is REGISTRATION_OPEN and the deadline, if any, has not passed. */
     registrationOpen: boolean;
+    /** Deadline after which registration is refused; null when there is none. */
+    registrationClosesAt: Date | null;
+    /** Check-in opening time; null when the tournament has no check-in. */
+    checkinOpensAt: Date | null;
+    /** off: no check-in; upcoming / open: around the window; closed: tournament started. */
+    checkinState: CheckinState;
 }
 
 @Injectable()
@@ -37,7 +45,7 @@ export class GetTournamentAvailabilityQuery {
         });
         const maxTeams = tournament.max_participants ?? null;
         const spotsLeft = maxTeams === null ? null : Math.max(0, maxTeams - lockedTeams);
-        const registrationOpen = tournament.status === TournamentStatus.REGISTRATION_OPEN;
+        const registrationOpen = isRegistrationOpen(tournament);
 
         return {
             tournamentId: tournament.id,
@@ -46,6 +54,9 @@ export class GetTournamentAvailabilityQuery {
             spotsLeft,
             full: spotsLeft === 0,
             registrationOpen,
+            registrationClosesAt: tournament.registration_closes_at ?? null,
+            checkinOpensAt: tournament.checkin_opens_at ?? null,
+            checkinState: checkinState(tournament),
         };
     }
 }
