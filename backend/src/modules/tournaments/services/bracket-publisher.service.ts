@@ -2,10 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Match } from '../../matches/entities/match.entity';
+import { Team } from '../../teams/entities/team.entity';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
 import { MatchChatService } from '../../chat/services/match-chat.service';
 import { EngineEvents } from './bracket-engine.service';
+
+/**
+ * Reasons that change a player's match history (a result appeared, changed or disappeared): the
+ * members of the teams involved also hear about them on their personal room.
+ */
+const HISTORY_REASONS = new Set(['match_finished', 'match_resolved', 'match_undone', 'match_edited', 'team_withdrawn']);
 
 interface Announcement {
     tournamentId: number;
@@ -33,6 +40,7 @@ export class BracketPublisher {
         private readonly realtime: RealtimeService,
         private readonly matchChat: MatchChatService,
         @InjectRepository(Match) private readonly matchRepo: Repository<Match>,
+        @InjectRepository(Team) private readonly teamRepo: Repository<Team>,
     ) {}
 
     /** A match changed (report, confirm, dispute, resolve, undo, edit) and the bracket with it. */
@@ -87,16 +95,23 @@ export class BracketPublisher {
         // the event already finds it.
         await this.matchChat.ensureRooms(ready);
 
-        const teamIds = new Set(a.teamIds ?? []);
-        if (ready.length) {
-            const rows = await this.matchRepo.find({ where: { id: In(ready) } });
-            for (const m of rows) {
-                if (m.team1_id != null) teamIds.add(m.team1_id);
-                if (m.team2_id != null) teamIds.add(m.team2_id);
-            }
-        }
+        const changed = [...new Set(a.matchIds ?? [])];
+        const rows = await this.matchRepo.find({ where: { id: In([...new Set([...changed, ...ready])]) } });
+        const teamsOf = (m: Match) => [m.team1_id, m.team2_id].filter((id): id is number => id != null);
+
+        const teamIds = new Set([...(a.teamIds ?? []), ...rows.flatMap(teamsOf)]);
         for (const id of teamIds) {
             this.realtime.toTeam(id, RealtimeEvents.TEAM_UPDATED, { id, reason });
+        }
+
+        if (HISTORY_REASONS.has(reason) && rows.length) {
+            const teams = await this.teamRepo.find({ where: { id: In([...teamIds]) }, relations: ['members'] });
+            const members = new Map(teams.map((t) => [t.id, (t.members ?? []).map((u) => u.id)]));
+            for (const m of rows.filter((r) => changed.includes(r.id))) {
+                for (const userId of new Set(teamsOf(m).flatMap((t) => members.get(t) ?? []))) {
+                    this.realtime.toUser(userId, RealtimeEvents.MATCH_UPDATED, { id: m.id, reason });
+                }
+            }
         }
     }
 }

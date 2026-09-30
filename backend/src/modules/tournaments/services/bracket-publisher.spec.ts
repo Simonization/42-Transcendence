@@ -22,8 +22,13 @@ function setup() {
         findOne: jest.fn(async ({ where }: any) => MATCHES[where.id] ?? null),
         find: jest.fn(async ({ where }: any) => (where.id.value as number[]).map((id) => MATCHES[id])),
     };
-    const publisher = new BracketPublisher(realtime, matchChat as any, matchRepo as any);
-    return { realtime, matchChat, matchRepo, publisher };
+    const teamRepo = {
+        find: jest.fn(async ({ where }: any) =>
+            (where.id.value as number[]).map((id) => ({ id, members: [{ id: id * 100 }, { id: id * 100 + 1 }] })),
+        ),
+    };
+    const publisher = new BracketPublisher(realtime, matchChat as any, matchRepo as any, teamRepo as any);
+    return { realtime, matchChat, matchRepo, teamRepo, publisher };
 }
 
 const calls = (fn: jest.Mock) => fn.mock.calls.map((c) => c.slice(0, 3));
@@ -42,6 +47,16 @@ describe('BracketPublisher', () => {
                 [1, TEAM_UPDATED, { id: 1, reason: 'score_reported' }],
                 [2, TEAM_UPDATED, { id: 2, reason: 'score_reported' }],
             ]);
+        });
+
+        it('tells the players on their own room when a result appears, not for a plain report', async () => {
+            const { realtime, publisher } = setup();
+            await publisher.matchChanged(10, 'score_reported');
+            expect(realtime.toUser).not.toHaveBeenCalled();
+
+            await publisher.matchChanged(10, 'match_finished');
+            expect(ids(realtime.toUser)).toEqual([100, 101, 200, 201]);
+            expect(realtime.toUser).toHaveBeenCalledWith(100, MATCH_UPDATED, { id: 10, reason: 'match_finished' });
         });
 
         it('does not send tournament:updated for a plain match change', async () => {
