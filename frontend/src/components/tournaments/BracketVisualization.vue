@@ -12,7 +12,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { TournamentBracket, BracketMatch } from '../../types'
 import type { ReportScoreDto } from '../../types/tournament'
-import { getWinnerOfMatch, matchPermissions, type MatchPermissions } from '../../utils/bracket'
+import { canOpenMatchChat, getWinnerOfMatch, matchPermissions, type MatchPermissions } from '../../utils/bracket'
 import { matchesApi } from '../../api/matches'
 import { tournamentsApi } from '../../api/tournaments'
 import { useAuthStore } from '../../stores/auth'
@@ -34,6 +34,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'match-click', matchId: string): void
   (e: 'changed'): void
+  /** A team member asked for the chat of this match (numeric match id). */
+  (e: 'open-chat', matchId: number): void
 }>()
 
 const { t } = useI18n()
@@ -84,6 +86,11 @@ function permissionsFor(match: BracketMatch): MatchPermissions {
     return { report: false, confirm: false, dispute: false, resolve: false, undo: false, withdraw: false }
   }
   return matchPermissions(match, auth.user?.id, isAdmin.value, live.value)
+}
+
+/** Members of either team get the match chat button; only where actions are shown. */
+function chatFor(match: BracketMatch): boolean {
+  return !!props.interactive && !props.bracket.provisional && canOpenMatchChat(match, auth.user?.id)
 }
 
 function toggleMatch(match: BracketMatch) {
@@ -294,6 +301,8 @@ function standingsKey(groupIndex: number) {
                 :expanded="expandedMatchId === match.id"
                 :permissions="permissionsFor(match)"
                 :busy="busy"
+                :can-chat="chatFor(match)"
+                @open-chat="emit('open-chat', match.matchId!)"
                 @toggle="toggleMatch(match)"
                 @report="scores => report(match, scores)"
                 @confirm="pending = { kind: 'confirm', match }"
@@ -333,6 +342,8 @@ function standingsKey(groupIndex: number) {
               :expanded="expandedMatchId === match.id"
               :permissions="permissionsFor(match)"
               :busy="busy"
+              :can-chat="chatFor(match)"
+              @open-chat="emit('open-chat', match.matchId!)"
               @toggle="toggleMatch(match)"
               @report="scores => report(match, scores)"
               @confirm="pending = { kind: 'confirm', match }"

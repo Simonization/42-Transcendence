@@ -10,6 +10,9 @@ import { useMatches } from '../../composables/useMatches'
 import { useAuthStore } from '../../stores/auth'
 import type { GameType, MatchResult } from '../../types'
 import HudIcon from '../../components/hud/HudIcon.vue'
+import { useUserEvents } from '../../composables/useUserEvents'
+import { useCoalescedRefresh } from '../../composables/useCoalescedRefresh'
+import { RealtimeEvents } from '../../types/realtime'
 
 type SortBy = 'date' | 'result'
 
@@ -26,6 +29,10 @@ const friendlyError = computed(() => {
   }
   return error.value
 })
+
+// Live: a result of one of my matches appeared, changed or was undone (sent to my user room).
+const refreshHistory = useCoalescedRefresh(() => (user ? fetchMyHistory(true) : undefined))
+useUserEvents({ [RealtimeEvents.MATCH_UPDATED]: refreshHistory }, { onResync: refreshHistory })
 
 const currentPage = ref(1)
 const sortBy = ref<SortBy>('date')

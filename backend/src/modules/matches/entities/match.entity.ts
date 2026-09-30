@@ -12,6 +12,7 @@ import { UserMatch } from './user-match.entity';
 import { Game } from '../../games/entities/game.entity';
 import { TournamentPhase } from '../../tournaments/entities/tournament-phase.entity';
 import { Team } from '../../teams/entities/team.entity';
+import { Chat } from '../../chat/entities/chat.entity';
 
 export enum MatchStatus {
     /** At least one slot is still waiting for a feeder match. */
@@ -134,4 +135,15 @@ export class Match {
     /** Group stage only: 0 for group A, 1 for B, ... Null in knockout phases. */
     @Column({ type: 'int', nullable: true })
     group_index: number | null;
+
+    /**
+     * The group chat of the two teams, created when the match first becomes READY. Kept when the
+     * match finishes; deleting the chat just clears the link.
+     */
+    @Column({ type: 'int', nullable: true })
+    chat_room_id: number | null;
+
+    @ManyToOne(() => Chat, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'chat_room_id' })
+    chat_room: Chat | null;
 }

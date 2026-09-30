@@ -134,6 +134,10 @@
     "deleteAccountConfirm": "HESABI SİL",
     "failedToDelete": "Hesap silme başarısız"
   },
+  "matchChat": {
+    "open": "Maç sohbeti",
+    "openFailed": "Maç sohbeti açılamadı."
+  },
   "match": {
     "title": "MAÇ GEÇMİŞİ",
     "loadingHistory": "Maç geçmişi yükleniyor...",

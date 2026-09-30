@@ -16,6 +16,12 @@ import { tournamentsApi } from '../../api/tournaments'
 import { useRbac } from '../../composables/useRbac'
 import { buildBracket } from '../../utils/bracket'
 import { TournamentStatus } from '../../types'
+import { matchesApi } from '../../api/matches'
+import { useLiveChannel } from '../../composables/useLiveChannel'
+import { useCoalescedRefresh } from '../../composables/useCoalescedRefresh'
+import { useNotificationsStore } from '../../stores/notifications'
+import { getErrorMessage } from '../../utils/error'
+import { RealtimeEvents } from '../../types/realtime'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -40,6 +46,24 @@ async function refresh() {
     currentTournament.value = await tournamentsApi.getById(tournamentId.value)
   } catch {
     await fetchTournament(tournamentId.value)
+  }
+}
+
+// Live: the bracket moves (a score is reported, a match finishes, the tournament starts).
+const refreshLive = useCoalescedRefresh(refresh)
+useLiveChannel('tournament', tournamentId, {
+  [RealtimeEvents.BRACKET_UPDATED]: refreshLive,
+  [RealtimeEvents.TOURNAMENT_UPDATED]: refreshLive,
+}, { onResync: refreshLive })
+
+// Match chat: the backend creates the room when the match is READY; open it on the chat page.
+const toasts = useNotificationsStore()
+async function openMatchChat(matchId: number) {
+  try {
+    const { chatId } = await matchesApi.openChat(matchId)
+    router.push({ path: '/menu/chat', query: { openRoom: String(chatId) } })
+  } catch (e) {
+    toasts.error(getErrorMessage(e, t('matchChat.openFailed')))
   }
 }
 
@@ -114,6 +138,7 @@ function open(id: number) {
         :tournament-status="currentTournament?.status"
         interactive
         @changed="refresh"
+        @open-chat="openMatchChat"
       />
       <div v-else class="bracket-guidance">
         <HudIcon name="brackets" :size="28" class="guidance-icon" />

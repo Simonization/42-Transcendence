@@ -14,6 +14,9 @@ import ConfirmDialog from '../common/ConfirmDialog.vue'
 import type { BackendTournament } from '../../types'
 import type { SeedingView } from '../../types/tournament'
 import { TournamentStatus } from '../../types'
+import { useLiveChannels } from '../../composables/useLiveChannels'
+import { useCoalescedRefresh } from '../../composables/useCoalescedRefresh'
+import { RealtimeEvents } from '../../types/realtime'
 
 const { t } = useI18n()
 const notifications = useNotificationsStore()
@@ -44,16 +47,23 @@ function statusClass(status: string): string {
   }
 }
 
-async function fetchTournaments() {
-  isLoading.value = true
+async function fetchTournaments(silent = false) {
+  if (!silent) isLoading.value = true
   try {
     tournaments.value = await tournamentsApi.getAll()
   } catch {
-    tournaments.value = []
+    if (!silent) tournaments.value = []
   } finally {
     isLoading.value = false
   }
 }
+
+// Live: teams lock, a tournament starts, a bracket completes. Refetch quietly, keep the list.
+const refreshLive = useCoalescedRefresh(() => fetchTournaments(true))
+useLiveChannels('tournament', () => tournaments.value.map(tr => tr.id), {
+  [RealtimeEvents.TOURNAMENT_UPDATED]: refreshLive,
+  [RealtimeEvents.BRACKET_UPDATED]: refreshLive,
+}, { onResync: refreshLive })
 
 function toDatetimeLocal(iso?: string | null): string {
   if (!iso) return ''
@@ -190,7 +200,7 @@ async function deleteTournament(id: number) {
   }
 }
 
-onMounted(fetchTournaments)
+onMounted(() => fetchTournaments())
 </script>
 
 <template>

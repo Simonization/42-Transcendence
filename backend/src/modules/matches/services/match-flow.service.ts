@@ -14,6 +14,7 @@ import { Team } from '../../teams/entities/team.entity';
 import { TeamPermissionsService } from '../../teams/services/team-permissions.service';
 import { BracketEngine, EngineEvents, newEvents } from '../../tournaments/services/bracket-engine.service';
 import { MatchNotifier } from '../../tournaments/services/match-notifier.service';
+import { BracketPublisher } from '../../tournaments/services/bracket-publisher.service';
 import { ReportScoreDto } from '../dto/report-score.dto';
 import { UpdateMatchDto } from '../dto/update-match.dto';
 
@@ -38,6 +39,7 @@ export class MatchFlowService {
         @Inject(forwardRef(() => BracketEngine)) private readonly engine: BracketEngine,
         @Inject(forwardRef(() => MatchNotifier)) private readonly notifier: MatchNotifier,
         private readonly permissions: TeamPermissionsService,
+        @Inject(forwardRef(() => BracketPublisher)) private readonly publisher: BracketPublisher,
     ) {}
 
     /** Captain or team admin of either team reports the score. → AWAITING_CONFIRMATION */
@@ -75,6 +77,7 @@ export class MatchFlowService {
         });
 
         this.notifier.dispatch(this.notifier.scoreReported(matchId));
+        void this.publisher.matchChanged(matchId, 'score_reported');
         return this.reload(matchId);
     }
 
@@ -93,7 +96,7 @@ export class MatchFlowService {
                 events,
             );
         });
-        this.afterFinish(events);
+        this.afterFinish(matchId, 'match_finished', events);
         return this.reload(matchId);
     }
 
@@ -106,6 +109,7 @@ export class MatchFlowService {
             await manager.save(Match, match);
         });
         this.notifier.dispatch(this.notifier.disputed(matchId));
+        void this.publisher.matchChanged(matchId, 'match_disputed');
         return this.reload(matchId);
     }
 
@@ -119,7 +123,7 @@ export class MatchFlowService {
             if (winner == null) throw new BadRequestException('Both teams must be known before the match can finish.');
             await this.engine.finishMatch(manager, match, winner, { team1: dto.team1Score, team2: dto.team2Score }, events);
         });
-        this.afterFinish(events);
+        this.afterFinish(matchId, 'match_resolved', events);
         return this.reload(matchId);
     }
 
@@ -129,6 +133,8 @@ export class MatchFlowService {
             const match = await this.lock(manager, matchId);
             await this.engine.undoMatch(manager, match);
         });
+        // A reopened match is READY again (its chat is reused) and may have reopened the tournament.
+        void this.publisher.matchChanged(matchId, 'match_undone', undefined, true);
         return this.reload(matchId);
     }
 
@@ -164,12 +170,13 @@ export class MatchFlowService {
             if (dto.score !== undefined) match.score = dto.score;
             await manager.save(Match, match);
         });
-        this.afterFinish(events);
+        this.afterFinish(matchId, 'match_edited', events);
         return this.reload(matchId);
     }
 
-    private afterFinish(events: EngineEvents) {
+    private afterFinish(matchId: number, reason: string, events: EngineEvents) {
         this.notifier.dispatch(this.notifier.matchesReady(events.readyMatchIds));
+        void this.publisher.matchChanged(matchId, reason, events);
     }
 
     private async lock(manager: EntityManager, matchId: number): Promise<Match> {

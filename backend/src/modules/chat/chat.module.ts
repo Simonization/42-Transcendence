@@ -13,6 +13,7 @@ import { UserSettings } from '../users/entities/user-settings.entity';
 import { ChatController } from './chat.controller';
 import { getJwtSecret } from '../auth/jwt-secret';
 import { ChatPrivacyService } from './services/chat-privacy.service';
+import { MatchChatService } from './services/match-chat.service';
 
 // Commands & Queries
 import { StartConversationCommand } from './commands/start-conversation.command';
@@ -43,6 +44,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
   providers: [
     ChatGateway,
     ChatPrivacyService,
+    MatchChatService,
     StartConversationCommand,
     SendMessageCommand,
     EditMessageCommand,
@@ -53,6 +55,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
     GetConversationsQuery,
     GetChatHistoryQuery,
   ],
-  exports: [CreateSystemChatCommand, ChatGateway]
+  exports: [CreateSystemChatCommand, ChatGateway, MatchChatService]
 })
 export class ChatModule {}

@@ -18,12 +18,14 @@ import { GetMatchDetailsQuery } from './queries/get-match-details.query';
 // External Modules
 import { TournamentsModule } from '../tournaments/tournaments.module';
 import { TeamsModule } from '../teams/teams.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Match, UserMatch]),
         forwardRef(() => TournamentsModule),
         TeamsModule,
+        ChatModule,
     ],
     controllers: [MatchesController],
     providers: [

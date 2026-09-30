@@ -134,6 +134,10 @@
     "deleteAccountConfirm": "SUPPRIMER LE COMPTE",
     "failedToDelete": "Échec de la suppression du compte"
   },
+  "matchChat": {
+    "open": "Chat du match",
+    "openFailed": "Impossible d'ouvrir le chat du match."
+  },
   "match": {
     "title": "HISTORIQUE DES MATCHS",
     "loadingHistory": "Chargement de l'historique des matchs...",

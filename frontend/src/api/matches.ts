@@ -115,6 +115,11 @@ export const matchesApi = {
     return api<BackendTournamentMatch>(`/matches/${id}/dispute`, { method: 'POST' })
   },
 
+  /** Member of either team: the group chat of this match (created if missing, joined if needed). */
+  openChat(id: number): Promise<{ chatId: number }> {
+    return api<{ chatId: number }>(`/matches/${id}/chat`, { method: 'POST' })
+  },
+
   /** Global admin: set the final score. */
   resolve(id: number, scores: ReportScoreDto): Promise<BackendTournamentMatch> {
     return api<BackendTournamentMatch>(`/matches/${id}/resolve`, { method: 'POST', body: scores })

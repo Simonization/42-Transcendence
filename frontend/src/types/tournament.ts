@@ -293,6 +293,8 @@ export interface BracketPlayer {
   /** Who may report / confirm for this team: its captain and promoted admins. */
   captainId?: number
   adminIds?: number[]
+  /** Every member of the team, for "is this my match" checks such as the match chat. */
+  memberIds?: number[]
 }
 
 export interface BracketMatch {

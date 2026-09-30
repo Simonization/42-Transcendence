@@ -10,6 +10,7 @@ import { MatchFlowService } from './services/match-flow.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Match } from './entities/match.entity';
 import { Repository } from 'typeorm';
+import { MatchChatService } from '../chat/services/match-chat.service';
 
 @Injectable()
 export class MatchesService {
@@ -21,6 +22,7 @@ export class MatchesService {
         private readonly getPlayerHistoryQuery: GetPlayerHistoryQuery,
         @InjectRepository(Match)
         private readonly repo: Repository<Match>,
+        private readonly matchChat: MatchChatService,
     ) {}
 
     create(dto: CreateMatchDto) {
@@ -53,6 +55,11 @@ export class MatchesService {
 
     undo(id: number) {
         return this.flow.undo(id);
+    }
+
+    /** Member of either team: the chat of this match (created if missing), joined if needed. */
+    openChat(id: number, userId: number) {
+        return this.matchChat.openForMember(id, userId);
     }
 
     async findOne(id: number) {
