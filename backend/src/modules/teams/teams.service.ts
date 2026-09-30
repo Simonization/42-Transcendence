@@ -25,6 +25,7 @@ import { LookingForTeamCommand } from './commands/looking-for-team.command';
 import { GetJoinRequestsQuery } from './queries/get-join-requests.query';
 import { GetLookingForTeamQuery } from './queries/get-looking-for-team.query';
 import { GetTournamentAvailabilityQuery } from './queries/get-tournament-availability.query';
+import { GetTeamProfileQuery } from './queries/get-team-profile.query';
 
 @Injectable()
 export class TeamsService {
@@ -53,7 +54,12 @@ export class TeamsService {
         private readonly joinRequestsQuery: GetJoinRequestsQuery,
         private readonly lftQuery: GetLookingForTeamQuery,
         private readonly availabilityQuery: GetTournamentAvailabilityQuery,
+        private readonly profileQuery: GetTeamProfileQuery,
     ) {}
+
+    async getProfile(teamId: number) {
+        return await this.profileQuery.execute(teamId);
+    }
 
     async create(dto: CreateTeamDto, user: User) {
         return await this.createCmd.execute(dto, user);

@@ -18,6 +18,13 @@ export class TeamsController {
         return await this.teamsService.create(createTeamDto, req.user);
     }
 
+    /** A team's page: roster, tournament, match results and placement. Any logged-in user. */
+    @Get(':id/profile')
+    @UseGuards(JwtAuthGuard)
+    async getProfile(@Param('id', ParseIntPipe) id: number) {
+        return await this.teamsService.getProfile(id);
+    }
+
     @Patch(':id/invite')
     @UseGuards(JwtAuthGuard)
     async invite(
