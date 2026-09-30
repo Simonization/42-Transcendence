@@ -686,5 +686,11 @@
     "linkDown": "DOWN",
     "msg": "MSG",
     "crew": "CREW"
+  },
+  "notFound": {
+    "code": "404",
+    "heading": "SIGNAL LOST",
+    "message": "This route doesn't exist on the platform.",
+    "backHome": "BACK TO BASE"
   }
 }

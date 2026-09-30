@@ -686,5 +686,11 @@
     "linkDown": "COUPÉ",
     "msg": "MSG",
     "crew": "AMIS"
+  },
+  "notFound": {
+    "code": "404",
+    "heading": "SIGNAL PERDU",
+    "message": "Cette page n'existe pas sur la plateforme.",
+    "backHome": "RETOUR À LA BASE"
   }
 }

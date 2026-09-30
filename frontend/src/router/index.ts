@@ -39,6 +39,9 @@ const router = createRouter({
     // Menu routes (authenticated)
     {
       path: '/menu',
+      // Bare /menu has no matching child, so it used to render the layout with an empty
+      // content pane. Redirect it to the default module instead.
+      redirect: '/menu/user',
       component: () => import('../layouts/MenuLayout.vue'),
       children: [
         {
@@ -130,13 +133,20 @@ const router = createRouter({
     { path: '/verify-email', redirect: '/auth/verify-email' },
     { path: '/verify-2fa', redirect: '/auth/2fa' },
     { path: '/', name: 'landing', component: () => import('../pages/LandingPage.vue') },
+
+    // Catch-all: keep last so a specific route always wins the match first.
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../pages/NotFoundPage.vue'),
+    },
   ],
 })
 
 // Auth guard - validates tokens with server before allowing access
 router.beforeEach(async (to) => {
   const publicPaths = ['/', '/auth', '/auth/verify-email', '/auth/2fa', '/auth/callback', '/privacy', '/terms']
-  const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/')
+  const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/') || to.name === 'not-found'
 
   // Public routes don't need authentication
   if (isPublic) {

@@ -686,5 +686,11 @@
     "linkDown": "KAPALI",
     "msg": "MSJ",
     "crew": "EKİP"
+  },
+  "notFound": {
+    "code": "404",
+    "heading": "SİNYAL KAYBOLDU",
+    "message": "Bu sayfa platformda mevcut değil.",
+    "backHome": "ANA SAYFAYA DÖN"
   }
 }
