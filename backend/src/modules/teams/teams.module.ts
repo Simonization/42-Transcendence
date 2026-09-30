@@ -13,6 +13,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { CreateTeamCommand } from './commands/create-team.command';
 import { InvitePlayerCommand } from './commands/invite-player.command';
 import { KickPlayerCommand } from './commands/kick-player.command';
+import { CheckInTeamCommand } from './commands/check-in-team.command';
 import { LockTeamCommand } from './commands/lock-team.command';
 import { AcceptInvitationCommand } from './commands/accept-invitation.command';
 import { DeclineInvitationCommand } from './commands/decline-invitation.command';
@@ -51,6 +52,7 @@ import { GetTournamentAvailabilityQuery } from './queries/get-tournament-availab
     InvitePlayerCommand,
     KickPlayerCommand,
     LockTeamCommand,
+    CheckInTeamCommand,
     AcceptInvitationCommand,
     DeclineInvitationCommand,
     DeleteTeamCommand,

@@ -8,6 +8,7 @@
 export interface SeedableTeam {
     id: number;
     status: string;
+    checked_in_at?: Date | string | null;
 }
 
 /** Status a team must have to enter the bracket (TeamStatus.LOCKED). */
@@ -15,10 +16,15 @@ export const ENTRANT_STATUS = 'LOCKED';
 
 /**
  * The teams that would enter, in seed order: the admin's `seedOrder` first (unknown or
- * non-LOCKED ids skipped), then every other LOCKED team by id.
+ * non-LOCKED ids skipped), then every other LOCKED team by id. With `requireCheckin`, a LOCKED
+ * team that has not checked in is left out too.
  */
-export function orderEntrants<T extends SeedableTeam>(teams: T[], seedOrder: number[] | null | undefined): T[] {
-    const locked = teams.filter((t) => t.status === ENTRANT_STATUS);
+export function orderEntrants<T extends SeedableTeam>(
+    teams: T[],
+    seedOrder: number[] | null | undefined,
+    requireCheckin = false,
+): T[] {
+    const locked = teams.filter((t) => t.status === ENTRANT_STATUS && (!requireCheckin || !!t.checked_in_at));
     const byId = new Map(locked.map((t) => [t.id, t]));
     const ordered: T[] = [];
     const seen = new Set<number>();

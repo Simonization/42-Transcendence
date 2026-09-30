@@ -1,6 +1,7 @@
 import { Team } from '../../teams/entities/team.entity';
 import { Tournament, TournamentStatus } from '../entities/tournament.entity';
 import { GROUP_PHASE_TYPES } from './bracket-generator.service';
+import { CheckinState, checkinRequired, checkinState } from './registration-window';
 import { firstRoundPairs, orderEntrants, snakeGroups } from './seeding';
 
 export interface SeededTeamView {
@@ -9,6 +10,7 @@ export interface SeededTeamView {
     status: string;
     seed: number;
     memberCount: number;
+    checkedInAt: Date | null;
 }
 
 export interface SeedingView {
@@ -23,7 +25,14 @@ export interface SeedingView {
     /** Group phases: team ids per group (A, B, ...). Empty for knockout phases. */
     groups: number[][];
     /** Registered teams that would not enter because they are not LOCKED. */
-    excluded: { id: number; name: string; status: string }[];
+    excluded: { id: number; name: string; status: string; reason: 'not_locked' | 'not_checked_in' }[];
+    /** Check-in configuration, so the preview can say why a locked team is in `excluded`. */
+    checkin: {
+        state: CheckinState;
+        opensAt: Date | null;
+        /** True when start drops LOCKED teams that have not checked in. */
+        required: boolean;
+    };
 }
 
 /**
@@ -40,7 +49,7 @@ export function buildSeedingView(tournament: Tournament): SeedingView {
         const byId = new Map(teams.map((t) => [t.id, t]));
         entrants = (tournament.seed_order ?? []).map((id) => byId.get(id)).filter((t): t is Team => !!t);
     } else {
-        entrants = orderEntrants(teams, tournament.seed_order);
+        entrants = orderEntrants(teams, tournament.seed_order, checkinRequired(tournament));
     }
     const entered = new Set(entrants.map((t) => t.id));
 
@@ -65,6 +74,7 @@ export function buildSeedingView(tournament: Tournament): SeedingView {
             status: t.status,
             seed: i + 1,
             memberCount: t.members?.length ?? 0,
+            checkedInAt: t.checked_in_at ?? null,
         })),
         pairs:
             isGroups || !ids.length
@@ -76,6 +86,16 @@ export function buildSeedingView(tournament: Tournament): SeedingView {
             : teams
                   .filter((t) => !entered.has(t.id))
                   .sort((a, b) => a.id - b.id)
-                  .map((t) => ({ id: t.id, name: t.name, status: t.status })),
+                  .map((t) => ({
+                      id: t.id,
+                      name: t.name,
+                      status: t.status,
+                      reason: t.status === 'LOCKED' ? ('not_checked_in' as const) : ('not_locked' as const),
+                  })),
+        checkin: {
+            state: checkinState(tournament),
+            opensAt: tournament.checkin_opens_at ?? null,
+            required: !started && checkinRequired(tournament),
+        },
     };
 }

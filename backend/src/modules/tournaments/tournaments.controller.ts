@@ -45,6 +45,12 @@ export class TournamentsController {
         return this.tournamentsService.getSeeding(id);
     }
 
+    /** Check-in state and who would be archived if the tournament started now. */
+    @Get(':id/checkin')
+    getCheckin(@Param('id', ParseIntPipe) id: number) {
+        return this.tournamentsService.getCheckin(id);
+    }
+
     /** Sets the seed order. Before start only. */
     @Put(':id/seeding')
     @UseGuards(JwtAuthGuard, AdminGuard)
