@@ -53,14 +53,14 @@ async function createGame() {
       team_count: newTeamCount.value,
       team_size: newTeamSize.value,
     })
-    notifications.addNotification({ type: 'success', message: t('admin.gameCreated') })
+    notifications.addNotification('success', t('admin.gameCreated'))
     newName.value = ''
     newTeamCount.value = 2
     newTeamSize.value = 1
     showAddForm.value = false
     await fetchGames()
   } catch {
-    notifications.addNotification({ type: 'error', message: 'Failed to create game' })
+    notifications.addNotification('error', 'Failed to create game')
   } finally {
     isSaving.value = false
   }
@@ -84,22 +84,22 @@ async function saveEdit(id: number) {
       team_count: editTeamCount.value,
       team_size: editTeamSize.value,
     })
-    notifications.addNotification({ type: 'success', message: t('admin.gameUpdated') })
+    notifications.addNotification('success', t('admin.gameUpdated'))
     editingId.value = null
     await fetchGames()
   } catch {
-    notifications.addNotification({ type: 'error', message: 'Failed to update game' })
+    notifications.addNotification('error', 'Failed to update game')
   }
 }
 
 async function deleteGame(id: number) {
   try {
     await gamesApi.delete(id)
-    notifications.addNotification({ type: 'success', message: t('admin.gameDeleted') })
+    notifications.addNotification('success', t('admin.gameDeleted'))
     confirmDeleteId.value = null
     await fetchGames()
   } catch {
-    notifications.addNotification({ type: 'error', message: 'Failed to delete game' })
+    notifications.addNotification('error', 'Failed to delete game')
   }
 }
 
