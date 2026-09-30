@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 import { Tournament } from "../entities/tournament.entity";
 import { BracketEngine, newEvents } from "../services/bracket-engine.service";
 import { MatchNotifier } from "../services/match-notifier.service";
+import { BracketPublisher } from "../services/bracket-publisher.service";
 
 @Injectable()
 export class WithdrawTeamCommand {
@@ -10,6 +11,7 @@ export class WithdrawTeamCommand {
         private dataSource: DataSource,
         private engine: BracketEngine,
         private notifier: MatchNotifier,
+        private publisher: BracketPublisher,
     ) {}
 
     /** Admin: the team forfeits its remaining match(es); opponents win by walkover. */
@@ -26,6 +28,10 @@ export class WithdrawTeamCommand {
         });
 
         this.notifier.dispatch(this.notifier.matchesReady(events.readyMatchIds));
+        void this.publisher.tournamentChanged(tournamentId, 'team_withdrawn', events, {
+            matchIds: matches.map(m => m.id),
+            teamIds: [teamId],
+        });
         return { teamId, matchIds: matches.map(m => m.id), tournamentCompleted: events.completedTournamentId !== null };
     }
 }

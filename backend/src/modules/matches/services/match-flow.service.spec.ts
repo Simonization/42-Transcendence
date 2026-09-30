@@ -43,11 +43,12 @@ async function setup(admins: Record<number, number[]> = {}) {
         scoreReported: jest.fn(async () => undefined),
         disputed: jest.fn(async () => undefined),
     };
-    const flow = new MatchFlowService(dataSource as any, engine, notifier as any, permissions as any);
+    const publisher = { matchChanged: jest.fn() };
+    const flow = new MatchFlowService(dataSource as any, engine, notifier as any, permissions as any, publisher as any);
 
     const semis = manager.all(Match).filter((m) => m.round_order === 1);
     const semi = semis.find((m) => m.team1_id === 1 && m.team2_id === 4)!;
-    return { manager, flow, notifier, semi, semis, tournament };
+    return { manager, flow, notifier, publisher, semi, semis, tournament };
 }
 
 describe('MatchFlowService', () => {
@@ -205,6 +206,56 @@ describe('MatchFlowService', () => {
     });
 });
 
+describe('MatchFlowService publishing', () => {
+    it('report: announces score_reported once, after the commit', async () => {
+        const { flow, publisher, semi } = await setup();
+        await flow.report(semi.id, CAPTAIN(1), { team1Score: 2, team2Score: 0 });
+        expect(publisher.matchChanged).toHaveBeenCalledTimes(1);
+        expect(publisher.matchChanged).toHaveBeenCalledWith(semi.id, 'score_reported');
+    });
+
+    it('publishes nothing when the command is refused', async () => {
+        const { flow, publisher, semi } = await setup();
+        await expect(flow.report(semi.id, STRANGER, { team1Score: 2, team2Score: 0 })).rejects.toBeInstanceOf(
+            ForbiddenException,
+        );
+        await expect(flow.confirm(semi.id, CAPTAIN(4))).rejects.toBeInstanceOf(ConflictException);
+        expect(publisher.matchChanged).not.toHaveBeenCalled();
+    });
+
+    it('confirm: announces match_finished with the engine events (ready matches, completion)', async () => {
+        const { flow, publisher, semi } = await setup();
+        await flow.report(semi.id, CAPTAIN(1), { team1Score: 0, team2Score: 2 });
+        publisher.matchChanged.mockClear();
+        await flow.confirm(semi.id, CAPTAIN(4));
+        expect(publisher.matchChanged).toHaveBeenCalledTimes(1);
+        const [id, reason, events] = publisher.matchChanged.mock.calls[0];
+        expect([id, reason]).toEqual([semi.id, 'match_finished']);
+        expect(events).toMatchObject({ readyMatchIds: [], completedTournamentId: null });
+    });
+
+    it('the second semi-final reports the final as ready', async () => {
+        const { flow, publisher, semis, manager } = await setup();
+        const [a, b] = semis;
+        await flow.resolve(a.id, { team1Score: 2, team2Score: 0 });
+        await flow.resolve(b.id, { team1Score: 2, team2Score: 0 });
+        const events = publisher.matchChanged.mock.calls[1][2];
+        expect(events.readyMatchIds).toEqual([a.winner_next_match_id]);
+        expect(manager.get(Match, a.winner_next_match_id).status).toBe(MatchStatus.READY);
+    });
+
+    it('dispute, resolve and undo announce their own reasons', async () => {
+        const { flow, publisher, semi } = await setup();
+        await flow.report(semi.id, CAPTAIN(1), { team1Score: 2, team2Score: 0 });
+        await flow.dispute(semi.id, CAPTAIN(4));
+        expect(publisher.matchChanged).toHaveBeenLastCalledWith(semi.id, 'match_disputed');
+        await flow.resolve(semi.id, { team1Score: 1, team2Score: 3 });
+        expect(publisher.matchChanged.mock.calls.at(-1)!.slice(0, 2)).toEqual([semi.id, 'match_resolved']);
+        await flow.undo(semi.id);
+        expect(publisher.matchChanged).toHaveBeenLastCalledWith(semi.id, 'match_undone', undefined, true);
+    });
+});
+
 describe('route guards', () => {
     const guardsOf = (target: object, method: string): unknown[] =>
         Reflect.getMetadata(GUARDS_METADATA, (target as any).prototype[method]) ?? [];
@@ -213,7 +264,7 @@ describe('route guards', () => {
         expect(guardsOf(MatchesController, method)).toContain(AdminGuard);
     });
 
-    it.each(['report', 'confirm', 'dispute'])('matches.%s is open to logged-in users (checked per match)', (method) => {
+    it.each(['report', 'confirm', 'dispute', 'openChat'])('matches.%s is open to logged-in users (checked per match)', (method) => {
         expect(guardsOf(MatchesController, method)).not.toContain(AdminGuard);
     });
 

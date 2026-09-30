@@ -6,6 +6,7 @@ import { NotificationsService } from "../../notifications/notifications.service"
 import { NotificationDestination } from "../../notifications/entities/notification.entity";
 import { BracketEngine, newEvents } from "../services/bracket-engine.service";
 import { MatchNotifier } from "../services/match-notifier.service";
+import { BracketPublisher } from "../services/bracket-publisher.service";
 import { orderEntrants } from "../services/seeding";
 
 @Injectable()
@@ -17,6 +18,7 @@ export class StartTournamentCommand {
         private engine: BracketEngine,
         private notificationsService: NotificationsService,
         private notifier: MatchNotifier,
+        private publisher: BracketPublisher,
     ) {}
 
     /**
@@ -80,6 +82,7 @@ export class StartTournamentCommand {
             this.logger.error(`Failed to send tournament start notifications: ${err?.message ?? err}`),
         );
         this.notifier.dispatch(this.notifier.matchesReady(events.readyMatchIds));
+        void this.publisher.tournamentChanged(tournamentId, 'tournament_started', events);
 
         const { teams, phases, ...rest } = tournament;
         return rest;

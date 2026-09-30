@@ -4,12 +4,14 @@ import { Repository } from "typeorm";
 import { Tournament, TournamentStatus } from "../entities/tournament.entity";
 import { GetSeedingQuery } from "../queries/get-seeding.query";
 import { SeedingView } from "../services/seeding-view";
+import { BracketPublisher } from "../services/bracket-publisher.service";
 
 @Injectable()
 export class SetSeedingCommand {
     constructor(
         @InjectRepository(Tournament) private repo: Repository<Tournament>,
         private getSeeding: GetSeedingQuery,
+        private publisher: BracketPublisher,
     ) {}
 
     /** Stores the admin's seed order. Allowed only until the tournament starts. */
@@ -30,6 +32,7 @@ export class SetSeedingCommand {
         }
 
         await this.repo.update(id, { seed_order: teamIds });
+        void this.publisher.tournamentChanged(id, 'seeding_changed');
         return this.getSeeding.execute(id);
     }
 }

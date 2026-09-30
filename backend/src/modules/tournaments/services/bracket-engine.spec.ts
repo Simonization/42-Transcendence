@@ -16,8 +16,9 @@ function setup() {
     };
     const notifier = { dispatch: jest.fn(), matchesReady: jest.fn(async () => undefined) };
     const notifications = { sendNotification: jest.fn() };
-    const start = new StartTournamentCommand(dataSource as any, engine, notifications as any, notifier as any);
-    return { manager, engine, start, notifier };
+    const publisher = { tournamentChanged: jest.fn(), matchChanged: jest.fn() };
+    const start = new StartTournamentCommand(dataSource as any, engine, notifications as any, notifier as any, publisher as any);
+    return { manager, engine, start, notifier, publisher };
 }
 
 async function started(teamCount: number, opts: Parameters<typeof seedTournament>[1] = { teamCount }) {
@@ -114,6 +115,21 @@ describe('BracketEngine', () => {
             expect(manager.get(Team, 2).status).toBe('ARCHIVED');
             const inBracket = manager.all(Match).flatMap((m) => [m.team1_id, m.team2_id]);
             expect(inBracket).not.toContain(2);
+        });
+
+        it('announces the start with the matches that are ready, after the commit', async () => {
+            const { publisher, tournament } = await started(3);
+            expect(publisher.tournamentChanged).toHaveBeenCalledTimes(1);
+            const [id, reason, events] = publisher.tournamentChanged.mock.calls[0];
+            expect([id, reason]).toEqual([tournament.id, 'tournament_started']);
+            expect(events.readyMatchIds).toHaveLength(1);
+        });
+
+        it('announces nothing when the start is refused', async () => {
+            const ctx = setup();
+            const seeded = await seedTournament(ctx.manager, { teamCount: 1 });
+            await expect(ctx.start.execute(seeded.tournament.id)).rejects.toBeInstanceOf(BadRequestException);
+            expect(ctx.publisher.tournamentChanged).not.toHaveBeenCalled();
         });
 
         it('refuses fewer than 2 locked teams', async () => {

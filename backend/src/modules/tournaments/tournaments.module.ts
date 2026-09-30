@@ -9,6 +9,7 @@ import { TournamentsService } from './tournaments.service';
 import { BracketGeneratorService } from './services/bracket-generator.service';
 import { BracketEngine } from './services/bracket-engine.service';
 import { MatchNotifier } from './services/match-notifier.service';
+import { BracketPublisher } from './services/bracket-publisher.service';
 
 // Commands & Queries
 import { CreateTournamentCommand } from './commands/create-tournament.command';
@@ -25,6 +26,7 @@ import { GetSeedingQuery } from './queries/get-seeding.query';
 import { GamesModule } from '../games/games.module';
 import { MatchesModule } from '../matches/matches.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ChatModule } from '../chat/chat.module';
 import { Match } from '../matches/entities/match.entity';
 import { Team } from '../teams/entities/team.entity';
 import { TeamAdmin } from '../teams/entities/team-admin.entity';
@@ -37,6 +39,7 @@ import { User } from '../users/entities/user.entity';
         GamesModule,
         forwardRef(() => MatchesModule),
         NotificationsModule,
+        ChatModule,
     ],
     controllers: [TournamentsController],
     providers: [
@@ -44,6 +47,7 @@ import { User } from '../users/entities/user.entity';
         BracketGeneratorService,
         BracketEngine,
         MatchNotifier,
+        BracketPublisher,
 
         // Commands
         CreateTournamentCommand,
@@ -58,6 +62,6 @@ import { User } from '../users/entities/user.entity';
         GetTournamentQuery,
         GetSeedingQuery,
     ],
-    exports: [TournamentsService, BracketEngine, MatchNotifier],
+    exports: [TournamentsService, BracketEngine, MatchNotifier, BracketPublisher],
 })
 export class TournamentsModule {}
