@@ -41,7 +41,8 @@ describe('start with check-in', () => {
         const notifications: any = { sendNotification: jest.fn() };
         const notifier: any = { dispatch: jest.fn(), matchesReady: jest.fn() };
         dataSource.getRepository = jest.fn(() => ({ find: jest.fn().mockResolvedValue([]) }));
-        const command = new StartTournamentCommand(dataSource, engine, notifications, notifier);
+        const publisher: any = { tournamentChanged: jest.fn(), matchChanged: jest.fn() };
+        const command = new StartTournamentCommand(dataSource, engine, notifications, notifier, publisher);
         return { command, manager, engine };
     }
 
