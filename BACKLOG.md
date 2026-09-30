@@ -86,7 +86,7 @@ sync. The backend also refuses to start without `JWT_SECRET`.
 
 ## 4. Frontend & UX
 
-- [ ] **No realtime for teams/tournaments.** Captain doesn't see an accepted invite, bracket
+- [x] **No realtime for teams/tournaments.** Captain doesn't see an accepted invite, bracket
       doesn't move, until reload. The socket exists; add a `tournament:<id>` room.
 - [x] **No confirm on irreversible actions:** start tournament
       (`components/admin/MyTournamentsTab.vue:195`, also drops DRAFT teams), delete team
@@ -129,13 +129,13 @@ Ranked by value for "make a team, enter a tournament".
    `PATCH /matches/:id` exists with no UI caller.
 2. [x] **Team invite link / join code.** One click from Discord instead of username search;
    plus a "looking for team" board / join requests.
-3. [ ] **Public, shareable bracket page** (no login) with an `og:image` — the thing people
+3. [x] **Public, shareable bracket page** (no login) with an `og:image` — the thing people
    actually share. Brackets are currently behind auth.
-4. [ ] **Live brackets and rosters** over the existing socket.
-5. [ ] **Check-in window** before start (start.gg / Battlefy / Toornament standard). Removes
+4. [x] **Live brackets and rosters** over the existing socket.
+5. [x] **Check-in window** before start (start.gg / Battlefy / Toornament standard). Removes
    no-shows and resolves the DRAFT-team limbo.
-6. [ ] **Registration deadline + countdown** (`scheduledAt` exists; add a deadline, auto-close).
+6. [x] **Registration deadline + countdown** (`scheduledAt` exists; add a deadline, auto-close).
 7. [x] **Admin tools:** drag-to-seed, disqualify / withdraw a team, undo a result.
-8. [ ] **Per-match chat room** for the two teams, reusing the chat module.
-9. [ ] **Results & history:** podium page on completion, team profile with past results,
+8. [x] **Per-match chat room** for the two teams, reusing the chat module.
+9. [x] **Results & history:** podium page on completion, team profile with past results,
    `ARCHIVED` set on completion, substitutes (bench slot beyond `teamSize`).
