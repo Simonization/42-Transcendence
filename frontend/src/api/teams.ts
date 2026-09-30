@@ -11,10 +11,19 @@ import type {
   TeamAdminState,
   TeamInvitation,
 } from '../types'
+import type { LookingForTeamEntry, TournamentAvailability } from '../types/tournament'
 
 export interface MyTournamentStatus {
   team: BackendTeam | null
   invitation: TeamInvitation | null
+  /** Pending join requests I sent to teams of this tournament. */
+  requests?: TeamInvitation[]
+  /** Roster spots left on my team; null without a team. */
+  teamSpotsLeft?: number | null
+  /** Registration capacity ("tournament full"). */
+  availability?: TournamentAvailability | null
+  /** My looking-for-team flag for this tournament, if set. */
+  lookingForTeam?: LookingForTeamEntry | null
 }
 
 export const teamsApi = {
@@ -134,5 +143,137 @@ export const teamsApi = {
    */
   getTeamInvitations(teamId: number): Promise<TeamInvitation[]> {
     return api<TeamInvitation[]>(`/teams/${teamId}/pending-invitations`)
+  },
+
+  /**
+   * Rename a team (captain or admin, before the tournament starts)
+   */
+  rename(teamId: number, name: string): Promise<BackendTeam> {
+    return api<BackendTeam>(`/teams/${teamId}/rename`, {
+      method: 'PATCH',
+      body: { name },
+    })
+  },
+
+  /**
+   * Unlock a LOCKED team back to DRAFT while registration is open (captain or admin)
+   */
+  unlock(teamId: number): Promise<BackendTeam> {
+    return api<BackendTeam>(`/teams/${teamId}/unlock`, {
+      method: 'PATCH',
+    })
+  },
+
+  /**
+   * Hand the captaincy to another member (captain only); the old captain becomes an admin
+   */
+  transferCaptain(teamId: number, userId: number): Promise<BackendTeam> {
+    return api<BackendTeam>(`/teams/${teamId}/transfer-captain`, {
+      method: 'PATCH',
+      body: { userId },
+    })
+  },
+
+  /**
+   * Cancel a pending invitation (team captain/admin) or my own join request
+   */
+  cancelInvitation(invitationId: number): Promise<TeamInvitation> {
+    return api<TeamInvitation>(`/teams/invitations/${invitationId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  /**
+   * The team's invite code (members only)
+   */
+  getJoinCode(teamId: number): Promise<{ joinCode: string }> {
+    return api<{ joinCode: string }>(`/teams/${teamId}/join-code`)
+  },
+
+  /**
+   * Issue a new invite code, invalidating the old one (captain or admin)
+   */
+  regenerateJoinCode(teamId: number): Promise<{ joinCode: string }> {
+    return api<{ joinCode: string }>(`/teams/${teamId}/join-code/regenerate`, {
+      method: 'PATCH',
+    })
+  },
+
+  /**
+   * Join a team directly with its invite code
+   */
+  joinByCode(code: string): Promise<{ message: string; teamId: number; tournamentId?: number | null }> {
+    return api<{ message: string; teamId: number; tournamentId?: number | null }>('/teams/join', {
+      method: 'POST',
+      body: { code },
+    })
+  },
+
+  /**
+   * Ask to join a team
+   */
+  requestToJoin(teamId: number, note?: string): Promise<TeamInvitation> {
+    return api<TeamInvitation>(`/teams/${teamId}/requests`, {
+      method: 'POST',
+      body: note ? { note } : {},
+    })
+  },
+
+  /**
+   * Pending join requests for my team (captain or admin)
+   */
+  getJoinRequests(teamId: number): Promise<TeamInvitation[]> {
+    return api<TeamInvitation[]>(`/teams/${teamId}/requests`)
+  },
+
+  /**
+   * Accept a join request (captain or admin)
+   */
+  acceptJoinRequest(requestId: number): Promise<{ message: string; teamId: number }> {
+    return api<{ message: string; teamId: number }>(`/teams/requests/${requestId}/accept`, {
+      method: 'PATCH',
+    })
+  },
+
+  /**
+   * Decline a join request (captain or admin)
+   */
+  declineJoinRequest(requestId: number): Promise<TeamInvitation> {
+    return api<TeamInvitation>(`/teams/requests/${requestId}/decline`, {
+      method: 'PATCH',
+    })
+  },
+
+  /**
+   * Registration capacity of a tournament (locked teams vs max_participants)
+   */
+  getAvailability(tournamentId: number): Promise<TournamentAvailability> {
+    return api<TournamentAvailability>(`/teams/tournament/${tournamentId}/availability`)
+  },
+
+  /**
+   * Looking-for-team board of a tournament
+   */
+  getLookingForTeam(tournamentId: number): Promise<LookingForTeamEntry[]> {
+    return api<LookingForTeamEntry[]>(`/teams/lft/${tournamentId}`)
+  },
+
+  /**
+   * Flag myself as looking for a team (or update my note)
+   */
+  flagLookingForTeam(tournamentId: number, note?: string): Promise<LookingForTeamEntry> {
+    return api<LookingForTeamEntry>(`/teams/lft/${tournamentId}`, {
+      method: 'POST',
+      body: note ? { note } : {},
+    })
+  },
+
+  /**
+   * Remove myself from the looking-for-team board
+   */
+  unflagLookingForTeam(tournamentId: number): Promise<{ message: string }> {
+    return api<{ message: string }>(`/teams/lft/${tournamentId}`, {
+      method: 'DELETE',
+    })
   },
 }

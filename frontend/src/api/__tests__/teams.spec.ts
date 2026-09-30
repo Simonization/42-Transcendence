@@ -123,4 +123,36 @@ describe('Teams API', () => {
       expect(result).toEqual(mockInvitation)
     })
   })
+
+  describe('team actions', () => {
+    it.each([
+      ['rename', () => teamsApi.rename(1, 'Blues'), '/teams/1/rename', { method: 'PATCH', body: { name: 'Blues' } }],
+      ['unlock', () => teamsApi.unlock(1), '/teams/1/unlock', { method: 'PATCH' }],
+      ['transferCaptain', () => teamsApi.transferCaptain(1, 4), '/teams/1/transfer-captain', { method: 'PATCH', body: { userId: 4 } }],
+      ['cancelInvitation', () => teamsApi.cancelInvitation(10), '/teams/invitations/10', { method: 'DELETE' }],
+      ['regenerateJoinCode', () => teamsApi.regenerateJoinCode(1), '/teams/1/join-code/regenerate', { method: 'PATCH' }],
+      ['joinByCode', () => teamsApi.joinByCode('abc123'), '/teams/join', { method: 'POST', body: { code: 'abc123' } }],
+      ['requestToJoin', () => teamsApi.requestToJoin(1, 'hi'), '/teams/1/requests', { method: 'POST', body: { note: 'hi' } }],
+      ['requestToJoin without note', () => teamsApi.requestToJoin(1), '/teams/1/requests', { method: 'POST', body: {} }],
+      ['acceptJoinRequest', () => teamsApi.acceptJoinRequest(7), '/teams/requests/7/accept', { method: 'PATCH' }],
+      ['declineJoinRequest', () => teamsApi.declineJoinRequest(7), '/teams/requests/7/decline', { method: 'PATCH' }],
+      ['flagLookingForTeam', () => teamsApi.flagLookingForTeam(5, 'evenings'), '/teams/lft/5', { method: 'POST', body: { note: 'evenings' } }],
+      ['unflagLookingForTeam', () => teamsApi.unflagLookingForTeam(5), '/teams/lft/5', { method: 'DELETE' }],
+    ])('%s calls the right endpoint', async (_name, call, url, options) => {
+      mockApi.mockResolvedValueOnce({})
+      await call()
+      expect(mockApi).toHaveBeenCalledWith(url, options)
+    })
+
+    it.each([
+      ['getJoinCode', () => teamsApi.getJoinCode(1), '/teams/1/join-code'],
+      ['getJoinRequests', () => teamsApi.getJoinRequests(1), '/teams/1/requests'],
+      ['getAvailability', () => teamsApi.getAvailability(5), '/teams/tournament/5/availability'],
+      ['getLookingForTeam', () => teamsApi.getLookingForTeam(5), '/teams/lft/5'],
+    ])('%s issues a plain GET', async (_name, call, url) => {
+      mockApi.mockResolvedValueOnce({})
+      await call()
+      expect(mockApi).toHaveBeenCalledWith(url)
+    })
+  })
 })

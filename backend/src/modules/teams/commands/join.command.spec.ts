@@ -46,7 +46,7 @@ describe('JoinByCodeCommand', () => {
     it('joins a DRAFT, non-full team of an open tournament and clears the LFT flag', async () => {
         const { command, team, manager, runner } = build();
 
-        await expect(command.execute('abcDEF2345', USER)).resolves.toEqual({ message: expect.any(String), teamId: 5 });
+        await expect(command.execute('abcDEF2345', USER)).resolves.toEqual({ message: expect.any(String), teamId: 5, tournamentId: 9 });
 
         expect(team.members.map((m: any) => m.id)).toEqual([1, USER]);
         expect(manager.delete).toHaveBeenCalledWith(LookingForTeam, { userId: USER, tournamentId: 9 });

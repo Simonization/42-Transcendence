@@ -12,7 +12,7 @@ export class JoinByCodeCommand {
         private readonly membership: TeamMembershipService,
     ) {}
 
-    async execute(code: string, userId: number): Promise<{ message: string; teamId: number }> {
+    async execute(code: string, userId: number): Promise<{ message: string; teamId: number; tournamentId: number | null }> {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -61,7 +61,7 @@ export class JoinByCodeCommand {
             }
 
             await queryRunner.commitTransaction();
-            return { message: 'Joined team successfully', teamId: team.id };
+            return { message: 'Joined team successfully', teamId: team.id, tournamentId: team.tournament?.id ?? null };
         } catch (err) {
             await queryRunner.rollbackTransaction();
             throw err;
