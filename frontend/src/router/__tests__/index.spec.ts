@@ -33,18 +33,23 @@ describe('Router Auth Guard', () => {
         { path: '/auth/verify-email', component: { template: '<div>Verify Email</div>' } },
         { path: '/auth/2fa', component: { template: '<div>2FA</div>' } },
         { path: '/auth/callback', component: { template: '<div>OAuth Callback</div>' } },
+        // Bare /menu has no matching child, mirroring the real router's redirect to the
+        // default module.
+        { path: '/menu', redirect: '/menu/user' },
         { path: '/menu/user', component: { template: '<div>User</div>' } },
         { path: '/menu/chat', component: { template: '<div>Chat</div>' } },
         { path: '/menu/friend', component: { template: '<div>Friends</div>' } },
         { path: '/menu/tournaments', component: { template: '<div>Tournaments</div>' } },
         { path: '/menu/admin', meta: { requiredRole: UserRole.ADMIN }, component: { template: '<div>Admin</div>' } },
+        // Catch-all 404, mirroring the real router's last route.
+        { path: '/:pathMatch(.*)*', name: 'not-found', component: { template: '<div>NotFound</div>' } },
       ],
     })
 
     // Add auth guard
     router.beforeEach(async (to) => {
       const publicPaths = ['/', '/auth', '/auth/verify-email', '/auth/2fa', '/auth/callback']
-      const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/')
+      const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/') || to.name === 'not-found'
 
       if (isPublic) {
         return true
@@ -440,6 +445,56 @@ describe('Router Auth Guard', () => {
 
       await router.push('/menu/admin')
       expect(router.currentRoute.value.path).toBe('/menu/user')
+    })
+  })
+
+  describe('Menu Redirect', () => {
+    it('should redirect bare /menu to /menu/user for an authenticated user', async () => {
+      mockGetAccessToken.mockReturnValue('valid-token')
+
+      const authStore = useAuthStore()
+      vi.spyOn(authStore, 'checkAuth').mockResolvedValue(true)
+
+      await router.push('/menu')
+      expect(router.currentRoute.value.path).toBe('/menu/user')
+    })
+
+    it('should still require auth after the redirect (no token)', async () => {
+      mockGetAccessToken.mockReturnValue(null)
+
+      await router.push('/menu')
+      expect(router.currentRoute.value.path).toBe('/auth')
+    })
+  })
+
+  describe('404 Catch-all', () => {
+    it('should render the not-found route for an unknown path', async () => {
+      mockGetAccessToken.mockReturnValue(null)
+
+      await router.push('/this-route-does-not-exist')
+      expect(router.currentRoute.value.name).toBe('not-found')
+    })
+
+    it('should render the not-found route without requiring authentication', async () => {
+      mockGetAccessToken.mockReturnValue(null)
+
+      const authStore = useAuthStore()
+      const checkAuthSpy = vi.spyOn(authStore, 'checkAuth')
+
+      await router.push('/nonexistent/deeply/nested/path')
+
+      expect(router.currentRoute.value.name).toBe('not-found')
+      expect(checkAuthSpy).not.toHaveBeenCalled()
+    })
+
+    it('should render the not-found route even with a valid token', async () => {
+      mockGetAccessToken.mockReturnValue('valid-token')
+
+      const authStore = useAuthStore()
+      vi.spyOn(authStore, 'checkAuth').mockResolvedValue(true)
+
+      await router.push('/another-missing-route')
+      expect(router.currentRoute.value.name).toBe('not-found')
     })
   })
 })

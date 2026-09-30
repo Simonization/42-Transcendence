@@ -8,7 +8,6 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAdminUsers } from '../../composables/useAdminUsers'
 import ConfirmDialog from '../common/ConfirmDialog.vue'
-import DemoBanner from '../common/DemoBanner.vue'
 
 const { t } = useI18n()
 const {
@@ -126,7 +125,6 @@ onMounted(() => fetchUsers())
 
 <template>
   <div class="manage-users">
-    <DemoBanner v-if="demoMode" />
     <h2 class="section-title">{{ $t('admin.manageUsersTitle') }}</h2>
 
     <!-- Search Bar -->

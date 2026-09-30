@@ -4,9 +4,10 @@ An esports companion platform for 42 Belgium, by Ahmet Tamer, Louis Watelle, Nic
 
 ## Overview
 
-**esportendence** is a full-stack web application where users create accounts, manage friendships, chat in real-time, view match history from external gaming APIs, organize tournaments, and manage teams and organizations.
+**esportendence** is a full-stack web application where users create accounts, manage friendships, chat in real-time, view their tournament match history, organize tournaments, and manage teams and organizations.
 
-- **Repository:** https://github.com/Wicoro/42-Transcendence
+- **Repository:** https://github.com/Simonization/42-Transcendence (fork; upstream team repo: https://github.com/Wicoro/42-Transcendence)
+- **Live demo:** https://transcendence.langerock.xyz
 - **Timeline:** Jan 19 - Mar 1, 2026
 - **Status:** Final week — 23/14 points achieved
 
@@ -41,7 +42,7 @@ An esports companion platform for 42 Belgium, by Ahmet Tamer, Louis Watelle, Nic
 ### Installation
 
 ```bash
-git clone https://github.com/Wicoro/42-Transcendence.git
+git clone https://github.com/Simonization/42-Transcendence.git
 cd 42-Transcendence
 make setup    # or: cp .env.example .env
 make up       # start all services
@@ -53,7 +54,8 @@ make up       # start all services
 |---------|-----|
 | Frontend | https://localhost:8443 |
 | Backend API | https://localhost:8443/api/ |
-| pgAdmin | https://localhost:5050 |
+| pgAdmin (dev only) | https://localhost:5050 |
+| Postgres (dev only, host-side) | localhost:5433 — published on 5433 rather than 5432, since a 42 piscine container often already holds 5432 locally |
 
 ### Dev Commands
 
@@ -75,7 +77,7 @@ npx vitest run             # tests
 - **[`PROJECT_DETAILS.md`](./PROJECT_DETAILS.md)** — Project management, modules, DB schema, individual contributions (jury reference)
 - **`Corrector.md`** — Module scoring reference (23 points)
 - **`frontend/FRONTEND_DOC.md`** — Frontend API contract & integration guide
-- **`docs/backend_architecture.md`** — Backend API endpoints & architecture
+- **`backend/README.md`** — Backend modules & API endpoints
 
 ## AI Disclosure
 

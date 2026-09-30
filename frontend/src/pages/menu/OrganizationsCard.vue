@@ -5,7 +5,6 @@ import { useAuthStore } from '../../stores/auth'
 import { useOrganizations } from '../../composables/useOrganizations'
 import { usersApi } from '../../api/users'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
-import DemoBanner from '../../components/common/DemoBanner.vue'
 import type { Organization, User } from '../../types'
 
 const { t } = useI18n()
@@ -130,7 +129,6 @@ const getInitials = (name: string) => name.slice(0, 2).toUpperCase()
 
 <template>
   <div class="card card-page glass-panel">
-    <DemoBanner v-if="demoMode" />
     <!-- Header -->
     <header class="section">
       <div class="section-header-row">

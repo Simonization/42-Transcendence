@@ -11,7 +11,6 @@ import TournamentCard from '../../components/tournaments/TournamentCard.vue'
 import TournamentFilters from '../../components/tournaments/TournamentFilters.vue'
 import { useTournaments } from '../../composables/useTournaments'
 import { toDisplayTournament } from '../../utils/tournamentMapper'
-import DemoBanner from '../../components/common/DemoBanner.vue'
 import { useAuthStore } from '../../stores/auth'
 
 const { tournaments, isLoading, error, demoMode, fetchTournaments } = useTournaments()
@@ -132,7 +131,6 @@ const getPageNumbers = () => {
 
 <template>
   <section class="tournaments-page">
-    <DemoBanner v-if="demoMode" />
     <!-- Header -->
     <header class="tournaments-header glass-header">
       <div class="tournaments-header-content">
