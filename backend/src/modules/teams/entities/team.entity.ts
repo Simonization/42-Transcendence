@@ -1,6 +1,5 @@
 import { Tournament } from "src/modules/tournaments/entities/tournament.entity";
 import { User } from "src/modules/users/entities/user.entity";
-import { Match } from "../../matches/entities/match.entity";
 import { TeamAdmin } from "./team-admin.entity";
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
@@ -46,9 +45,6 @@ export class Team {
     // Members promoted to admin by the captain or another admin. The captain is not listed.
     @OneToMany(() => TeamAdmin, (admin) => admin.team)
     admins: TeamAdmin[];
-
-    @ManyToMany(() => Match, (match) => match.teams)
-    matches: Match[];
 
     // This links the team to the tournament, not just a single match
     @ManyToOne(() => Tournament, (t) => t.teams, { nullable: true })

@@ -3,9 +3,11 @@ import { CreateTournamentCommand } from './commands/create-tournament.command';
 import { UpdateTournamentCommand } from './commands/update-tournament.command';
 import { DeleteTournamentCommand } from './commands/delete-tournament.command';
 import { StartTournamentCommand } from './commands/start-tournament.command';
-import { PhaseService } from './services/phase.service';
+import { SetSeedingCommand } from './commands/set-seeding.command';
+import { WithdrawTeamCommand } from './commands/withdraw-team.command';
 import { GetAllTournamentsQuery } from './queries/get-all-tournaments.query';
 import { GetTournamentQuery } from './queries/get-tournament-details.query';
+import { GetSeedingQuery } from './queries/get-seeding.query';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
 
@@ -16,16 +18,18 @@ export class TournamentsService {
         private readonly updateCmd: UpdateTournamentCommand,
         private readonly deleteCmd: DeleteTournamentCommand,
         private readonly startCmd: StartTournamentCommand,
-        private readonly phaseService: PhaseService,
+        private readonly setSeedingCmd: SetSeedingCommand,
+        private readonly withdrawCmd: WithdrawTeamCommand,
         private readonly getAllQuery: GetAllTournamentsQuery,
         private readonly getOneQuery: GetTournamentQuery,
+        private readonly getSeedingQuery: GetSeedingQuery,
     ) {}
 
     create(dto: CreateTournamentDto) {
         return this.createCmd.execute(dto);
     }
 
-    // --- New Lifecycle Methods ---
+    // --- Lifecycle ---
 
     /**
      * Transitions tournament from REGISTRATION to ONGOING
@@ -35,11 +39,20 @@ export class TournamentsService {
         return this.startCmd.execute(id);
     }
 
-    /**
-     * Checks if a phase is complete and moves teams to the next phase.
-     */
-    advancePhase(phaseId: number) {
-        return this.phaseService.checkAndAdvance(phaseId);
+    getSeeding(id: number) {
+        return this.getSeedingQuery.execute(id);
+    }
+
+    setSeeding(id: number, teamIds: number[]) {
+        return this.setSeedingCmd.execute(id, teamIds);
+    }
+
+    getStandings(id: number) {
+        return this.getOneQuery.standings(id);
+    }
+
+    withdrawTeam(id: number, teamId: number) {
+        return this.withdrawCmd.execute(id, teamId);
     }
 
     // --- Standard CRUD ---

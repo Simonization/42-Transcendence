@@ -66,19 +66,15 @@ export class RealtimeAccessService {
         return !!user && (user.role === ADMIN_ROLE || user.role === SUPER_ADMIN_ROLE);
     }
 
-    /**
-     * True when the user belongs to any team playing the match. This is the one place that knows
-     * how a match points at its teams: today through the `match_teams` join table
-     * (Match.teams). If Match moves to explicit team1_id / team2_id columns, only this query
-     * changes (load the match, then check membership of those two team ids); the callers and
-     * the rest of the module do not.
-     */
+    /** True when the user belongs to either team in the match's two slots. */
     async isMatchParticipant(userId: number, matchId: number): Promise<boolean> {
         const match = await this.matchRepo.findOne({
             where: { id: matchId },
-            relations: ['teams', 'teams.members'],
+            relations: ['team1', 'team1.members', 'team2', 'team2.members'],
         });
-        if (!match?.teams) return false;
-        return match.teams.some((team) => (team.members ?? []).some((m) => m.id === userId));
+        if (!match) return false;
+        return [match.team1, match.team2].some((team) =>
+            (team?.members ?? []).some((m) => m.id === userId),
+        );
     }
 }

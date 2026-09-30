@@ -11,22 +11,34 @@ export class GetPlayerHistoryQuery {
         private readonly matchRepo: Repository<Match>,
     ) {}
 
+    /**
+     * Matches the user played: tournament matches of any team they are a member of (through the
+     * two slots), plus legacy matches that list them in users_matches.
+     */
     async execute(userId: number): Promise<Match[]> {
-        return await this.matchRepo.find({
-            where: {
-                userMatches: { user_id: userId }
-            },
-            relations: [
-                'teams',
-                'game',
-                'phase',
-                'phase.tournament',
-                'userMatches',
-                'userMatches.user',
-            ],
-            order: {
-                created_at: 'DESC',
-            },
-        });
+        return await this.matchRepo
+            .createQueryBuilder('m')
+            .leftJoinAndSelect('m.team1', 't1')
+            .leftJoinAndSelect('t1.members', 't1m')
+            .leftJoinAndSelect('m.team2', 't2')
+            .leftJoinAndSelect('t2.members', 't2m')
+            .leftJoinAndSelect('m.game', 'game')
+            .leftJoinAndSelect('m.phase', 'phase')
+            .leftJoinAndSelect('phase.game', 'phaseGame')
+            .leftJoinAndSelect('phase.tournament', 'tournament')
+            .leftJoinAndSelect('m.userMatches', 'um')
+            .leftJoinAndSelect('um.user', 'umUser')
+            .where(
+                `m.id IN (
+                    SELECT mm.id FROM matches mm
+                    JOIN team_members tm ON tm.team_id IN (mm.team1_id, mm.team2_id)
+                    WHERE tm.user_id = :userId
+                    UNION
+                    SELECT um2.match_id FROM users_matches um2 WHERE um2.user_id = :userId
+                )`,
+                { userId },
+            )
+            .orderBy('m.created_at', 'DESC')
+            .getMany();
     }
 }

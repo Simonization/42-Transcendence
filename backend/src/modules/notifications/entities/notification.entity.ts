@@ -19,7 +19,10 @@ export type NotificationType =
   | 'team_invite_cancelled'
   | 'looking_for_team_invite'
   | 'tournament_started'
-  | 'match_result';
+  | 'match_result'
+  | 'match_ready'
+  | 'match_score_reported'
+  | 'match_disputed';
 
 // Destination de la notification
 export enum NotificationDestination {

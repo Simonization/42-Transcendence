@@ -32,7 +32,7 @@ export function toDisplayTournament(bt: BackendTournament): Tournament {
     name: bt.name,
     game: gameName,
     date: bt.createdAt?.split('T')[0] ?? '',
-    endDate: '',
+    endDate: bt.finished_at?.split('T')[0] ?? '',
     status: statusMap[bt.status] ?? 'open',
     maxParticipants: bt.max_participants,
     currentParticipants: bt.teams?.length ?? 0,

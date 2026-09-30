@@ -50,6 +50,17 @@ export class Tournament {
     @Column({ type: 'timestamp', nullable: true })
     scheduledAt: Date | null;
 
+    /** Set when the last phase's final match finishes. */
+    @Column({ type: 'timestamp', nullable: true })
+    finished_at: Date | null;
+
+    /**
+     * Team ids in seed order (seed 1 first). Set by an admin before start; LOCKED teams missing
+     * from it seed after the listed ones, by id. Frozen to the real entrants at start.
+     */
+    @Column({ type: 'jsonb', nullable: true })
+    seed_order: number[] | null;
+
     @CreateDateColumn()
     createdAt: Date;
 }

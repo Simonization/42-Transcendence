@@ -1,32 +1,43 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { DataSource, In } from "typeorm";
 import { Tournament, TournamentStatus } from "../entities/tournament.entity";
-import { BracketGeneratorService } from "../services/bracket-generator.service";
-import { Match } from "src/modules/matches/entities/match.entity";
-import { Team, TeamStatus } from "src/modules/teams/entities/team.entity";
-import { NotificationsService } from "src/modules/notifications";
-import { NotificationDestination } from "src/modules/notifications/entities/notification.entity";
+import { Team, TeamStatus } from "../../teams/entities/team.entity";
+import { NotificationsService } from "../../notifications/notifications.service";
+import { NotificationDestination } from "../../notifications/entities/notification.entity";
+import { BracketEngine, newEvents } from "../services/bracket-engine.service";
+import { MatchNotifier } from "../services/match-notifier.service";
+import { orderEntrants } from "../services/seeding";
 
 @Injectable()
 export class StartTournamentCommand {
-  constructor(
-    private dataSource: DataSource,
-    private bracketGenerator: BracketGeneratorService,
-    private notificationsService: NotificationsService,
-  ) {}
+    private readonly logger = new Logger(StartTournamentCommand.name);
 
+    constructor(
+        private dataSource: DataSource,
+        private engine: BracketEngine,
+        private notificationsService: NotificationsService,
+        private notifier: MatchNotifier,
+    ) {}
+
+    /**
+     * Freezes the field and generates phase 1. Only LOCKED teams enter, in the seeding order
+     * GET /tournaments/:id/seeding shows; DRAFT teams are archived; byes advance immediately.
+     */
     async execute(tournamentId: number) {
-        const queryRunner = this.dataSource.createQueryRunner();
-        await queryRunner.connect();
-        await queryRunner.startTransaction();
+        const events = newEvents();
 
-        try {
-            const tournament = await queryRunner.manager.findOne(Tournament, {
+        const { tournament, entrants } = await this.dataSource.transaction(async (manager) => {
+            // Lock the row first (FOR UPDATE cannot sit on an outer join), so two concurrent
+            // starts cannot both generate a bracket.
+            const locked = await manager.findOne(Tournament, {
+                where: { id: tournamentId },
+                lock: { mode: 'pessimistic_write' },
+            });
+            if (!locked) throw new NotFoundException(`Tournament ${tournamentId} not found`);
+            const tournament = (await manager.findOne(Tournament, {
                 where: { id: tournamentId },
                 relations: ['teams', 'phases'],
-            });
-
-            if (!tournament) throw new NotFoundException(`Tournament ${tournamentId} not found`);
+            }))!;
             if (tournament.status !== TournamentStatus.REGISTRATION_OPEN) {
                 throw new BadRequestException('Tournament is not in registration phase.');
             }
@@ -34,80 +45,70 @@ export class StartTournamentCommand {
             const phase1 = tournament.phases?.find(p => p.order === 1);
             if (!phase1) throw new BadRequestException('Phase 1 is missing.');
 
-            const readyTeams = tournament.teams.filter(t => t.status === TeamStatus.LOCKED);
-            const minTeams = phase1.teams_limit_start || 2;
-
-            if (readyTeams.length < minTeams) {
-                throw new BadRequestException(`Insufficient teams. Required: ${minTeams}, Found: ${readyTeams.length}`);
+            const entrants = orderEntrants(tournament.teams ?? [], tournament.seed_order);
+            if (entrants.length < 2) {
+                throw new BadRequestException(`At least 2 locked teams are needed to start (found ${entrants.length}).`);
+            }
+            if (tournament.max_participants && entrants.length > tournament.max_participants) {
+                throw new BadRequestException(
+                    `${entrants.length} locked teams exceed the maximum of ${tournament.max_participants}.`,
+                );
             }
 
-            // --- Updated State Logic ---
+            // Teams still recruiting at start are out; archive them rather than leave them in limbo.
+            const draftIds = (tournament.teams ?? []).filter(t => t.status === TeamStatus.DRAFT).map(t => t.id);
+            if (draftIds.length) {
+                await manager.update(Team, { id: In(draftIds) }, { status: TeamStatus.ARCHIVED });
+            }
+
             tournament.status = TournamentStatus.ONGOING;
             tournament.active_phase_id = phase1.id;
             tournament.current_phase_order = 1;
-            await queryRunner.manager.save(tournament);
+            tournament.seed_order = entrants.map(t => t.id);
+            await manager.update(Tournament, tournament.id, {
+                status: tournament.status,
+                active_phase_id: tournament.active_phase_id,
+                current_phase_order: 1,
+                seed_order: tournament.seed_order,
+            });
 
-            // --- Updated Generator Call ---
-            // We pass the full phase1 entity instead of just phase1.type
-            const result = await this.bracketGenerator.generate(
-                queryRunner, 
-                phase1, 
-                readyTeams
-            );
+            await this.engine.startPhase(manager, tournament.id, phase1, entrants, events);
+            return { tournament, entrants };
+        });
 
-            // If the generator returns blueprints (like Round Robin usually does)
-            if (Array.isArray(result) && result.length > 0) {
-                const matchEntities = result.map(m => queryRunner.manager.create(Match, m));
-                await queryRunner.manager.save(Match, matchEntities);
-            }
+        this.notifyTournamentStart(tournament, entrants).catch(err =>
+            this.logger.error(`Failed to send tournament start notifications: ${err?.message ?? err}`),
+        );
+        this.notifier.dispatch(this.notifier.matchesReady(events.readyMatchIds));
 
-            await queryRunner.commitTransaction();
-
-            // Send notifications to all team members about tournament start (async, don't block)
-            this.notifyTournamentStart(tournament, readyTeams).catch(err =>
-                console.error('Failed to send tournament start notifications:', err)
-            );
-
-            return tournament;
-        } catch (err) {
-            await queryRunner.rollbackTransaction();
-            throw err;
-        } finally {
-            await queryRunner.release();
-        }
+        const { teams, phases, ...rest } = tournament;
+        return rest;
     }
 
-    private async notifyTournamentStart(
-        tournament: Tournament,
-        readyTeams: any[]
-    ): Promise<void> {
-        const dataSource = this.dataSource;
-
-        const teamsWithMembers = await dataSource.getRepository(Team).find({
-            where: { id: In(readyTeams.map(t => t.id)) },
+    private async notifyTournamentStart(tournament: Tournament, entrants: Team[]): Promise<void> {
+        const teamsWithMembers = await this.dataSource.getRepository(Team).find({
+            where: { id: In(entrants.map(t => t.id)) },
             relations: ['members'],
         });
 
         for (const team of teamsWithMembers) {
-            if (team.members && Array.isArray(team.members)) {
-                for (const member of team.members) {
-                    try {
-                        await this.notificationsService.sendNotification(
-                            member.id,
-                            'tournament_started',
-                            `Tournament "${tournament.name}" has started! Good luck!`,
-                            undefined,
-                            {
-                                tournamentId: tournament.id,
-                                tournamentName: tournament.name,
-                                teamId: team.id,
-                                teamName: team.name,
-                            },
-                            NotificationDestination.CHAT
-                        );
-                    } catch (notifError) {
-                        console.error(`Failed to notify user ${member.id} about tournament start:`, notifError);
-                    }
+            for (const member of team.members ?? []) {
+                try {
+                    await this.notificationsService.sendNotification(
+                        member.id,
+                        'tournament_started',
+                        `Tournament "${tournament.name}" has started! Good luck!`,
+                        undefined,
+                        {
+                            tournamentId: tournament.id,
+                            tournamentName: tournament.name,
+                            teamId: team.id,
+                            teamName: team.name,
+                        },
+                        NotificationDestination.CHAT,
+                    );
+                } catch (notifError) {
+                    this.logger.warn(`Failed to notify user ${member.id} about tournament start`);
                 }
             }
         }

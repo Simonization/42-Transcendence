@@ -82,7 +82,7 @@ describe('RealtimeAccessService', () => {
             userRepo.findOne.mockResolvedValue({ id: 5, role: 0 });
             matchRepo.findOne.mockResolvedValue({
                 id: 3,
-                teams: [{ members: [{ id: 1 }] }, { members: [{ id: 5 }] }],
+                team1: { members: [{ id: 1 }] }, team2: { members: [{ id: 5 }] },
             });
             await expect(service.canJoin(5, { channel: 'match', id: 3 })).resolves.toBe(true);
         });
@@ -91,14 +91,14 @@ describe('RealtimeAccessService', () => {
             userRepo.findOne.mockResolvedValue({ id: 5, role: 0 });
             matchRepo.findOne.mockResolvedValue({
                 id: 3,
-                teams: [{ members: [{ id: 1 }] }, { members: [{ id: 2 }] }],
+                team1: { members: [{ id: 1 }] }, team2: { members: [{ id: 2 }] },
             });
             await expect(service.canJoin(5, { channel: 'match', id: 3 })).resolves.toBe(false);
         });
 
         it('refuses when the match has no teams yet or does not exist', async () => {
             userRepo.findOne.mockResolvedValue({ id: 5, role: 0 });
-            matchRepo.findOne.mockResolvedValue({ id: 3, teams: [] });
+            matchRepo.findOne.mockResolvedValue({ id: 3, team1: null, team2: null });
             await expect(service.canJoin(5, { channel: 'match', id: 3 })).resolves.toBe(false);
             matchRepo.findOne.mockResolvedValue(null);
             await expect(service.canJoin(5, { channel: 'match', id: 3 })).resolves.toBe(false);

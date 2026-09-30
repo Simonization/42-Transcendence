@@ -72,6 +72,6 @@ import { GetTournamentAvailabilityQuery } from './queries/get-tournament-availab
     GetLookingForTeamQuery,
     GetTournamentAvailabilityQuery,
   ],
-  exports: [TeamsService],
+  exports: [TeamsService, TeamPermissionsService],
 })
 export class TeamsModule {}

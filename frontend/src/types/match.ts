@@ -14,12 +14,32 @@ export interface BackendUserMatch {
   }
 }
 
+/** A team slot as the history endpoint returns it: with its members, to find "my" side. */
+export interface BackendHistoryTeam {
+  id: number
+  name: string
+  members?: { id: number; username: string }[]
+}
+
 export interface BackendMatch {
   id: number
   game?: { id: number; name: string } | null
   created_at: string
+  /** Legacy per-player rows; tournament matches use the team slots instead. */
   userMatches: BackendUserMatch[]
   details?: Record<string, unknown>
+  status?: string
+  team1?: BackendHistoryTeam | null
+  team2?: BackendHistoryTeam | null
+  team1_score?: number | null
+  team2_score?: number | null
+  winner_id?: number | null
+  finished_at?: string | null
+  game_data?: Record<string, unknown> | null
+  phase?: {
+    game?: { id: number; name: string } | null
+    tournament?: { id: number; name: string } | null
+  } | null
 }
 
 // --- Frontend shapes ---
@@ -34,6 +54,9 @@ export interface Match {
   game: GameType
   result: MatchResult
   date: string
+  /** "3 - 1" from my side, or null (walkover, legacy match). */
+  score?: string | null
+  tournament?: string | null
 }
 
 export interface MatchStats {

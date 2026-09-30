@@ -178,12 +178,13 @@ const formatDate = (date: string) => {
       <!-- Matches Table -->
       <div class="matches-container glass-panel">
         <table class="matches-table">
-          <caption class="visually-hidden">Match history results table showing date, opponent, game, and result</caption>
+          <caption class="visually-hidden">{{ $t('match.tableCaption') }}</caption>
           <thead>
             <tr>
               <th>{{ $t('match.date') }}</th>
               <th>{{ $t('match.opponent') }}</th>
               <th>{{ $t('match.gameCol') }}</th>
+              <th>{{ $t('match.scoreCol') }}</th>
               <th>{{ $t('match.resultCol') }}</th>
             </tr>
           </thead>
@@ -192,6 +193,7 @@ const formatDate = (date: string) => {
               <td class="cell-date">{{ formatDate(match.date) }}</td>
               <td class="cell-opponent">{{ match.opponent }}</td>
               <td class="cell-game">{{ match.game }}</td>
+              <td class="cell-score">{{ match.score ?? '—' }}</td>
               <td class="cell-result" :class="getResultClass(match.result)">
                 <span class="result-icon">{{ getResultIcon(match.result) }}</span>
                 {{ match.result }}
@@ -449,6 +451,12 @@ const formatDate = (date: string) => {
 
 .match-row:hover {
   background: var(--bg-selected);
+}
+
+.cell-score {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* Result Cell */

@@ -2,6 +2,7 @@ import {
         Controller,
         Get,
         Post,
+        Put,
         Body,
         Patch,
         Param,
@@ -13,6 +14,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
+import { SetSeedingDto } from './dto/set-seeding.dto';
 import { TournamentsService } from './tournaments.service';
 
 @Controller('tournaments')
@@ -35,6 +37,35 @@ export class TournamentsController {
     @UseGuards(JwtAuthGuard, AdminGuard)
     start(@Param('id', ParseIntPipe) id: number) {
         return this.tournamentsService.start(id);
+    }
+
+    /** The teams that would enter (or entered), seed 1 first, with the first-round layout. */
+    @Get(':id/seeding')
+    getSeeding(@Param('id', ParseIntPipe) id: number) {
+        return this.tournamentsService.getSeeding(id);
+    }
+
+    /** Sets the seed order. Before start only. */
+    @Put(':id/seeding')
+    @UseGuards(JwtAuthGuard, AdminGuard)
+    setSeeding(@Param('id', ParseIntPipe) id: number, @Body() dto: SetSeedingDto) {
+        return this.tournamentsService.setSeeding(id, dto.teamIds);
+    }
+
+    /** Group / round-robin standings for every such phase that has matches. */
+    @Get(':id/standings')
+    getStandings(@Param('id', ParseIntPipe) id: number) {
+        return this.tournamentsService.getStandings(id);
+    }
+
+    /** The team forfeits its remaining match(es) in the active phase: walkover to the opponent. */
+    @Post(':id/teams/:teamId/withdraw')
+    @UseGuards(JwtAuthGuard, AdminGuard)
+    withdraw(
+        @Param('id', ParseIntPipe) id: number,
+        @Param('teamId', ParseIntPipe) teamId: number,
+    ) {
+        return this.tournamentsService.withdrawTeam(id, teamId);
     }
 
     @Get(':id')
