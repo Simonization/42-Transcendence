@@ -3,7 +3,7 @@ import { LeaveTeamCommand } from './leave-team.command';
 import { TeamStatus } from '../entities/team.entity';
 import { TeamAdmin } from '../entities/team-admin.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
-import { mockDataSource } from '../testing/test-mocks-spec';
+import { mockDataSource, mockRealtime } from '../testing/test-mocks-spec';
 
 describe('LeaveTeamCommand', () => {
     const CAPTAIN = 1;
@@ -12,7 +12,7 @@ describe('LeaveTeamCommand', () => {
     function build(team: any) {
         const ctx = mockDataSource();
         ctx.manager.findOne.mockResolvedValue(team);
-        return { ...ctx, command: new LeaveTeamCommand(ctx.dataSource) };
+        return { ...ctx, command: new LeaveTeamCommand(ctx.dataSource, mockRealtime()) };
     }
 
     const team = (status: TeamStatus, tournamentStatus: TournamentStatus) => ({

@@ -3,10 +3,15 @@ import { DataSource } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { TeamAdmin } from '../entities/team-admin.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class LeaveTeamCommand {
-    constructor(private dataSource: DataSource) {}
+    constructor(
+        private dataSource: DataSource,
+        private readonly realtime: RealtimeService,
+    ) {}
 
     async execute(teamId: number, userId: number) {
         const queryRunner = this.dataSource.createQueryRunner();
@@ -47,13 +52,20 @@ export class LeaveTeamCommand {
 
             // Leaving a locked (registered) team un-registers it: the captain must re-lock
             // once the roster is fixed.
-            if (team.status === TeamStatus.LOCKED) {
+            const wasLocked = team.status === TeamStatus.LOCKED;
+            if (wasLocked) {
                 team.status = TeamStatus.DRAFT;
             }
 
             await queryRunner.manager.save(team);
 
             await queryRunner.commitTransaction();
+
+            this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'member_left' });
+            this.realtime.leaveTeamRoom(userId, teamId);
+            if (wasLocked && team.tournament?.id) {
+                this.realtime.toTournament(team.tournament.id, RealtimeEvents.TOURNAMENT_UPDATED, { id: team.tournament.id, reason: 'team_unlocked' });
+            }
             return { message: 'Left team successfully' };
 
         } catch (err) {

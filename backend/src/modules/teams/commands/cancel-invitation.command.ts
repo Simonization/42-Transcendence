@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { InvitationDirection, InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
 import { Team } from '../entities/team.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 /**
  * Cancels a pending invitation or join request.
@@ -16,6 +18,7 @@ export class CancelInvitationCommand {
         @InjectRepository(TeamInvitation) private inviteRepo: Repository<TeamInvitation>,
         @InjectRepository(Team) private teamRepo: Repository<Team>,
         private readonly permissions: TeamPermissionsService,
+        private readonly realtime: RealtimeService,
     ) {}
 
     async execute(invitationId: number, actorId: number): Promise<TeamInvitation> {
@@ -35,6 +38,13 @@ export class CancelInvitationCommand {
         }
 
         invite.status = InvitationStatus.CANCELLED;
-        return await this.inviteRepo.save(invite);
+        const saved = await this.inviteRepo.save(invite);
+
+        // An invitee hears about a withdrawn invite; a withdrawn request only concerns the team's admins.
+        if (invite.direction === InvitationDirection.INVITE) {
+            this.realtime.toUser(invite.receiver_id, RealtimeEvents.INVITATION_RECEIVED, { id: invite.id, reason: 'invitation_cancelled' });
+        }
+        this.realtime.toTeam(invite.team_id, RealtimeEvents.TEAM_UPDATED, { id: invite.team_id, reason: 'invitation_cancelled' });
+        return saved;
     }
 }

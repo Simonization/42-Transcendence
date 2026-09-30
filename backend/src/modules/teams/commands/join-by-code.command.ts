@@ -3,19 +3,25 @@ import { DataSource } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { User } from '../../users/entities/user.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
-import { TeamMembershipService } from '../services/team-membership.service';
+import { TeamMembershipService, DepartedTeam } from '../services/team-membership.service';
+import { publishDepartures } from '../utils/publish-departures';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class JoinByCodeCommand {
     constructor(
         private dataSource: DataSource,
         private readonly membership: TeamMembershipService,
+        private readonly realtime: RealtimeService,
     ) {}
 
     async execute(code: string, userId: number): Promise<{ message: string; teamId: number; tournamentId: number | null }> {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
+
+        let departed: DepartedTeam[] = [];
 
         try {
             const team = await queryRunner.manager
@@ -47,7 +53,7 @@ export class JoinByCodeCommand {
             }
 
             if (team.tournament?.id) {
-                await this.membership.assertCanJoin(queryRunner.manager, userId, team.tournament.id, team.id);
+                departed = await this.membership.assertCanJoin(queryRunner.manager, userId, team.tournament.id, team.id);
             }
 
             const user = await queryRunner.manager.findOneBy(User, { id: userId });
@@ -61,6 +67,12 @@ export class JoinByCodeCommand {
             }
 
             await queryRunner.commitTransaction();
+
+            publishDepartures(this.realtime, team.tournament?.id, userId, departed);
+            this.realtime.toTeam(team.id, RealtimeEvents.TEAM_UPDATED, { id: team.id, reason: 'member_joined' });
+            if (team.tournament?.id) {
+                this.realtime.toTournament(team.tournament.id, RealtimeEvents.TOURNAMENT_UPDATED, { id: team.tournament.id, reason: 'looking_for_team_changed' });
+            }
             return { message: 'Joined team successfully', teamId: team.id, tournamentId: team.tournament?.id ?? null };
         } catch (err) {
             await queryRunner.rollbackTransaction();

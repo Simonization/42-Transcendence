@@ -6,7 +6,10 @@ import { InvitationDirection, InvitationStatus, TeamInvitation } from '../entiti
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
-import { TeamMembershipService } from '../services/team-membership.service';
+import { TeamMembershipService, DepartedTeam } from '../services/team-membership.service';
+import { publishDepartures } from '../utils/publish-departures';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class AcceptJoinRequestCommand {
@@ -15,6 +18,7 @@ export class AcceptJoinRequestCommand {
         private readonly notificationsService: NotificationsService,
         private readonly permissions: TeamPermissionsService,
         private readonly membership: TeamMembershipService,
+        private readonly realtime: RealtimeService,
     ) {}
 
     /** Team captain/admin accepts a pending join request. */
@@ -22,6 +26,8 @@ export class AcceptJoinRequestCommand {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
+
+        let departed: DepartedTeam[] = [];
 
         try {
             const request = await queryRunner.manager.findOne(TeamInvitation, {
@@ -44,7 +50,7 @@ export class AcceptJoinRequestCommand {
 
             const requesterId = request.sender_id;
             if (team.tournament?.id) {
-                await this.membership.assertCanJoin(queryRunner.manager, requesterId, team.tournament.id, team.id);
+                departed = await this.membership.assertCanJoin(queryRunner.manager, requesterId, team.tournament.id, team.id);
             }
 
             request.status = InvitationStatus.ACCEPTED;
@@ -61,6 +67,13 @@ export class AcceptJoinRequestCommand {
             }
 
             await queryRunner.commitTransaction();
+
+            publishDepartures(this.realtime, team.tournament?.id, requesterId, departed);
+            this.realtime.toTeam(team.id, RealtimeEvents.TEAM_UPDATED, { id: team.id, reason: 'member_joined' });
+            this.realtime.toUser(requesterId, RealtimeEvents.INVITATION_RECEIVED, { id: request.id, reason: 'request_accepted' });
+            if (team.tournament?.id) {
+                this.realtime.toTournament(team.tournament.id, RealtimeEvents.TOURNAMENT_UPDATED, { id: team.tournament.id, reason: 'looking_for_team_changed' });
+            }
 
             try {
                 await this.notificationsService.sendNotification(

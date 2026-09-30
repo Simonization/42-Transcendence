@@ -6,7 +6,7 @@ import { CancelInvitationCommand } from './cancel-invitation.command';
 import { TeamStatus } from '../entities/team.entity';
 import { InvitationDirection, InvitationStatus } from '../entities/team-invitation.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
-import { mockNotifications, mockPermissions, mockRepo } from '../testing/test-mocks-spec';
+import { mockNotifications, mockPermissions, mockRealtime, mockRepo } from '../testing/test-mocks-spec';
 
 const teamFixture = (over: any = {}) => ({
     id: 5,
@@ -21,7 +21,7 @@ const teamFixture = (over: any = {}) => ({
 describe('RenameTeamCommand', () => {
     function build(team: any, allow = true) {
         const teamRepo = mockRepo({ findOne: jest.fn().mockResolvedValue(team) });
-        return { teamRepo, command: new RenameTeamCommand(teamRepo, mockPermissions(allow)) };
+        return { teamRepo, command: new RenameTeamCommand(teamRepo, mockPermissions(allow), mockRealtime()) };
     }
 
     it('renames for a captain/admin before the tournament starts', async () => {
@@ -44,7 +44,7 @@ describe('RenameTeamCommand', () => {
 describe('UnlockTeamCommand', () => {
     function build(team: any, allow = true) {
         const teamRepo = mockRepo({ findOne: jest.fn().mockResolvedValue(team) });
-        return { teamRepo, command: new UnlockTeamCommand(teamRepo, mockPermissions(allow)) };
+        return { teamRepo, command: new UnlockTeamCommand(teamRepo, mockPermissions(allow), mockRealtime()) };
     }
 
     it('takes a LOCKED team back to DRAFT while registration is open', async () => {
@@ -72,7 +72,7 @@ describe('TransferCaptaincyCommand', () => {
             existsBy: jest.fn(async ({ userId }) => existingAdminRows.includes(userId)),
         });
         const notifications = mockNotifications();
-        return { teamRepo, adminRepo, notifications, command: new TransferCaptaincyCommand(teamRepo, adminRepo, notifications) };
+        return { teamRepo, adminRepo, notifications, command: new TransferCaptaincyCommand(teamRepo, adminRepo, notifications, mockRealtime()) };
     }
 
     it('makes the target captain and the old captain an admin', async () => {
@@ -110,7 +110,7 @@ describe('CancelInvitationCommand', () => {
         const inviteRepo = mockRepo({ findOne: jest.fn().mockResolvedValue(invite) });
         const teamRepo = mockRepo({ findOneBy: jest.fn().mockResolvedValue(team) });
         const permissions = mockPermissions(allow);
-        return { inviteRepo, permissions, command: new CancelInvitationCommand(inviteRepo, teamRepo, permissions) };
+        return { inviteRepo, permissions, command: new CancelInvitationCommand(inviteRepo, teamRepo, permissions, mockRealtime()) };
     }
 
     const invite = (over: any = {}) => ({

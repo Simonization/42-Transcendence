@@ -7,6 +7,8 @@ import { User } from '../../users/entities/user.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class InvitePlayerCommand {
@@ -16,6 +18,7 @@ export class InvitePlayerCommand {
         @InjectRepository(User) private userRepo: Repository<User>,
         private readonly notificationsService: NotificationsService,
         private readonly permissions: TeamPermissionsService,
+        private readonly realtime: RealtimeService,
     ) {}
 
     async execute(teamId: number, targetUserId: number, actorId: number) {
@@ -64,6 +67,9 @@ export class InvitePlayerCommand {
         });
 
         const savedInvitation = await this.inviteRepo.save(invitation);
+
+        this.realtime.toUser(targetUserId, RealtimeEvents.INVITATION_RECEIVED, { id: savedInvitation.id, reason: 'invited' });
+        this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'invitation_sent' });
 
         // 7. Send notification to the invited player (BELL only)
         try {

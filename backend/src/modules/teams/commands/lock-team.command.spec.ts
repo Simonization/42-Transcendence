@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException } from '@nes
 import { LockTeamCommand } from './lock-team.command';
 import { TeamStatus } from '../entities/team.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
-import { mockPermissions, mockRepo } from '../testing/test-mocks-spec';
+import { mockPermissions, mockRealtime, mockRepo } from '../testing/test-mocks-spec';
 
 describe('LockTeamCommand', () => {
     function build(opts: {
@@ -28,7 +28,7 @@ describe('LockTeamCommand', () => {
             findOne: jest.fn().mockResolvedValue(team),
             count: jest.fn().mockResolvedValue(opts.locked ?? 0),
         });
-        return { team, teamRepo, command: new LockTeamCommand(teamRepo, mockPermissions(opts.allow ?? true)) };
+        return { team, teamRepo, command: new LockTeamCommand(teamRepo, mockPermissions(opts.allow ?? true), mockRealtime()) };
     }
 
     it('locks a full team while registration is open and spots remain', async () => {

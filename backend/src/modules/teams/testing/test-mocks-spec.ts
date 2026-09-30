@@ -57,6 +57,17 @@ export function mockDataSource(managerOverrides: Record<string, any> = {}) {
     return { dataSource, runner, manager };
 }
 
+/** RealtimeService stub: every publish method is a jest.fn so specs can assert on the calls. */
+export function mockRealtime() {
+    return {
+        toUser: jest.fn(),
+        toTeam: jest.fn(),
+        toTournament: jest.fn(),
+        toMatch: jest.fn(),
+        leaveTeamRoom: jest.fn(),
+    } as any;
+}
+
 export function mockNotifications() {
     return { sendNotification: jest.fn().mockResolvedValue({}) } as any;
 }

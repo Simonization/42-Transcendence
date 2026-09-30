@@ -5,6 +5,12 @@ import { TeamAdmin } from '../entities/team-admin.entity';
 import { TeamInvitation } from '../entities/team-invitation.entity';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
 
+/** A DRAFT team the joining user was pulled out of; `deleted` when they were its only member. */
+export interface DepartedTeam {
+    teamId: number;
+    deleted: boolean;
+}
+
 /**
  * Shared "one team per user per tournament" enforcement, used by every path that puts a user
  * onto a team: accepting an invite, joining by code, and accepting a join request.
@@ -24,7 +30,7 @@ export class TeamMembershipService {
         userId: number,
         tournamentId: number,
         newTeamId: number,
-    ): Promise<void> {
+    ): Promise<DepartedTeam[]> {
         const otherTeams = await manager
             .createQueryBuilder(Team, 'team')
             .innerJoin('team.members', 'member', 'member.id = :userId', { userId })
@@ -40,6 +46,7 @@ export class TeamMembershipService {
             );
         }
 
+        const departed: DepartedTeam[] = [];
         for (const otherTeam of otherTeams) {
             const others = otherTeam.members.filter((m) => m.id !== userId);
             await manager.delete(TeamAdmin, { teamId: otherTeam.id, userId });
@@ -57,12 +64,16 @@ export class TeamMembershipService {
                     otherTeam.members = [];
                     await manager.save(otherTeam);
                     await manager.delete(Team, { id: otherTeam.id });
+                    departed.push({ teamId: otherTeam.id, deleted: true });
+                    continue;
                 }
             } else {
                 otherTeam.members = others;
                 await manager.save(otherTeam);
             }
+            departed.push({ teamId: otherTeam.id, deleted: false });
         }
+        return departed;
     }
 
     /** A user who just joined a team no longer needs to be on the looking-for-team board. */

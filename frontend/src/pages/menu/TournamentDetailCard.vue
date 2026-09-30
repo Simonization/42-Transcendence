@@ -18,6 +18,10 @@ import { useTournaments } from '../../composables/useTournaments'
 import { toDisplayTournament } from '../../utils/tournamentMapper'
 import { buildBracket } from '../../utils/bracket'
 import HudIcon from '../../components/hud/HudIcon.vue'
+import { useLiveChannel } from '../../composables/useLiveChannel'
+import { useUserEvents } from '../../composables/useUserEvents'
+import { useCoalescedRefresh } from '../../composables/useCoalescedRefresh'
+import { RealtimeEvents } from '../../types/realtime'
 
 type TabType = 'overview' | 'bracket' | 'participants' | 'lft' | 'chat'
 
@@ -127,6 +131,23 @@ async function loadTeamState() {
     lftEntries.value = []
   }
 }
+
+// Live: registrations, team list, full state and the looking-for-team board change under us.
+const refreshAll = useCoalescedRefresh(async () => {
+  const id = tournamentId.value
+  if (!id) return
+  await Promise.all([fetchTournament(id), loadTeamState()])
+})
+const refreshMine = useCoalescedRefresh(() => loadTeamState())
+
+useLiveChannel('tournament', tournamentId, {
+  [RealtimeEvents.TOURNAMENT_UPDATED]: refreshAll,
+}, { onResync: refreshAll })
+
+// My own request/invitation answered, or I was removed from a team.
+useUserEvents({
+  [RealtimeEvents.INVITATION_RECEIVED]: refreshMine,
+})
 
 /** The CTA: manage my team if I have one, otherwise register (unless full / closed). */
 const ctaLabel = computed(() => {

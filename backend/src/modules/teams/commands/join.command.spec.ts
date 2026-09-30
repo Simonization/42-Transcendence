@@ -11,7 +11,7 @@ import { InvitationDirection, InvitationStatus } from '../entities/team-invitati
 import { LookingForTeam } from '../entities/looking-for-team.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
 import {
-    mockDataSource, mockNotifications, mockPermissions, mockQueryBuilder, mockRepo,
+    mockDataSource, mockNotifications, mockPermissions, mockQueryBuilder, mockRealtime, mockRepo,
 } from '../testing/test-mocks-spec';
 
 const USER = 7;
@@ -40,7 +40,7 @@ describe('JoinByCodeCommand', () => {
             .mockReturnValueOnce(mockQueryBuilder({ one: team }))
             .mockReturnValue(mockQueryBuilder({ many: opts.otherTeams ?? [] }));
         ctx.manager.findOneBy.mockResolvedValue({ id: USER, username: 'neo' });
-        return { ...ctx, team, command: new JoinByCodeCommand(ctx.dataSource, new TeamMembershipService()) };
+        return { ...ctx, team, command: new JoinByCodeCommand(ctx.dataSource, new TeamMembershipService(), mockRealtime()) };
     }
 
     it('joins a DRAFT, non-full team of an open tournament and clears the LFT flag', async () => {
@@ -113,7 +113,7 @@ describe('join requests', () => {
             const notifications = mockNotifications();
             return {
                 inviteRepo, notifications,
-                command: new CreateJoinRequestCommand(teamRepo, inviteRepo, notifications, permissions),
+                command: new CreateJoinRequestCommand(teamRepo, inviteRepo, notifications, permissions, mockRealtime()),
             };
         }
 
@@ -150,7 +150,7 @@ describe('join requests', () => {
             ctx.manager.findOneBy.mockResolvedValue({ id: USER, username: 'neo' });
             ctx.manager.createQueryBuilder.mockReturnValue(mockQueryBuilder({ many: opts.otherTeams ?? [] }));
             const permissions = mockPermissions(opts.allow ?? true);
-            const command = new AcceptJoinRequestCommand(ctx.dataSource, mockNotifications(), permissions, new TeamMembershipService());
+            const command = new AcceptJoinRequestCommand(ctx.dataSource, mockNotifications(), permissions, new TeamMembershipService(), mockRealtime());
             return { ...ctx, request, permissions, command };
         }
 
@@ -187,7 +187,7 @@ describe('join requests', () => {
             const inviteRepo = mockRepo({ findOne: jest.fn().mockResolvedValue(request) });
             const teamRepo = mockRepo({ findOneBy: jest.fn().mockResolvedValue(teamFixture()) });
             const notifications = mockNotifications();
-            const command = new DeclineJoinRequestCommand(inviteRepo, teamRepo, notifications, mockPermissions());
+            const command = new DeclineJoinRequestCommand(inviteRepo, teamRepo, notifications, mockPermissions(), mockRealtime());
 
             await command.execute(11, 1);
 
@@ -208,7 +208,7 @@ describe('LookingForTeamCommand', () => {
                 opts.tournament === undefined ? { id: 9, status: TournamentStatus.REGISTRATION_OPEN } : opts.tournament,
             ),
         });
-        return { lftRepo, command: new LookingForTeamCommand(lftRepo, teamRepo, tournamentRepo) };
+        return { lftRepo, command: new LookingForTeamCommand(lftRepo, teamRepo, tournamentRepo, mockRealtime()) };
     }
 
     it('flags the user with an optional note', async () => {

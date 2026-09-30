@@ -5,6 +5,8 @@ import { Team } from '../entities/team.entity';
 import { TeamAdmin } from '../entities/team-admin.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
+import { RealtimeService } from '../../realtime/realtime.service';
+import { RealtimeEvents } from '../../realtime/realtime.events';
 
 @Injectable()
 export class TransferCaptaincyCommand {
@@ -12,6 +14,7 @@ export class TransferCaptaincyCommand {
         @InjectRepository(Team) private teamRepo: Repository<Team>,
         @InjectRepository(TeamAdmin) private adminRepo: Repository<TeamAdmin>,
         private readonly notificationsService: NotificationsService,
+        private readonly realtime: RealtimeService,
     ) {}
 
     /** Captain only. The old captain becomes a team admin so they keep management rights. */
@@ -43,6 +46,8 @@ export class TransferCaptaincyCommand {
         }
 
         const saved = await this.teamRepo.save(team);
+
+        this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'captain_transferred' });
 
         try {
             await this.notificationsService.sendNotification(
