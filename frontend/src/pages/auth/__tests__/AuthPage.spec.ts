@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import AuthPage from '../AuthPage.vue'
+import type { LoginResponse, User } from '../../../types'
 
 // Mock dependencies
 vi.mock('../../../api/auth', () => ({
@@ -117,12 +118,13 @@ describe('AuthPage', () => {
     })
 
     it('should redirect to /menu if user is already authenticated', async () => {
-      const mockUser = {
+      const mockUser: User = {
         id: 1,
         username: 'testuser',
         mail: 'test@example.com',
         twoFactorEnabled: false,
-        profile: { displayName: 'Test User' },
+        profile: { userId: 1, displayName: 'Test User', avatarUrl: null, bio: null, createdAt: '' },
+        settings: { userId: 1, language: 'en', timezone: null, theme: 0, openMessage: false, createdAt: '' },
       }
 
       mockGetAccessToken.mockReturnValueOnce('valid-token')
@@ -151,6 +153,7 @@ describe('AuthPage', () => {
       mockGetAccessToken.mockReturnValueOnce(null)
       mockAuthApi.login.mockResolvedValueOnce({
         accessToken: 'token',
+        refreshToken: 'refresh-token',
         user: { id: 1, username: 'testuser', mail: 'test@example.com' },
       })
 
@@ -220,7 +223,12 @@ describe('AuthPage', () => {
     it('should disable submit button while loading', async () => {
       mockGetAccessToken.mockReturnValueOnce(null)
       mockAuthApi.login.mockImplementationOnce(
-        () => new Promise(resolve => setTimeout(() => resolve({}), 100))
+        () => new Promise<LoginResponse>(resolve =>
+          setTimeout(
+            () => resolve({ accessToken: 't', refreshToken: 'r', user: { id: 1, username: 'u', mail: 'u@example.com' } }),
+            100,
+          ),
+        )
       )
 
       const wrapper = mount(AuthPage, { global: { plugins: [router] } })
@@ -244,6 +252,7 @@ describe('AuthPage', () => {
       mockGetAccessToken.mockReturnValueOnce(null)
       mockAuthApi.login.mockResolvedValueOnce({
         accessToken: 'token',
+        refreshToken: 'refresh-token',
         user: { id: 1, username: 'testuser', mail: 'test@example.com' },
       })
 
@@ -348,7 +357,10 @@ describe('AuthPage', () => {
 
     it('should call register API with correct data', async () => {
       mockGetAccessToken.mockReturnValueOnce(null)
-      mockAuthApi.register.mockResolvedValueOnce({ success: true })
+      mockAuthApi.register.mockResolvedValueOnce({
+        message: 'Registered',
+        user: { id: 1, username: 'testuser', mail: 'test@example.com', isEmailVerified: false },
+      })
 
       const wrapper = mount(AuthPage, { global: { plugins: [router] } })
 
@@ -378,7 +390,10 @@ describe('AuthPage', () => {
 
     it('should clear form fields after successful registration', async () => {
       mockGetAccessToken.mockReturnValueOnce(null)
-      mockAuthApi.register.mockResolvedValueOnce({ success: true })
+      mockAuthApi.register.mockResolvedValueOnce({
+        message: 'Registered',
+        user: { id: 1, username: 'testuser', mail: 'test@example.com', isEmailVerified: false },
+      })
 
       const wrapper = mount(AuthPage, { global: { plugins: [router] } })
 
@@ -430,8 +445,8 @@ describe('AuthPage', () => {
       mockGetAccessToken.mockReturnValueOnce(null)
       const wrapper = mount(AuthPage, { global: { plugins: [router] } })
 
-      const usernameInput = wrapper.find('input[type="text"]')
-      const passwordInput = wrapper.find('input[type="password"]')
+      const usernameInput = wrapper.find<HTMLInputElement>('input[type="text"]')
+      const passwordInput = wrapper.find<HTMLInputElement>('input[type="password"]')
 
       await usernameInput.setValue('testuser')
       await passwordInput.setValue('password123')

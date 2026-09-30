@@ -115,9 +115,9 @@ describe('FriendCard', () => {
     vi.spyOn(friendsStore, 'fetchFriends').mockResolvedValue(undefined)
     vi.spyOn(friendsStore, 'fetchBlocks').mockResolvedValue(undefined)
     vi.spyOn(friendsStore, 'addFriend').mockResolvedValue(true)
-    vi.spyOn(friendsStore, 'removeFriend').mockResolvedValue(undefined)
-    vi.spyOn(friendsStore, 'blockUser').mockResolvedValue(undefined)
-    vi.spyOn(friendsStore, 'unblockUser').mockResolvedValue(undefined)
+    vi.spyOn(friendsStore, 'removeFriend').mockResolvedValue(true)
+    vi.spyOn(friendsStore, 'blockUser').mockResolvedValue(true)
+    vi.spyOn(friendsStore, 'unblockUser').mockResolvedValue(true)
   })
 
   afterEach(() => {

@@ -31,7 +31,9 @@ const makeTournament = (overrides: Partial<BackendTournament> = {}): BackendTour
       order: 1,
       type: PhaseType.SINGLE_ELIMINATION,
       game_id: 1,
-      game: { id: 1, name: 'Chess' },
+      game: { id: 1, name: 'Chess', teamCount: 2, teamSize: 1 },
+      teams_limit_start: 16,
+      teams_limit_end: 1,
       matches: [],
     },
   ],
@@ -86,7 +88,15 @@ describe('Tournaments API', () => {
         name: 'Spring Championship',
         description: 'Annual spring tournament',
         max_participants: 16,
-        phases: [{ order: 1, type: PhaseType.SINGLE_ELIMINATION, game_id: 1 }],
+        phases: [
+          {
+            order: 1,
+            type: PhaseType.SINGLE_ELIMINATION,
+            game_id: 1,
+            teams_limit_start: 2,
+            teams_limit_end: 1,
+          },
+        ],
       }
 
       const result = await tournamentsApi.create(dto)

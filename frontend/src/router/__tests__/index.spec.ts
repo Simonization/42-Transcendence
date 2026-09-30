@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { createRouter, createMemoryHistory, Router } from 'vue-router'
+import { createRouter, createMemoryHistory, type Router } from 'vue-router'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../../stores/auth'
 import { UserRole } from '../../types'

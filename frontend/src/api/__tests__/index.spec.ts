@@ -160,7 +160,7 @@ describe('API Client', () => {
         }),
       })
 
-      const error = await api('/test').catch((e) => e)
+      const error = (await api('/test').catch((e) => e)) as ApiError
       expect(error).toBeInstanceOf(ApiError)
       expect(error).toMatchObject({
         status: 400,
@@ -180,7 +180,7 @@ describe('API Client', () => {
         }),
       })
 
-      const error = await api('/test').catch((e) => e)
+      const error = (await api('/test').catch((e) => e)) as ApiError
       expect(error).toBeInstanceOf(ApiError)
       expect(error.isNotFoundError()).toBe(true)
     })
@@ -195,7 +195,7 @@ describe('API Client', () => {
         },
       })
 
-      const error = await api('/test').catch((e) => e)
+      const error = (await api('/test').catch((e) => e)) as ApiError
       expect(error).toBeInstanceOf(ApiError)
       expect(error.status).toBe(500)
       expect(error.message).toBe('Internal Server Error')
@@ -250,7 +250,7 @@ describe('API Client', () => {
       })
 
       // API throws SESSION_EXPIRED error after redirecting to login
-      const error = await api('/protected').catch((e) => e)
+      const error = (await api('/protected').catch((e) => e)) as ApiError
 
       expect(error).toBeInstanceOf(ApiError)
       expect(error.code).toBe('SESSION_EXPIRED')
@@ -269,7 +269,7 @@ describe('API Client', () => {
       })
 
       // API throws SESSION_EXPIRED error after redirecting to auth
-      const error = await api('/protected').catch((e) => e)
+      const error = (await api('/protected').catch((e) => e)) as ApiError
 
       expect(error).toBeInstanceOf(ApiError)
       expect(error.code).toBe('SESSION_EXPIRED')
@@ -283,7 +283,7 @@ describe('API Client', () => {
         json: async () => ({ statusCode: 401, message: 'Unauthorized' }),
       })
 
-      const error = await api('/public', { auth: false }).catch((e) => e)
+      const error = (await api('/public', { auth: false }).catch((e) => e)) as ApiError
 
       expect(error).toBeInstanceOf(ApiError)
       expect(error.isAuthError()).toBe(true)
@@ -373,7 +373,7 @@ describe('API Client', () => {
         )
       )
 
-      const error = await api('/test').catch((e) => e)
+      const error = (await api('/test').catch((e) => e)) as ApiError
       expect(error).toBeInstanceOf(ApiError)
       expect(error.message).toBe('Cannot reach the server')
     })
@@ -381,7 +381,7 @@ describe('API Client', () => {
     it('should handle offline scenario', async () => {
       mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
 
-      const error = await api('/test').catch((e) => e)
+      const error = (await api('/test').catch((e) => e)) as ApiError
       expect(error).toBeInstanceOf(ApiError)
       expect(error.code).toBe('NETWORK_ERROR')
     })
@@ -392,7 +392,7 @@ describe('API Client', () => {
         text: async () => 'not valid json {',
       })
 
-      const error = await api('/test').catch((e) => e)
+      const error = (await api('/test').catch((e) => e)) as ApiError
       expect(error).toBeInstanceOf(Error)
     })
 
@@ -408,7 +408,7 @@ describe('API Client', () => {
         }),
       })
 
-      const error = await api('/test').catch((e) => e)
+      const error = (await api('/test').catch((e) => e)) as ApiError
       expect(error).toBeInstanceOf(ApiError)
       expect(error.status).toBe(500)
     })
@@ -425,7 +425,7 @@ describe('API Client', () => {
         }),
       })
 
-      const error = await api('/test').catch((e) => e)
+      const error = (await api('/test').catch((e) => e)) as ApiError
       expect(error).toBeInstanceOf(ApiError)
       expect(error.status).toBe(503)
     })
@@ -443,7 +443,7 @@ describe('API Client', () => {
       // Refresh fails with network error
       mockFetch.mockRejectedValueOnce(new Error('Network error during refresh'))
 
-      const error = await api('/protected').catch((e) => e)
+      const error = (await api('/protected').catch((e) => e)) as ApiError
       expect(error).toBeInstanceOf(Error)
     })
   })
@@ -544,7 +544,7 @@ describe('API Client', () => {
         json: async () => ({ message: 'success' }), // Missing accessToken
       })
 
-      const error = await api('/protected').catch((e) => e)
+      const error = (await api('/protected').catch((e) => e)) as ApiError
       // Should handle gracefully
       expect(window.location.href).toBe('/auth')
     })
@@ -566,7 +566,7 @@ describe('API Client', () => {
       })
 
       // Next call should use old logic (expecting accessToken field)
-      const error = await api('/protected').catch((e) => e)
+      const error = (await api('/protected').catch((e) => e)) as ApiError
       // Should redirect since token wasn't found in expected field
       expect(window.location.href).toBe('/auth')
     })
@@ -597,7 +597,7 @@ describe('API Client', () => {
         text: async () => JSON.stringify({ data: 'result' }),
       })
 
-      const error = await api('/protected').catch((e) => e)
+      const error = (await api('/protected').catch((e) => e)) as ApiError
       // Should handle gracefully (may redirect or retry once)
       expect(error || getAccessToken()).toBeDefined()
     })

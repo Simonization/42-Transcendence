@@ -266,7 +266,7 @@ describe('useFriends', () => {
       await removeFriend(50)
 
       expect(friends.value).toHaveLength(99)
-      expect(friends.value.find((f) => f.id === 50)).toBeUndefined()
+      expect(friends.value.find((f: { id: number }) => f.id === 50)).toBeUndefined()
     })
 
     it('should handle block user with reason', async () => {

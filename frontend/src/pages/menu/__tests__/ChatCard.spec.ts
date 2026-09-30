@@ -102,17 +102,21 @@ const createInitializedPinia = () => {
     messages: [
       {
         id: 1,
-        roomId: 1,
-        userId: 2,
+        chatId: 1,
+        senderId: 2,
         content: 'Hello!',
         createdAt: '2024-01-01T10:00:00Z',
+        editedAt: null,
+        deletedAt: null,
       },
       {
         id: 2,
-        roomId: 1,
-        userId: 1,
+        chatId: 1,
+        senderId: 1,
         content: 'Hi there!',
         createdAt: '2024-01-01T10:01:00Z',
+        editedAt: null,
+        deletedAt: null,
       },
     ],
     isLoadingRooms: false,
@@ -139,7 +143,7 @@ describe('ChatCard', () => {
     vi.spyOn(chatStore, 'fetchRooms').mockResolvedValue(undefined)
     vi.spyOn(chatStore, 'selectRoom').mockResolvedValue(undefined)
     vi.spyOn(chatStore, 'sendMessage').mockResolvedValue(undefined)
-    vi.spyOn(chatStore, 'createRoom').mockResolvedValue(undefined)
+    vi.spyOn(chatStore, 'createRoom').mockResolvedValue(null)
     vi.spyOn(chatStore, 'deleteMessage').mockResolvedValue(undefined)
     vi.spyOn(chatStore, 'connectSocket').mockResolvedValue(undefined)
     vi.spyOn(chatStore, 'disconnectSocket').mockResolvedValue(undefined)
