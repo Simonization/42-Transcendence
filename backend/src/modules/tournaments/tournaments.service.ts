@@ -11,6 +11,7 @@ import { GetSeedingQuery } from './queries/get-seeding.query';
 import { GetCheckinQuery } from './queries/get-checkin.query';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
+import { publicTournament } from '../users/public-views';
 
 @Injectable()
 export class TournamentsService {
@@ -27,8 +28,8 @@ export class TournamentsService {
         private readonly getCheckinQuery: GetCheckinQuery,
     ) {}
 
-    create(dto: CreateTournamentDto) {
-        return this.createCmd.execute(dto);
+    async create(dto: CreateTournamentDto) {
+        return publicTournament(await this.createCmd.execute(dto));
     }
 
     // --- Lifecycle ---
@@ -63,16 +64,16 @@ export class TournamentsService {
 
     // --- Standard CRUD ---
 
-    findAll() {
-        return this.getAllQuery.execute();
+    async findAll() {
+        return (await this.getAllQuery.execute()).map(publicTournament);
     }
 
-    findOne(id: number) {
-        return this.getOneQuery.execute(id);
+    async findOne(id: number) {
+        return publicTournament(await this.getOneQuery.execute(id));
     }
 
-    update(id: number, dto: UpdateTournamentDto) {
-        return this.updateCmd.execute(id, dto);
+    async update(id: number, dto: UpdateTournamentDto) {
+        return publicTournament(await this.updateCmd.execute(id, dto));
     }
 
     remove(id: number) {
