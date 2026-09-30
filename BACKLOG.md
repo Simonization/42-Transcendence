@@ -33,8 +33,8 @@ sync. The backend also refuses to start without `JWT_SECRET`.
 - [ ] **Google OAuth** needs a client under your own Google Cloud project (the current
       credentials belong to a teammate's).
 - [ ] **Real TypeORM migrations**, so deploys stop needing a one-off `synchronize`.
-- [ ] **Database backups** for this app's volume.
-- [ ] **Committed TLS private key** `nginx/ssl/transcendence.key`. It's the self-signed
+- [~] **Database backups** for this app's volume. — script updated 2026-09-30 (infra repo), install on the server pending
+- [x] **Committed TLS private key** `nginx/ssl/transcendence.key`. It's the self-signed
       localhost dev cert, but remove it from git and generate it in `make setup`.
 
 ## 2. Security & permissions bugs
@@ -43,17 +43,17 @@ sync. The backend also refuses to start without `JWT_SECRET`.
       `backend/src/modules/matches/matches.controller.ts` guards only with `JwtAuthGuard`.
       Also `winner_id` is never checked to be one of the match's teams
       (`matches/commands/update-match.command.ts`).
-- [ ] **Team admin rights survive leaving the team.** `LeaveTeamCommand` and the
+- [x] **Team admin rights survive leaving the team.** `LeaveTeamCommand` and the
       "remove from other teams" branch of `AcceptInvitationCommand` never delete the
       `team_admins` row, and `TeamPermissionsService.isAdmin`
       (`teams/services/team-permissions.service.ts:14`) doesn't check membership. An ex-member
       keeps invite / kick / lock / promote. (Introduced with the admin role.)
-- [ ] **Accepting an invite pulls you out of a LOCKED team.**
+- [x] **Accepting an invite pulls you out of a LOCKED team.**
       `teams/commands/accept-invitation.command.ts:62` has no status filter; the locked team
       stays LOCKED while short-handed and still enters the bracket.
-- [ ] **One user can create several teams in the same tournament.** `create-team.command.ts`
+- [x] **One user can create several teams in the same tournament.** `create-team.command.ts`
       has no "already in a team here" check.
-- [ ] **`max_participants` is stored but never enforced** (not on team creation, not on start).
+- [~] **`max_participants` is stored but never enforced** (not on team creation, not on start). — enforced at lock time 2026-09-30; start-time check pending
 
 ## 3. Tournament / bracket engine
 
@@ -91,18 +91,18 @@ sync. The backend also refuses to start without `JWT_SECRET`.
 - [ ] **No confirm on irreversible actions:** start tournament
       (`components/admin/MyTournamentsTab.vue:195`, also drops DRAFT teams), delete team
       (`pages/menu/TeamSetupCard.vue:520`). `ConfirmDialog` already exists.
-- [ ] **Player search races.** `TeamSetupCard.vue:159` fires on every keystroke; a slow
+- [x] **Player search races.** `TeamSetupCard.vue:159` fires on every keystroke; a slow
       earlier response overwrites a newer one. Debounce + ignore stale responses.
 - [ ] **13 hard-coded English toasts** (`TeamSetupCard.vue`, `MyTournamentsTab.vue`) plus the
       "← Back" label — weakens the FR/TR i18n module.
-- [ ] **No 404 route**; `/menu` alone renders an empty layout (add a redirect to `/menu/user`).
+- [x] **No 404 route**; `/menu` alone renders an empty layout (add a redirect to `/menu/user`).
 - [ ] Bracket page shows **"GO TO ADMIN" to everyone**, and with no `:id` it should list
       tournaments to pick from.
-- [ ] **`DemoBanner` "Demo mode — backend unavailable"** still on 5 pages although demo data was
+- [x] **`DemoBanner` "Demo mode — backend unavailable"** still on 5 pages although demo data was
       removed; it's just an error state now, and doubles the error message. Remove or rename.
-- [ ] Missing team actions: **rename team, cancel a pending invite, unlock before start,
+- [x] Missing team actions: **rename team, cancel a pending invite, unlock before start,
       transfer captaincy** (captain can currently only delete).
-- [ ] **Dual chat socket** — `composables/useChat.ts` and `stores/chat.ts` both connect.
+- [x] **Dual chat socket** — `composables/useChat.ts` and `stores/chat.ts` both connect.
       Not user-visible; the one big simplification left.
 
 ## 5. Tooling & docs
@@ -112,12 +112,12 @@ sync. The backend also refuses to start without `JWT_SECRET`.
 - [ ] **Backend has one test, and it fails** (the Nest scaffold `app.controller.spec.ts`
       expects "Hello from Backend!"). Replace it with tests for the bracket generator,
       winner propagation and team permissions — where the bugs above live.
-- [ ] Frontend `predev` runs `npm install` of three fonts on every `npm run dev`; they're
+- [x] Frontend `predev` runs `npm install` of three fonts on every `npm run dev`; they're
       already dependencies. Drop it.
-- [ ] `README.md`: `docs/backend_architecture.md` doesn't exist; repo/clone URLs point at the
+- [x] `README.md`: `docs/backend_architecture.md` doesn't exist; repo/clone URLs point at the
       school repo `Wicoro/42-Transcendence`; pgAdmin line is dev-only.
-- [ ] `Corrector.md` overstates modules #5, #14, #15, #16.
-- [ ] Local dev: Postgres publishes on **5433** (a 42 piscine container holds 5432).
+- [x] `Corrector.md` overstates modules #5, #14, #15, #16.
+- [x] Local dev: Postgres publishes on **5433** (a 42 piscine container holds 5432).
 
 ## 6. Features that would make it a real tournament platform
 
@@ -127,7 +127,7 @@ Ranked by value for "make a team, enter a tournament".
    disputes → admin override. Auto-advance, byes resolved, notifications ("your match is
    ready", "confirm the score"). Without this, tournaments can't finish.
    `PATCH /matches/:id` exists with no UI caller.
-2. [ ] **Team invite link / join code.** One click from Discord instead of username search;
+2. [x] **Team invite link / join code.** One click from Discord instead of username search;
    plus a "looking for team" board / join requests.
 3. [ ] **Public, shareable bracket page** (no login) with an `og:image` — the thing people
    actually share. Brackets are currently behind auth.
