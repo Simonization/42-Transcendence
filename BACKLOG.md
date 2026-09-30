@@ -23,7 +23,7 @@ replaced by a real FK on `phase_id`, `messages.isRead` dropped), and production 
 `synchronize` and without migrations — so the deploy needs a DB backup and a one-off schema
 sync. The backend also refuses to start without `JWT_SECRET`.
 
-- [ ] Deploy (runbook in local `CLAUDE.md`)
+- [x] Deploy (runbook in local `CLAUDE.md`) — done 2026-09-30
 - [x] Fix the deploy script: default `SRC`, and update only this site's Caddy block
 
 ## 1. Ops
