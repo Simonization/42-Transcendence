@@ -28,6 +28,7 @@ export enum TeamInvitationStatus {
   PENDING = 'PENDING',
   ACCEPTED = 'ACCEPTED',
   DECLINED = 'DECLINED',
+  CANCELLED = 'CANCELLED',
 }
 
 export interface BackendGame {
@@ -120,6 +121,29 @@ export interface TeamInvitation {
   receiver_id: number
   receiver?: BackendTeamMember
   status: TeamInvitationStatus | string
+  /** INVITE = a team invited a user; REQUEST = a user asked to join (sender_id is the requester). */
+  direction?: 'INVITE' | 'REQUEST'
+  note?: string | null
+}
+
+/** Registration capacity of a tournament (locked teams vs max_participants). */
+export interface TournamentAvailability {
+  tournamentId: number
+  maxTeams: number | null
+  lockedTeams: number
+  spotsLeft: number | null
+  full: boolean
+  registrationOpen: boolean
+}
+
+/** One entry of the looking-for-team board. */
+export interface LookingForTeamEntry {
+  id: number
+  userId: number
+  tournamentId: number
+  note: string | null
+  createdAt: string
+  user?: BackendTeamMember
 }
 
 export interface BackendTournament {

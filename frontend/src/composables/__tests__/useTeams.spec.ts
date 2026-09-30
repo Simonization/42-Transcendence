@@ -14,6 +14,12 @@ vi.mock('../../api/teams', () => ({
     getMyInvitations: vi.fn(),
     acceptInvitation: vi.fn(),
     declineInvitation: vi.fn(),
+    rename: vi.fn(),
+    unlock: vi.fn(),
+    transferCaptain: vi.fn(),
+    cancelInvitation: vi.fn(),
+    joinByCode: vi.fn(),
+    requestToJoin: vi.fn(),
   },
 }))
 
@@ -196,6 +202,59 @@ describe('useTeams', () => {
       const result = await declineInvitation(10)
 
       expect(result).toBe(false)
+    })
+  })
+
+  describe('team actions', () => {
+    const api = teamsApiModule.teamsApi as any
+
+    it('renameTeam updates myTeam, and reports failure', async () => {
+      api.rename.mockResolvedValueOnce({ ...MOCK_TEAM, name: 'Blues' })
+      const { myTeam, renameTeam } = useTeams()
+      await expect(renameTeam(1, 'Blues')).resolves.toBe(true)
+      expect((myTeam.value as any).name).toBe('Blues')
+
+      api.rename.mockRejectedValueOnce(new Error('nope'))
+      await expect(renameTeam(1, 'x')).resolves.toBe(false)
+    })
+
+    it('unlockTeam and transferCaptain update myTeam', async () => {
+      api.unlock.mockResolvedValueOnce({ ...MOCK_TEAM, status: 'DRAFT' })
+      api.transferCaptain.mockResolvedValueOnce({ ...MOCK_TEAM, captain_id: 4 })
+      const { myTeam, unlockTeam, transferCaptain } = useTeams()
+
+      await expect(unlockTeam(1)).resolves.toBe(true)
+      expect((myTeam.value as any).status).toBe('DRAFT')
+      await expect(transferCaptain(1, 4)).resolves.toBe(true)
+      expect(api.transferCaptain).toHaveBeenCalledWith(1, 4)
+      expect((myTeam.value as any).captain_id).toBe(4)
+    })
+
+    it('cancelInvitation returns false and sets error on failure', async () => {
+      api.cancelInvitation.mockRejectedValueOnce(new Error('403'))
+      const { error, cancelInvitation } = useTeams()
+      await expect(cancelInvitation(10)).resolves.toBe(false)
+      expect(error.value).toBe('Failed to cancel invitation')
+    })
+
+    it('joinByCode returns the ids on success and null on failure', async () => {
+      api.joinByCode.mockResolvedValueOnce({ message: 'ok', teamId: 1, tournamentId: 5 })
+      const { joinByCode, isLoading } = useTeams()
+      await expect(joinByCode('abc')).resolves.toEqual({ teamId: 1, tournamentId: 5 })
+      expect(isLoading.value).toBe(false)
+
+      api.joinByCode.mockRejectedValueOnce(new Error('full'))
+      await expect(joinByCode('abc')).resolves.toBeNull()
+    })
+
+    it('requestToJoin returns the request, or null on failure', async () => {
+      api.requestToJoin.mockResolvedValueOnce({ id: 9 })
+      const { requestToJoin } = useTeams()
+      await expect(requestToJoin(1, 'hi')).resolves.toEqual({ id: 9 })
+      expect(api.requestToJoin).toHaveBeenCalledWith(1, 'hi')
+
+      api.requestToJoin.mockRejectedValueOnce(new Error('closed'))
+      await expect(requestToJoin(1)).resolves.toBeNull()
     })
   })
 })

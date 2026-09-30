@@ -17,3 +17,9 @@ export class SetAdminDto {
     @IsPositive()
     userId: number;
 }
+
+export class TransferCaptainDto {
+    @IsInt()
+    @IsPositive()
+    userId: number;
+}

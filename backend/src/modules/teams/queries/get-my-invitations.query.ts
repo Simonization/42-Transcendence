@@ -1,5 +1,5 @@
 import { Repository } from "typeorm";
-import { InvitationStatus, TeamInvitation } from "../entities/team-invitation.entity";
+import { InvitationDirection, InvitationStatus, TeamInvitation } from "../entities/team-invitation.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Injectable } from "@nestjs/common";
 
@@ -13,8 +13,9 @@ export class GetMyInvitationsQuery {
     async execute(userId: number) {
         return await this.inviteRepo.find({
             where: { 
-                receiver_id: userId, 
-                status: InvitationStatus.PENDING 
+                receiver_id: userId,
+                status: InvitationStatus.PENDING,
+                direction: InvitationDirection.INVITE,
             },
             relations: ['team', 'sender'] // So the user knows who invited them to what
         });

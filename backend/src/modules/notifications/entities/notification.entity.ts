@@ -12,6 +12,12 @@ export type NotificationType =
   | 'team_member_removed'
   | 'team_admin_granted'
   | 'team_admin_revoked'
+  | 'team_captain_transferred'
+  | 'team_join_request'
+  | 'team_join_request_accepted'
+  | 'team_join_request_declined'
+  | 'team_invite_cancelled'
+  | 'looking_for_team_invite'
   | 'tournament_started'
   | 'match_result';
 

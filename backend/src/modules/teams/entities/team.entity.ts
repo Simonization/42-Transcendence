@@ -53,4 +53,10 @@ export class Team {
     // This links the team to the tournament, not just a single match
     @ManyToOne(() => Tournament, (t) => t.teams, { nullable: true })
     tournament: Tournament;
+
+    // Random, unguessable invite code (~10 url-safe chars). `select: false` so it never leaks
+    // through the generic team-listing endpoints (participants tab, bracket, etc.) — only the
+    // dedicated join-code endpoints explicitly select it.
+    @Column({ unique: true, length: 16, select: false, nullable: true })
+    join_code: string;
 }

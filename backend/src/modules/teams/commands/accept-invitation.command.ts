@@ -3,9 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { User } from '../../users/entities/user.entity';
-import { InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
+import { InvitationDirection, InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
+import { TeamMembershipService } from '../services/team-membership.service';
 
 @Injectable()
 export class AcceptInvitationCommand {
@@ -13,6 +14,7 @@ export class AcceptInvitationCommand {
         private dataSource: DataSource,
         @InjectRepository(TeamInvitation) private inviteRepo: Repository<TeamInvitation>,
         private readonly notificationsService: NotificationsService,
+        private readonly membership: TeamMembershipService,
     ) {}
 
     async execute(invitationId: number, userId: number) {
@@ -22,7 +24,12 @@ export class AcceptInvitationCommand {
 
         try {
             const invite = await queryRunner.manager.findOne(TeamInvitation, {
-                where: { id: invitationId, receiver_id: userId, status: InvitationStatus.PENDING },
+                where: {
+                    id: invitationId,
+                    receiver_id: userId,
+                    status: InvitationStatus.PENDING,
+                    direction: InvitationDirection.INVITE,
+                },
                 relations: [
                     'team',
                     'team.members',
@@ -48,6 +55,12 @@ export class AcceptInvitationCommand {
                 throw new BadRequestException(`That team is already full (${maxSize} players)`);
             }
 
+            // One team per tournament: block if the user is locked into another team here,
+            // otherwise quietly pull them out of any other DRAFT team in this tournament.
+            if (team.tournament?.id) {
+                await this.membership.assertCanJoin(queryRunner.manager, userId, team.tournament.id, team.id);
+            }
+
             invite.status = InvitationStatus.ACCEPTED;
             await queryRunner.manager.save(invite);
 
@@ -57,37 +70,8 @@ export class AcceptInvitationCommand {
             team.members.push(user);
             await queryRunner.manager.save(team);
 
-            // Remove user from any other teams they belong to in the same tournament
             if (team.tournament?.id) {
-                const otherTeams = await queryRunner.manager
-                    .createQueryBuilder(Team, 'team')
-                    .innerJoin('team.members', 'member', 'member.id = :userId', { userId })
-                    .innerJoin('team.tournament', 'tournament', 'tournament.id = :tournamentId', { tournamentId: team.tournament.id })
-                    .leftJoinAndSelect('team.members', 'allMembers')
-                    .where('team.id != :newTeamId', { newTeamId: team.id })
-                    .getMany();
-
-                for (const otherTeam of otherTeams) {
-                    const others = otherTeam.members.filter(m => m.id !== userId);
-                    if (otherTeam.captain_id === userId) {
-                        if (others.length > 0) {
-                            // Transfer captaincy
-                            otherTeam.captain_id = others[0].id;
-                            otherTeam.members = others;
-                            await queryRunner.manager.save(otherTeam);
-                        } else {
-                            // Solo captain — delete the team (remove invitations first to satisfy FK)
-                            await queryRunner.manager.delete(TeamInvitation, { team_id: otherTeam.id });
-                            otherTeam.members = [];
-                            await queryRunner.manager.save(otherTeam);
-                            await queryRunner.manager.delete(Team, { id: otherTeam.id });
-                        }
-                    } else {
-                        // Regular member — just remove
-                        otherTeam.members = others;
-                        await queryRunner.manager.save(otherTeam);
-                    }
-                }
+                await this.membership.clearLookingForTeam(queryRunner.manager, userId, team.tournament.id);
             }
 
             await queryRunner.commitTransaction();

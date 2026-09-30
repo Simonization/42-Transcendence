@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { authApi } from '../../api/auth'
 import { usersApi } from '../../api/users'
 import { getAccessToken, clearTokens } from '../../api'
+import { consumePendingRedirect } from '../../utils/postLoginRedirect'
 import { requiresTwoFactor } from '../../types'
 import { useFormValidation } from '../../composables/useFormValidation'
 import { useErrorHandler } from '../../composables/useErrorHandler'
@@ -45,7 +46,7 @@ onMounted(async () => {
   if (!token) return
   try {
     await usersApi.getMe()
-    router.push('/menu')
+    router.push(consumePendingRedirect('/menu'))
   } catch {
     clearTokens()
   }
@@ -77,7 +78,7 @@ const login = async () => {
       }, REDIRECT_DELAY)
     } else {
       handleSuccess(t('auth.welcome', { username: response.user.username }))
-      router.push('/menu')
+      router.push(consumePendingRedirect('/menu'))
     }
   } catch (error) {
     if (error instanceof Error) {

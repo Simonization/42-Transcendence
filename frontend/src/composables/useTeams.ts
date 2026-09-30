@@ -149,6 +149,94 @@ export function useTeams() {
     }
   }
 
+  /**
+   * Rename the team (captain or admin, before the tournament starts)
+   */
+  const renameTeam = async (teamId: number, name: string): Promise<boolean> => {
+    error.value = ''
+    try {
+      myTeam.value = await teamsApi.rename(teamId, name)
+      return true
+    } catch (e) {
+      error.value = getErrorMessage(e, 'Failed to rename team')
+      return false
+    }
+  }
+
+  /**
+   * Unlock a LOCKED team while registration is open
+   */
+  const unlockTeam = async (teamId: number): Promise<boolean> => {
+    error.value = ''
+    try {
+      myTeam.value = await teamsApi.unlock(teamId)
+      return true
+    } catch (e) {
+      error.value = getErrorMessage(e, 'Failed to unlock team')
+      return false
+    }
+  }
+
+  /**
+   * Hand the captaincy to another member (captain only)
+   */
+  const transferCaptain = async (teamId: number, userId: number): Promise<boolean> => {
+    error.value = ''
+    try {
+      myTeam.value = await teamsApi.transferCaptain(teamId, userId)
+      return true
+    } catch (e) {
+      error.value = getErrorMessage(e, 'Failed to transfer captaincy')
+      return false
+    }
+  }
+
+  /**
+   * Cancel a pending invitation sent by the team
+   */
+  const cancelInvitation = async (invitationId: number): Promise<boolean> => {
+    error.value = ''
+    try {
+      await teamsApi.cancelInvitation(invitationId)
+      return true
+    } catch (e) {
+      error.value = getErrorMessage(e, 'Failed to cancel invitation')
+      return false
+    }
+  }
+
+  /**
+   * Join a team with its invite code. Returns the team/tournament ids, or null on failure.
+   */
+  const joinByCode = async (
+    code: string,
+  ): Promise<{ teamId: number; tournamentId?: number | null } | null> => {
+    isLoading.value = true
+    error.value = ''
+    try {
+      const res = await teamsApi.joinByCode(code)
+      return { teamId: res.teamId, tournamentId: res.tournamentId }
+    } catch (e) {
+      error.value = getErrorMessage(e, 'Failed to join team')
+      return null
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * Ask to join a team
+   */
+  const requestToJoin = async (teamId: number, note?: string): Promise<TeamInvitation | null> => {
+    error.value = ''
+    try {
+      return await teamsApi.requestToJoin(teamId, note)
+    } catch (e) {
+      error.value = getErrorMessage(e, 'Failed to send join request')
+      return null
+    }
+  }
+
   return {
     myTeam,
     myInvitations,
@@ -162,5 +250,11 @@ export function useTeams() {
     fetchMyInvitations,
     acceptInvitation,
     declineInvitation,
+    renameTeam,
+    unlockTeam,
+    transferCaptain,
+    cancelInvitation,
+    joinByCode,
+    requestToJoin,
   }
 }

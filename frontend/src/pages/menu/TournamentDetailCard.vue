@@ -8,6 +8,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNotificationsStore } from '../../stores/notifications'
+import { useAuthStore } from '../../stores/auth'
+import { teamsApi, type MyTournamentStatus } from '../../api/teams'
+import type { LookingForTeamEntry } from '../../types/tournament'
+import { TeamStatus, TournamentStatus } from '../../types'
 import TournamentRegistrationModal from '../../components/tournaments/TournamentRegistrationModal.vue'
 import BracketVisualization from '../../components/tournaments/BracketVisualization.vue'
 import { useTournaments } from '../../composables/useTournaments'
@@ -15,12 +19,13 @@ import { toDisplayTournament } from '../../utils/tournamentMapper'
 import { buildBracket } from '../../utils/bracket'
 import HudIcon from '../../components/hud/HudIcon.vue'
 
-type TabType = 'overview' | 'bracket' | 'participants' | 'chat'
+type TabType = 'overview' | 'bracket' | 'participants' | 'lft' | 'chat'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const notificationsStore = useNotificationsStore()
+const authStore = useAuthStore()
 const { success: showSuccess, error: showError } = notificationsStore
 const activeTab = ref<TabType>('overview')
 const registrationModalOpen = ref(false)
@@ -30,11 +35,17 @@ const { currentTournament, isLoading, error, fetchTournament, register } = useTo
 const tournamentId = computed(() => Number(route.params.id))
 
 onMounted(() => {
-  if (tournamentId.value) fetchTournament(tournamentId.value)
+  if (tournamentId.value) {
+    fetchTournament(tournamentId.value)
+    loadTeamState()
+  }
 })
 
 watch(tournamentId, (id) => {
-  if (id) fetchTournament(id)
+  if (id) {
+    fetchTournament(id)
+    loadTeamState()
+  }
 })
 
 // Map backend tournament to display format for template compatibility
@@ -71,17 +82,140 @@ const filteredTeams = computed(() => {
   )
 })
 
-const isRegistered = ref(false)
+// ─── My team state, capacity and the looking-for-team board ─────────────────
+
+const me = computed(() => authStore.user)
+const myStatus = ref<MyTournamentStatus | null>(null)
+const lftEntries = ref<LookingForTeamEntry[]>([])
+const lftNote = ref('')
+const lftBusy = ref(false)
+const invitedUserIds = ref<Set<number>>(new Set())
+const requestingTeamId = ref<number | null>(null)
+
+const myTeam = computed(() => myStatus.value?.team ?? null)
+const hasTeam = computed(() => myTeam.value !== null)
+const isRegistered = computed(() => myTeam.value?.status === TeamStatus.LOCKED)
+const availability = computed(() => myStatus.value?.availability ?? null)
+const registrationOpen = computed(
+  () => currentTournament.value?.status === TournamentStatus.REGISTRATION_OPEN,
+)
+/** All registration spots are taken and I am not one of the registered teams. */
+const isFull = computed(() => !!availability.value?.full && !isRegistered.value)
+const iAmFlagged = computed(() => !!myStatus.value?.lookingForTeam)
+
+const canManageTeam = computed(() => {
+  const team = myTeam.value
+  const uid = me.value?.id
+  if (!team || uid == null) return false
+  return team.captain_id === uid || (team.admins ?? []).some(a => a.userId === uid)
+})
+
+const canInviteFromBoard = computed(
+  () => canManageTeam.value && myTeam.value?.status !== TeamStatus.LOCKED && registrationOpen.value,
+)
+
+async function loadTeamState() {
+  const id = tournamentId.value
+  try {
+    myStatus.value = await teamsApi.getMyTeam(id)
+  } catch {
+    myStatus.value = null
+  }
+  try {
+    lftEntries.value = await teamsApi.getLookingForTeam(id)
+  } catch {
+    lftEntries.value = []
+  }
+}
+
+/** The CTA: manage my team if I have one, otherwise register (unless full / closed). */
+const ctaLabel = computed(() => {
+  if (isRegistered.value) return t('tournament.youreRegistered')
+  if (hasTeam.value) return t('tournament.teamSetup')
+  if (isFull.value) return t('teams.tournamentFull')
+  if (!registrationOpen.value) return t('teams.registrationClosed')
+  return t('tournament.registerNow')
+})
+const ctaDisabled = computed(
+  () => !hasTeam.value && (isFull.value || !registrationOpen.value),
+)
 
 const handleRegister = () => {
+  if (hasTeam.value) {
+    router.push(`/menu/tournaments/${tournamentId.value}/team`)
+    return
+  }
+  if (ctaDisabled.value) return
   registrationModalOpen.value = true
 }
 
 const handleRegistered = () => {
-  isRegistered.value = true
   registrationModalOpen.value = false
-  // Refresh to get updated teams list
+  // Refresh to get updated teams list and my team state
   fetchTournament(tournamentId.value)
+  loadTeamState()
+}
+
+/** A DRAFT team with room, while I have no team of my own. */
+const canRequestToJoin = (team: { id: number; status: string; members?: unknown[] }) =>
+  !hasTeam.value &&
+  registrationOpen.value &&
+  team.status === TeamStatus.DRAFT &&
+  (team.members?.length ?? 0) < requiredTeamSize.value
+
+const hasPendingRequest = (teamId: number) =>
+  (myStatus.value?.requests ?? []).some(r => r.team_id === teamId)
+
+async function requestToJoin(teamId: number) {
+  requestingTeamId.value = teamId
+  try {
+    await teamsApi.requestToJoin(teamId)
+    showSuccess(t('teams.requestSent'))
+    await loadTeamState()
+  } catch (err) {
+    showError((err as { message?: string })?.message || t('teams.requestSendFailed'))
+  } finally {
+    requestingTeamId.value = null
+  }
+}
+
+async function flagMyself() {
+  lftBusy.value = true
+  try {
+    await teamsApi.flagLookingForTeam(tournamentId.value, lftNote.value.trim() || undefined)
+    showSuccess(t('lft.flagged'))
+    await loadTeamState()
+  } catch (err) {
+    showError((err as { message?: string })?.message || t('lft.failed'))
+  } finally {
+    lftBusy.value = false
+  }
+}
+
+async function unflagMyself() {
+  lftBusy.value = true
+  try {
+    await teamsApi.unflagLookingForTeam(tournamentId.value)
+    lftNote.value = ''
+    showSuccess(t('lft.unflagged'))
+    await loadTeamState()
+  } catch (err) {
+    showError((err as { message?: string })?.message || t('lft.failed'))
+  } finally {
+    lftBusy.value = false
+  }
+}
+
+async function inviteFromBoard(userId: number) {
+  const team = myTeam.value
+  if (!team) return
+  try {
+    await teamsApi.invitePlayer(team.id, { userId })
+    invitedUserIds.value = new Set(invitedUserIds.value).add(userId)
+    showSuccess(t('lft.invited'))
+  } catch (err) {
+    showError((err as { message?: string })?.message || t('lft.inviteFailed'))
+  }
 }
 
 /** Get game info from the first phase */
@@ -99,6 +233,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   { id: 'overview', label: t('tournament.overview'), icon: 'clipboard' },
   { id: 'bracket', label: t('tournament.bracket'), icon: 'tournament' },
   { id: 'participants', label: t('tournament.participants'), icon: 'friend' },
+  { id: 'lft', label: t('lft.tab'), icon: 'search' },
   { id: 'chat', label: t('tournament.chat'), icon: 'chat' },
 ])
 </script>
@@ -116,10 +251,12 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
       </div>
       <button
         class="detail-cta-btn"
-        :aria-label="`${isRegistered ? 'Already registered for' : 'Register for'} ${tournament.name}`"
+        :class="{ 'detail-cta-btn-disabled': ctaDisabled }"
+        :disabled="ctaDisabled"
+        :aria-label="`${ctaLabel} — ${tournament.name}`"
         @click="handleRegister"
       >
-        {{ isRegistered ? $t('tournament.youreRegistered') : $t('tournament.registerNow') }}
+        {{ ctaLabel }}
       </button>
     </header>
 
@@ -212,6 +349,13 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
                   :style="{ width: `${(tournament.currentParticipants / tournament.maxParticipants) * 100}%` }"
                 ></div>
               </div>
+              <p
+                v-if="availability && availability.spotsLeft !== null"
+                class="spots-left"
+                :class="{ 'spots-left-full': availability.full }"
+              >
+                {{ availability.full ? $t('teams.tournamentFull') : $t('teams.spotsLeft', { count: availability.spotsLeft }) }}
+              </p>
             </div>
           </div>
         </div>
@@ -291,6 +435,19 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
               <div class="team-member-count">
                 {{ team.members?.length ?? 0 }}/{{ requiredTeamSize }} {{ $t('teams.players') }}
               </div>
+              <div v-if="canRequestToJoin(team)" class="team-request-row">
+                <span v-if="hasPendingRequest(team.id)" class="team-request-pending">
+                  {{ $t('teams.requestPending') }}
+                </span>
+                <button
+                  v-else
+                  class="lft-btn lft-btn-sm"
+                  :disabled="requestingTeamId === team.id"
+                  @click="requestToJoin(team.id)"
+                >
+                  {{ $t('teams.requestToJoin') }}
+                </button>
+              </div>
             </div>
 
             <div v-if="filteredTeams.length === 0" class="no-participants">
@@ -302,6 +459,82 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
           <div class="participants-summary">
             <span class="summary-label">{{ $t('tournament.totalRegistered') }}</span>
             <span class="summary-value">{{ teamsList.length }} {{ $t('teams.teams') }} ({{ totalParticipants }} {{ $t('teams.players') }})</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Looking-for-team Tab -->
+      <section
+        v-show="activeTab === 'lft'"
+        id="panel-lft"
+        role="tabpanel"
+        aria-labelledby="tab-lft"
+        class="tab-pane glass-panel"
+      >
+        <div class="lft-container">
+          <div>
+            <h3 class="section-title">{{ $t('lft.title') }}</h3>
+            <p class="lft-subtitle">{{ $t('lft.subtitle') }}</p>
+          </div>
+
+          <!-- Flag / unflag myself -->
+          <div v-if="!hasTeam && registrationOpen" class="lft-flag">
+            <input
+              v-model="lftNote"
+              type="text"
+              class="search-input"
+              maxlength="140"
+              :placeholder="$t('lft.notePlaceholder')"
+              :aria-label="$t('lft.notePlaceholder')"
+              @keydown.enter="flagMyself"
+            />
+            <div class="lft-flag-actions">
+              <button class="lft-btn" :disabled="lftBusy" @click="flagMyself">
+                {{ iAmFlagged ? $t('common.save') : $t('lft.flagMe') }}
+              </button>
+              <button v-if="iAmFlagged" class="lft-btn lft-btn-ghost" :disabled="lftBusy" @click="unflagMyself">
+                {{ $t('lft.unflag') }}
+              </button>
+            </div>
+          </div>
+          <p v-else-if="hasTeam && !canInviteFromBoard" class="lft-hint">{{ $t('lft.haveTeam') }}</p>
+          <p v-else-if="!registrationOpen" class="lft-hint">{{ $t('lft.closed') }}</p>
+          <p v-if="!hasTeam && registrationOpen && lftEntries.length" class="lft-hint">
+            {{ $t('lft.createTeamFirst') }}
+          </p>
+
+          <!-- Board -->
+          <ul v-if="lftEntries.length" class="lft-list">
+            <li v-for="entry in lftEntries" :key="entry.id" class="lft-item">
+              <span class="participant-avatar">
+                <img
+                  v-if="entry.user?.avatarUrl"
+                  :src="entry.user.avatarUrl"
+                  :alt="entry.user.username"
+                  class="avatar-img"
+                />
+                <HudIcon v-else name="user" :size="18" />
+              </span>
+              <div class="lft-item-body">
+                <span class="participant-name">
+                  @{{ entry.user?.username }}
+                  <span v-if="entry.userId === me?.id" class="captain-badge">{{ $t('lft.you') }}</span>
+                </span>
+                <span v-if="entry.note" class="lft-note">{{ entry.note }}</span>
+              </div>
+              <button
+                v-if="canInviteFromBoard && entry.userId !== me?.id"
+                class="lft-btn lft-btn-sm"
+                :disabled="invitedUserIds.has(entry.userId)"
+                @click="inviteFromBoard(entry.userId)"
+              >
+                {{ invitedUserIds.has(entry.userId) ? $t('tournament.pending') : $t('lft.invite') }}
+              </button>
+            </li>
+          </ul>
+          <div v-else class="no-participants">
+            <HudIcon name="friend" :size="28" class="no-participants-icon" />
+            <p class="no-participants-text">{{ $t('lft.empty') }}</p>
           </div>
         </div>
       </section>
@@ -344,6 +577,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
     :is-open="registrationModalOpen"
     :team-size="gameInfo.teamSize"
     :game-name="gameInfo.gameName"
+    :is-full="isFull"
     @close="registrationModalOpen = false"
     @registered="handleRegistered"
   />
@@ -891,6 +1125,139 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   letter-spacing: var(--tracking-wider);
+}
+
+
+/* Capacity + requests */
+.spots-left {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.spots-left-full {
+  color: var(--color-warning);
+  font-weight: var(--font-bold);
+}
+
+.detail-cta-btn:disabled,
+.detail-cta-btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: var(--border-default);
+}
+
+.team-request-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.team-request-pending {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-warning);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+/* Looking-for-team board */
+.lft-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.lft-subtitle,
+.lft-hint {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  letter-spacing: var(--tracking-wider);
+}
+
+.lft-flag {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.lft-flag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.lft-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.lft-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-tertiary);
+  border: var(--hud-border) solid var(--border-subtle);
+}
+
+.lft-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.lft-note {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.lft-btn {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-primary);
+  background: transparent;
+  border: var(--hud-border) solid var(--accent-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.lft-btn:not(:disabled):hover {
+  background: var(--bg-selected);
+  color: var(--accent-primary);
+}
+
+.lft-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lft-btn-ghost {
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+.lft-btn-sm {
+  padding: var(--space-1) var(--space-3);
 }
 
 /* Not Found */

@@ -535,4 +535,31 @@ describe('TournamentRegistrationModal', () => {
       expect(document.querySelector('.rules-text')?.textContent).toContain('Single elimination')
     })
   })
+
+  describe('Tournament full', () => {
+    it('shows a banner and blocks submission when the tournament is full', async () => {
+      const wrapper = mount(TournamentRegistrationModal, { props: { ...soloProps, isFull: true } })
+      await flushPromises()
+
+      expect(document.querySelector('.full-banner')?.textContent).toContain('TOURNAMENT FULL')
+
+      const accept = document.querySelector('.checkbox-accept input') as HTMLInputElement
+      accept.checked = true
+      accept.dispatchEvent(new Event('change'))
+      await flushPromises()
+
+      const submit = document.querySelector('button.modal-btn-primary') as HTMLButtonElement
+      expect(submit.disabled).toBe(true)
+      submit.click()
+      await flushPromises()
+      expect(mockCreateTeam).not.toHaveBeenCalled()
+      wrapper.unmount()
+    })
+
+    it('shows no banner when there is room', async () => {
+      mount(TournamentRegistrationModal, { props: { ...soloProps, isFull: false } })
+      await flushPromises()
+      expect(document.querySelector('.full-banner')).toBeNull()
+    })
+  })
 })

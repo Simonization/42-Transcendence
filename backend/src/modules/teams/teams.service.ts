@@ -12,6 +12,19 @@ import { LeaveTeamCommand } from './commands/leave-team.command';
 import { GetMyInvitationsQuery } from './queries/get-my-invitations.query';
 import { GetMyTeamForTournamentQuery } from './queries/get-my-team-for-tournament.query';
 import { SetAdminCommand } from './commands/set-admin.command';
+import { RenameTeamCommand } from './commands/rename-team.command';
+import { UnlockTeamCommand } from './commands/unlock-team.command';
+import { TransferCaptaincyCommand } from './commands/transfer-captaincy.command';
+import { CancelInvitationCommand } from './commands/cancel-invitation.command';
+import { JoinCodeCommand } from './commands/join-code.command';
+import { JoinByCodeCommand } from './commands/join-by-code.command';
+import { CreateJoinRequestCommand } from './commands/create-join-request.command';
+import { AcceptJoinRequestCommand } from './commands/accept-join-request.command';
+import { DeclineJoinRequestCommand } from './commands/decline-join-request.command';
+import { LookingForTeamCommand } from './commands/looking-for-team.command';
+import { GetJoinRequestsQuery } from './queries/get-join-requests.query';
+import { GetLookingForTeamQuery } from './queries/get-looking-for-team.query';
+import { GetTournamentAvailabilityQuery } from './queries/get-tournament-availability.query';
 
 @Injectable()
 export class TeamsService {
@@ -27,6 +40,19 @@ export class TeamsService {
         private readonly leaveCmd: LeaveTeamCommand,
         private readonly getInvitesQuery: GetMyInvitationsQuery,
         private readonly getMyTeamQuery: GetMyTeamForTournamentQuery,
+        private readonly renameCmd: RenameTeamCommand,
+        private readonly unlockCmd: UnlockTeamCommand,
+        private readonly transferCmd: TransferCaptaincyCommand,
+        private readonly cancelInviteCmd: CancelInvitationCommand,
+        private readonly joinCodeCmd: JoinCodeCommand,
+        private readonly joinByCodeCmd: JoinByCodeCommand,
+        private readonly createRequestCmd: CreateJoinRequestCommand,
+        private readonly acceptRequestCmd: AcceptJoinRequestCommand,
+        private readonly declineRequestCmd: DeclineJoinRequestCommand,
+        private readonly lftCmd: LookingForTeamCommand,
+        private readonly joinRequestsQuery: GetJoinRequestsQuery,
+        private readonly lftQuery: GetLookingForTeamQuery,
+        private readonly availabilityQuery: GetTournamentAvailabilityQuery,
     ) {}
 
     async create(dto: CreateTeamDto, user: User) {
@@ -79,5 +105,65 @@ export class TeamsService {
 
     async getTeamPendingInvitations(teamId: number, requesterId: number) {
         return await this.getMyTeamQuery.getPendingInvitations(teamId, requesterId);
+    }
+
+    async rename(teamId: number, name: string, actorId: number) {
+        return await this.renameCmd.execute(teamId, name, actorId);
+    }
+
+    async unlock(teamId: number, actorId: number) {
+        return await this.unlockCmd.execute(teamId, actorId);
+    }
+
+    async transferCaptaincy(teamId: number, targetId: number, actorId: number) {
+        return await this.transferCmd.execute(teamId, targetId, actorId);
+    }
+
+    async cancelInvitation(invitationId: number, actorId: number) {
+        return await this.cancelInviteCmd.execute(invitationId, actorId);
+    }
+
+    async getJoinCode(teamId: number, requesterId: number) {
+        return await this.joinCodeCmd.get(teamId, requesterId);
+    }
+
+    async regenerateJoinCode(teamId: number, actorId: number) {
+        return await this.joinCodeCmd.regenerate(teamId, actorId);
+    }
+
+    async joinByCode(code: string, userId: number) {
+        return await this.joinByCodeCmd.execute(code, userId);
+    }
+
+    async requestToJoin(teamId: number, userId: number, note?: string) {
+        return await this.createRequestCmd.execute(teamId, userId, note);
+    }
+
+    async getJoinRequests(teamId: number, requesterId: number) {
+        return await this.joinRequestsQuery.execute(teamId, requesterId);
+    }
+
+    async acceptJoinRequest(requestId: number, actorId: number) {
+        return await this.acceptRequestCmd.execute(requestId, actorId);
+    }
+
+    async declineJoinRequest(requestId: number, actorId: number) {
+        return await this.declineRequestCmd.execute(requestId, actorId);
+    }
+
+    async flagLookingForTeam(tournamentId: number, userId: number, note?: string) {
+        return await this.lftCmd.flag(tournamentId, userId, note);
+    }
+
+    async unflagLookingForTeam(tournamentId: number, userId: number) {
+        return await this.lftCmd.unflag(tournamentId, userId);
+    }
+
+    async listLookingForTeam(tournamentId: number) {
+        return await this.lftQuery.execute(tournamentId);
+    }
+
+    async getTournamentAvailability(tournamentId: number) {
+        return await this.availabilityQuery.execute(tournamentId);
     }
 }
