@@ -4,14 +4,18 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { chatApi } from '../api/chat'
 import { friendsApi } from '../api/friends'
-import { getAccessToken } from '../api'
 import { getErrorMessage } from '../utils/error'
 import { ChatType } from '../types'
 import type { ChatRoom, Message, TypingUser } from '../types'
-import { io, Socket } from 'socket.io-client' 
+import {
+  connectSocket as connectSharedSocket,
+  getSocket,
+  onSocketEvent,
+  wsConnected as socketConnected,
+} from '../services/socket'
 import { useAuthStore } from './auth'
 
 
@@ -29,8 +33,11 @@ export const useChatStore = defineStore('chat', () => {
   const error = ref('')
   const demoMode = ref(false)
 
-  let socket: Socket | null = null
-  const wsConnected = ref(false)
+  // Mirrors the shared connection (services/socket.ts) so the store exposes it as plain state.
+  const wsConnected = ref(socketConnected.value)
+  watch(socketConnected, (connected) => { wsConnected.value = connected })
+  // Removers for this store's socket listeners, filled while the chat page is bound.
+  let unbindHandlers: Array<() => void> = []
 
   const blockedUserIds = ref<Set<number>>(new Set())
   const typingUsers = ref<TypingUser[]>([])
@@ -71,10 +78,10 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  const emitTyping = () => socket?.emit('typing', { roomId: activeRoomId.value, isTyping: true })
-  const emitStopTyping = () => socket?.emit('typing', { roomId: activeRoomId.value, isTyping: false })
-  const emitJoinRoom = (roomId: number) => socket?.emit('joinRoom', { roomId })
-  const emitLeaveRoom = (roomId: number) => socket?.emit('leaveRoom', { roomId })
+  const emitTyping = () => getSocket()?.emit('typing', { roomId: activeRoomId.value, isTyping: true })
+  const emitStopTyping = () => getSocket()?.emit('typing', { roomId: activeRoomId.value, isTyping: false })
+  const emitJoinRoom = (roomId: number) => getSocket()?.emit('joinRoom', { roomId })
+  const emitLeaveRoom = (roomId: number) => getSocket()?.emit('leaveRoom', { roomId })
  
   /**
    * Fetch user's chat rooms
@@ -186,29 +193,20 @@ const sendMessage = async (content: string) => {
 	}
   }
 
-  // Friend activity callback registry
-  const friendActivityCallbacks: Array<() => void> = []
-  const onFriendActivity = (cb: () => void) => {
-    friendActivityCallbacks.push(cb)
-  }
-
+  /**
+   * Bind the chat page's listeners to the app's shared socket and make sure it is open. The
+   * connection itself is owned by services/socket.ts (opened by the app shell); calling this
+   * again while already bound does nothing.
+   */
   const connectSocket = () => {
-    const token = getAccessToken()
-    if (!token || socket?.connected) return
+    connectSharedSocket()
+    if (unbindHandlers.length) return
 
-    socket = io('/', { 
-      auth: { token: `Bearer ${token}` },
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionAttempts: 5
-    })
+    const bind = (event: string, handler: (...args: any[]) => void) => {
+      unbindHandlers.push(onSocketEvent(event, handler))
+    }
 
-    socket.on('connect', () => {
-      wsConnected.value = true
-      if (import.meta.env.DEV) {
-        console.log('Socket.io connected!')
-      }
-
+    bind('connect', () => {
       // Resync after reconnect and rejoin active room for real-time updates.
       fetchRooms().catch(() => {})
       if (activeRoomId.value) {
@@ -216,18 +214,7 @@ const sendMessage = async (content: string) => {
       }
     })
 
-    socket.on('disconnect', () => {
-      wsConnected.value = false
-      if (import.meta.env.DEV) {
-        console.log('Socket.io disconnected.')
-      }
-    })
-
-    socket.on('friendActivity', () => {
-      friendActivityCallbacks.forEach(cb => cb())
-    })
-
-    socket.on('newMessage', (payload: any) => {
+    bind('newMessage', (payload: any) => {
       const targetChatId = payload.roomId ?? payload.chatId
       
       let senderObj = payload.sender
@@ -260,7 +247,7 @@ const sendMessage = async (content: string) => {
       )
     })
 
-    socket.on('userTyping', (payload: any) => {
+    bind('userTyping', (payload: any) => {
       const targetChatId = payload.roomId ?? payload.chatId
       const userId = payload.userId
       const isTyping = payload.isTyping
@@ -294,7 +281,7 @@ const sendMessage = async (content: string) => {
       }
     })
 
-    socket.on('messagesRead', (payload: any) => {
+    bind('messagesRead', (payload: any) => {
       const targetChatId = payload.roomId ?? payload.chatId
       const userId = payload.userId
       
@@ -309,20 +296,21 @@ const sendMessage = async (content: string) => {
     })
   }
 
+  /**
+   * Called when the chat page closes: leave the open room and stop listening. The shared socket
+   * stays up; it belongs to the whole app (notifications, live pages), not to this page.
+   */
   const disconnectSocket = () => {
     if (activeRoomId.value) emitLeaveRoom(activeRoomId.value)
-    if (socket) {
-      socket.disconnect()
-      socket = null
-    }
-    wsConnected.value = false
+    unbindHandlers.forEach((unbind) => unbind())
+    unbindHandlers = []
   }
 
   return {
     rooms, activeRoomId, activeRoom, messages, isLoadingRooms, isLoadingMessages, isSending,
     error, unreadCount, demoMode, wsConnected, blockedUserIds, currentUserId, typingUsers,
     visibleRooms, isActiveRoomBlocked, currentRoomTypingUsers,
-    loadBlockedUsers, blockUserInChat, onFriendActivity,
+    loadBlockedUsers, blockUserInChat,
     emitTyping, emitStopTyping, emitJoinRoom, emitLeaveRoom,
     fetchRooms, selectRoom, sendMessage, createRoom, deleteMessage,
     connectSocket, disconnectSocket,
