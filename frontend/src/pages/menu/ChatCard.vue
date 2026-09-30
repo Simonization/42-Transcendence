@@ -10,7 +10,6 @@ import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import UserProfilePopup from '../../components/chat/UserProfilePopup.vue'
 import { storeToRefs } from 'pinia'
 import { usersApi } from '../../api/users'
-import DemoBanner from '../../components/common/DemoBanner.vue'
 import type { User } from '../../types'
 import HudIcon from '../../components/hud/HudIcon.vue'
 
@@ -210,7 +209,6 @@ onUnmounted(() => {
 
 <template>
   <div class="card card-page chat-layout glass-panel">
-    <DemoBanner v-if="demoMode" />
     <!-- Sidebar: Room list -->
     <aside class="chat-sidebar">
       <div class="sidebar-header">

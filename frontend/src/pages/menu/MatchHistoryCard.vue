@@ -8,7 +8,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMatches } from '../../composables/useMatches'
 import { useAuthStore } from '../../stores/auth'
-import DemoBanner from '../../components/common/DemoBanner.vue'
 import type { GameType, MatchResult } from '../../types'
 import HudIcon from '../../components/hud/HudIcon.vue'
 
@@ -124,10 +123,8 @@ const formatDate = (date: string) => {
       <p class="loading-text">{{ $t('match.loadingHistory') }}</p>
     </div>
 
-    <DemoBanner v-if="demoMode" />
-
     <!-- Error State -->
-    <div v-else-if="error" class="error-state glass-panel">
+    <div v-if="error" class="error-state glass-panel">
       <p class="error-text">{{ friendlyError }}</p>
       <button class="retry-btn" @click="fetchMyHistory()">{{ $t('common.retry') }}</button>
     </div>
