@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { InvitationDirection, InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
-import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
+import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationDestination } from '../../notifications/entities/notification.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
@@ -30,9 +30,7 @@ export class CreateJoinRequestCommand {
         if (team.status !== TeamStatus.DRAFT) {
             throw new BadRequestException('This team is not open to new members');
         }
-        if (team.tournament?.status !== TournamentStatus.REGISTRATION_OPEN) {
-            throw new BadRequestException('Tournament is not open for registration');
-        }
+        assertRegistrationOpen(team.tournament);
         if (team.members.some((m) => m.id === userId)) {
             throw new BadRequestException('You are already a member of this team');
         }

@@ -11,7 +11,7 @@ import { useNotificationsStore } from '../../stores/notifications'
 import { useAuthStore } from '../../stores/auth'
 import { teamsApi, type MyTournamentStatus } from '../../api/teams'
 import type { LookingForTeamEntry } from '../../types/tournament'
-import { TeamStatus, TournamentStatus } from '../../types'
+import { TeamStatus } from '../../types'
 import TournamentRegistrationModal from '../../components/tournaments/TournamentRegistrationModal.vue'
 import BracketVisualization from '../../components/tournaments/BracketVisualization.vue'
 import { useTournaments } from '../../composables/useTournaments'
@@ -21,6 +21,9 @@ import HudIcon from '../../components/hud/HudIcon.vue'
 import { useLiveChannel } from '../../composables/useLiveChannel'
 import { useUserEvents } from '../../composables/useUserEvents'
 import { useCoalescedRefresh } from '../../composables/useCoalescedRefresh'
+import { useNow } from '../../composables/useNow'
+import RegistrationCountdown from '../../components/tournaments/RegistrationCountdown.vue'
+import { isRegistrationOpen, registrationPhase } from '../../utils/registration'
 import { RealtimeEvents } from '../../types/realtime'
 
 type TabType = 'overview' | 'bracket' | 'participants' | 'lft' | 'chat'
@@ -100,9 +103,20 @@ const myTeam = computed(() => myStatus.value?.team ?? null)
 const hasTeam = computed(() => myTeam.value !== null)
 const isRegistered = computed(() => myTeam.value?.status === TeamStatus.LOCKED)
 const availability = computed(() => myStatus.value?.availability ?? null)
+// Ticks every second so the deadline flips the page to "closed" without a refetch.
+const now = useNow()
 const registrationOpen = computed(
-  () => currentTournament.value?.status === TournamentStatus.REGISTRATION_OPEN,
+  () => !!currentTournament.value && isRegistrationOpen(currentTournament.value, now.value),
 )
+/** open / closed / ongoing / completed, from the status and the deadline. */
+const phase = computed(() =>
+  currentTournament.value ? registrationPhase(currentTournament.value, now.value) : 'closed',
+)
+const tournamentStarted = computed(
+  () => phase.value === 'ongoing' || phase.value === 'completed',
+)
+/** The check-in window is configured, so a per-team badge means something. */
+const hasCheckin = computed(() => !!currentTournament.value?.checkin_opens_at)
 /** All registration spots are taken and I am not one of the registered teams. */
 const isFull = computed(() => !!availability.value?.full && !isRegistered.value)
 const iAmFlagged = computed(() => !!myStatus.value?.lookingForTeam)
@@ -149,8 +163,10 @@ useUserEvents({
   [RealtimeEvents.INVITATION_RECEIVED]: refreshMine,
 })
 
-/** The CTA: manage my team if I have one, otherwise register (unless full / closed). */
+/** The CTA: bracket once started, else manage my team if I have one, otherwise register (unless full / closed). */
 const ctaLabel = computed(() => {
+  if (phase.value === 'ongoing') return t('registration.viewBracket')
+  if (phase.value === 'completed') return t('registration.viewResults')
   if (isRegistered.value) return t('tournament.youreRegistered')
   if (hasTeam.value) return t('tournament.teamSetup')
   if (isFull.value) return t('teams.tournamentFull')
@@ -158,10 +174,14 @@ const ctaLabel = computed(() => {
   return t('tournament.registerNow')
 })
 const ctaDisabled = computed(
-  () => !hasTeam.value && (isFull.value || !registrationOpen.value),
+  () => !tournamentStarted.value && !hasTeam.value && (isFull.value || !registrationOpen.value),
 )
 
 const handleRegister = () => {
+  if (tournamentStarted.value) {
+    router.push(`/menu/brackets/${tournamentId.value}`)
+    return
+  }
   if (hasTeam.value) {
     router.push(`/menu/tournaments/${tournamentId.value}/team`)
     return
@@ -269,6 +289,15 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
           <span class="detail-game">{{ tournament.game }}</span>
           <span class="detail-organizer">{{ tournament.organizer.name }}</span>
         </div>
+        <p class="detail-registration" :class="`detail-registration-${phase}`" data-testid="registration-state">
+          <template v-if="phase === 'open'">
+            <span>{{ $t('registration.open') }}</span>
+            <RegistrationCountdown :closes-at="currentTournament?.registration_closes_at" />
+          </template>
+          <template v-else-if="phase === 'ongoing'">{{ $t('registration.ongoing') }}</template>
+          <template v-else-if="phase === 'completed'">{{ $t('registration.completed') }}</template>
+          <template v-else>{{ $t('registration.closed') }}</template>
+        </p>
       </div>
       <button
         class="detail-cta-btn"
@@ -330,6 +359,14 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
               <div class="info-item">
                 <span class="info-label">{{ $t('tournament.maxPlayers') }}</span>
                 <span class="info-value">{{ tournament.maxParticipants }}</span>
+              </div>
+              <div v-if="currentTournament?.registration_closes_at" class="info-item">
+                <span class="info-label">{{ $t('registration.deadline') }}</span>
+                <span class="info-value">{{ new Date(currentTournament.registration_closes_at).toLocaleString() }}</span>
+              </div>
+              <div v-if="currentTournament?.checkin_opens_at" class="info-item">
+                <span class="info-label">{{ $t('checkin.opensAt') }}</span>
+                <span class="info-value">{{ new Date(currentTournament.checkin_opens_at).toLocaleString() }}</span>
               </div>
             </div>
           </div>
@@ -433,6 +470,14 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
                   :class="`status-${team.status.toLowerCase()}`"
                 >
                   {{ team.status }}
+                </span>
+                <span
+                  v-if="hasCheckin && team.status === 'LOCKED'"
+                  class="team-status-badge"
+                  :class="team.checked_in_at ? 'status-checkedin' : 'status-notcheckedin'"
+                  data-testid="checkin-badge"
+                >
+                  {{ team.checked_in_at ? $t('checkin.checkedIn') : $t('checkin.notCheckedIn') }}
                 </span>
               </div>
               <div class="team-members">
@@ -599,6 +644,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
     :team-size="gameInfo.teamSize"
     :game-name="gameInfo.gameName"
     :is-full="isFull"
+    :registration-closes-at="currentTournament.registration_closes_at"
     @close="registrationModalOpen = false"
     @registered="handleRegistered"
   />
@@ -1034,6 +1080,36 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 .status-draft {
   background: var(--color-warning);
   color: white;
+}
+
+.status-checkedin {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.status-notcheckedin {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+.detail-registration {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.detail-registration-open {
+  color: var(--color-success);
+}
+
+.detail-registration-closed {
+  color: var(--color-warning);
 }
 
 .status-archived {

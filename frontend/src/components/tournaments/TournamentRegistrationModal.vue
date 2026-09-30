@@ -14,6 +14,8 @@ import { useTeams } from '../../composables/useTeams'
 import { useNotificationsStore } from '../../stores/notifications'
 import { TeamStatus } from '../../types'
 import HudIcon from '../hud/HudIcon.vue'
+import RegistrationCountdown from './RegistrationCountdown.vue'
+import { useNow } from '../../composables/useNow'
 
 const props = defineProps<{
   tournamentId: number
@@ -26,6 +28,8 @@ const props = defineProps<{
   gameName: string
   /** Every registration spot is taken: registering is blocked. */
   isFull?: boolean
+  /** Registration deadline (ISO), shown as a countdown; past it, registering is blocked. */
+  registrationClosesAt?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -38,6 +42,11 @@ const authStore = useAuthStore()
 const friendsStore = useFriendsStore()
 const notifications = useNotificationsStore()
 const { myTeam, isLoading, error: teamError, createTeam, invitePlayer, lockTeam } = useTeams()
+
+const now = useNow()
+const deadlinePassed = computed(
+  () => !!props.registrationClosesAt && new Date(props.registrationClosesAt).getTime() <= now.value,
+)
 
 const isSolo = computed(() => props.teamSize <= 1)
 
@@ -92,7 +101,7 @@ const toggleFriend = (friendId: number) => {
 
 const canProceedTeam = computed(() => teamName.value.trim().length >= 3)
 const canProceedInvite = computed(() => selectedFriends.value.length > 0)
-const canSubmit = computed(() => acceptRules.value && !props.isFull)
+const canSubmit = computed(() => acceptRules.value && !props.isFull && !deadlinePassed.value)
 
 const handleNext = async () => {
   if (currentStep.value === 'team') {
@@ -221,6 +230,16 @@ const totalSteps = computed(() => isSolo.value ? 1 : 3)
 
           <!-- Content -->
           <div class="modal-content">
+            <!-- Deadline countdown / closed -->
+            <div
+              v-if="registrationClosesAt"
+              class="deadline-banner"
+              :class="{ 'deadline-banner-closed': deadlinePassed }"
+              :role="deadlinePassed ? 'alert' : 'status'"
+            >
+              <RegistrationCountdown :closes-at="registrationClosesAt" />
+            </div>
+
             <!-- Tournament full -->
             <div v-if="isFull" class="full-banner" role="alert">
               <strong>{{ $t('teams.tournamentFull') }}</strong>
@@ -871,5 +890,14 @@ const totalSteps = computed(() => isSolo.value ? 1 : 3)
   .modal-footer { flex-direction: column; gap: var(--space-3); }
   .modal-btn-group { width: 100%; flex-direction: column; }
   .modal-btn { width: 100%; }
+}
+.deadline-banner {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-selected);
+  border: var(--hud-border) solid var(--accent-primary-subtle);
+}
+
+.deadline-banner-closed {
+  border-color: var(--color-warning);
 }
 </style>

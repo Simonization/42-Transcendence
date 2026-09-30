@@ -111,7 +111,7 @@ const getProgressPercentage = (current: number, max: number) => {
         {{ $t('tournament.registered') }} ✓
       </span>
       <button
-        v-else-if="tournament.status === 'open' && props.backendTournamentId"
+        v-else-if="(tournament.registrationOpen ?? tournament.status === 'open') && props.backendTournamentId"
         class="tournament-card-register"
         @click.stop="emit('register')"
       >

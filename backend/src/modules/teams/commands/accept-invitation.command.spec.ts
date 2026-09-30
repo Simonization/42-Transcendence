@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { AcceptInvitationCommand } from './accept-invitation.command';
+import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
 import { TeamMembershipService } from '../services/team-membership.service';
 import { TeamStatus } from '../entities/team.entity';
 import { TeamAdmin } from '../entities/team-admin.entity';
@@ -16,7 +17,7 @@ describe('AcceptInvitationCommand', () => {
         status: TeamStatus.DRAFT,
         captain_id: 1,
         members: [{ id: 1 }],
-        tournament: { id: 9, phases: [{ order: 1, game: { teamSize: 2 } }] },
+        tournament: { id: 9, status: TournamentStatus.REGISTRATION_OPEN, phases: [{ order: 1, game: { teamSize: 2 } }] },
         ...over,
     });
 

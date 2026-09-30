@@ -25,6 +25,10 @@ export class Team {
     })
     status: TeamStatus;
 
+    /** When the team checked in for the tournament. Null: not checked in (reset on unlock). */
+    @Column({ type: 'timestamp', nullable: true })
+    checked_in_at: Date | null;
+
     // The person who can invite/kick/lock
     @ManyToOne(() => User)
     @JoinColumn({ name: 'captain_id' })

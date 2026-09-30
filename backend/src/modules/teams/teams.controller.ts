@@ -7,6 +7,7 @@ import { RenameTeamDto } from './dto/rename-team.dto';
 import { JoinByCodeDto } from './dto/join-code.dto';
 import { CreateJoinRequestDto } from './dto/join-request.dto';
 import { LookingForTeamDto } from './dto/looking-for-team.dto';
+import { ADMIN_ROLE, SUPER_ADMIN_ROLE } from '../users/constants/user-roles';
 
 @Controller('teams')
 export class TeamsController {
@@ -42,6 +43,17 @@ export class TeamsController {
     @UseGuards(JwtAuthGuard)
     async lock(@Param('id', ParseIntPipe) id: number, @Req() req) {
         return await this.teamsService.lock(id, req.user.id);
+    }
+
+    /**
+     * Checks a LOCKED team in while the tournament's check-in window is open. Captain or team
+     * admin; a global admin can check any team in.
+     */
+    @Post(':id/check-in')
+    @UseGuards(JwtAuthGuard)
+    async checkIn(@Param('id', ParseIntPipe) id: number, @Req() req) {
+        const asAdmin = req.user.role === ADMIN_ROLE || req.user.role === SUPER_ADMIN_ROLE;
+        return await this.teamsService.checkIn(id, req.user.id, asAdmin);
     }
 
     /** Grants admin rights to a member. Captain or an existing admin. */

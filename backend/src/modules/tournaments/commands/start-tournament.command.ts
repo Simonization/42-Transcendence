@@ -8,6 +8,7 @@ import { BracketEngine, newEvents } from "../services/bracket-engine.service";
 import { MatchNotifier } from "../services/match-notifier.service";
 import { BracketPublisher } from "../services/bracket-publisher.service";
 import { orderEntrants } from "../services/seeding";
+import { checkinRequired } from "../services/registration-window";
 
 @Injectable()
 export class StartTournamentCommand {
@@ -24,6 +25,7 @@ export class StartTournamentCommand {
     /**
      * Freezes the field and generates phase 1. Only LOCKED teams enter, in the seeding order
      * GET /tournaments/:id/seeding shows; DRAFT teams are archived; byes advance immediately.
+     * When check-in has opened, only checked-in LOCKED teams enter and the others are archived.
      */
     async execute(tournamentId: number) {
         const events = newEvents();
@@ -47,7 +49,8 @@ export class StartTournamentCommand {
             const phase1 = tournament.phases?.find(p => p.order === 1);
             if (!phase1) throw new BadRequestException('Phase 1 is missing.');
 
-            const entrants = orderEntrants(tournament.teams ?? [], tournament.seed_order);
+            const requireCheckin = checkinRequired(tournament);
+            const entrants = orderEntrants(tournament.teams ?? [], tournament.seed_order, requireCheckin);
             if (entrants.length < 2) {
                 throw new BadRequestException(`At least 2 locked teams are needed to start (found ${entrants.length}).`);
             }
@@ -57,10 +60,14 @@ export class StartTournamentCommand {
                 );
             }
 
-            // Teams still recruiting at start are out; archive them rather than leave them in limbo.
-            const draftIds = (tournament.teams ?? []).filter(t => t.status === TeamStatus.DRAFT).map(t => t.id);
-            if (draftIds.length) {
-                await manager.update(Team, { id: In(draftIds) }, { status: TeamStatus.ARCHIVED });
+            // Teams still recruiting (or locked but never checked in) are out; archive them rather
+            // than leave them in limbo.
+            const entered = new Set(entrants.map(t => t.id));
+            const outIds = (tournament.teams ?? [])
+                .filter(t => t.status === TeamStatus.DRAFT || (t.status === TeamStatus.LOCKED && !entered.has(t.id)))
+                .map(t => t.id);
+            if (outIds.length) {
+                await manager.update(Team, { id: In(outIds) }, { status: TeamStatus.ARCHIVED });
             }
 
             tournament.status = TournamentStatus.ONGOING;

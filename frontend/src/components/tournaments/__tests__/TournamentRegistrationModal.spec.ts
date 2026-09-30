@@ -562,4 +562,45 @@ describe('TournamentRegistrationModal', () => {
       expect(document.querySelector('.full-banner')).toBeNull()
     })
   })
+
+  describe('Registration deadline', () => {
+    const acceptRules = async () => {
+      const accept = document.querySelector('.checkbox-accept input') as HTMLInputElement
+      accept.checked = true
+      accept.dispatchEvent(new Event('change'))
+      await flushPromises()
+    }
+
+    it('shows "Registration closes in ..." and keeps submit enabled before the deadline', async () => {
+      const closesAt = new Date(Date.now() + 2 * 86_400_000 + 4 * 3_600_000 + 60_000).toISOString()
+      const wrapper = mount(TournamentRegistrationModal, { props: { ...soloProps, registrationClosesAt: closesAt } })
+      await flushPromises()
+      await acceptRules()
+
+      expect(document.querySelector('.deadline-banner')?.textContent).toContain('Registration closes in 2d 4h')
+      expect((document.querySelector('button.modal-btn-primary') as HTMLButtonElement).disabled).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('shows "Registration closed" and blocks submit after the deadline', async () => {
+      const closesAt = new Date(Date.now() - 1000).toISOString()
+      const wrapper = mount(TournamentRegistrationModal, { props: { ...soloProps, registrationClosesAt: closesAt } })
+      await flushPromises()
+      await acceptRules()
+
+      expect(document.querySelector('.deadline-banner-closed')?.textContent).toContain('Registration closed')
+      const submit = document.querySelector('button.modal-btn-primary') as HTMLButtonElement
+      expect(submit.disabled).toBe(true)
+      submit.click()
+      await flushPromises()
+      expect(mockCreateTeam).not.toHaveBeenCalled()
+      wrapper.unmount()
+    })
+
+    it('shows no banner without a deadline', async () => {
+      mount(TournamentRegistrationModal, { props: soloProps })
+      await flushPromises()
+      expect(document.querySelector('.deadline-banner')).toBeNull()
+    })
+  })
 })

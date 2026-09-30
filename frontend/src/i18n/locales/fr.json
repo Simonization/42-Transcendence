@@ -531,7 +531,23 @@
     "noResults": "Aucun ami ne correspond à \"{query}\"",
     "selected": "Sélectionnés :",
     "cancel": "ANNULER",
-    "register": "S'INSCRIRE"
+    "register": "S'INSCRIRE",
+    "closesIn": "Les inscriptions ferment dans {time}",
+    "closed": "Inscriptions closes",
+    "open": "Inscriptions ouvertes",
+    "ongoing": "Tournoi en cours",
+    "completed": "Tournoi terminé",
+    "deadline": "Date limite d'inscription",
+    "viewBracket": "Voir le tableau",
+    "viewResults": "Voir les résultats",
+    "closesAtLabel": "Fin des inscriptions",
+    "deadlineAfterStart": "La date limite d'inscription ne peut pas être après le début.",
+    "units": {
+      "d": "j",
+      "h": "h",
+      "m": "min",
+      "s": "s"
+    }
   },
   "validation": {
     "required": "Ce champ est requis",
@@ -903,5 +919,19 @@
     "tableCaption": "Tournois avec nom, statut, date, équipes et actions",
     "descriptionPlaceholder": "Description",
     "maxPlaceholder": "Max"
+  },
+  "checkin": {
+    "opensAt": "Ouverture du check-in",
+    "checkedIn": "Présent (check-in fait)",
+    "notCheckedIn": "Check-in non fait",
+    "done": "Votre équipe a fait son check-in",
+    "failed": "Impossible de faire le check-in",
+    "opensAtHint": "Le check-in ouvre le {time}. Votre équipe doit le faire pour jouer.",
+    "openHint": "Le check-in est ouvert. Faites le check-in de votre équipe, sinon elle sera exclue du tableau.",
+    "closed": "Le check-in est fermé.",
+    "button": "Faire le check-in",
+    "opensAtLabel": "Ouverture du check-in",
+    "opensAtFieldHint": "Facultatif. Une fois ouvert, seules les équipes présentes entrent dans le tableau au démarrage.",
+    "opensAfterStart": "Le check-in ne peut pas ouvrir après le début."
   }
 }

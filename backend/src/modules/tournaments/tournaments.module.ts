@@ -21,6 +21,7 @@ import { WithdrawTeamCommand } from './commands/withdraw-team.command';
 import { GetAllTournamentsQuery } from './queries/get-all-tournaments.query';
 import { GetTournamentQuery } from './queries/get-tournament-details.query';
 import { GetSeedingQuery } from './queries/get-seeding.query';
+import { GetCheckinQuery } from './queries/get-checkin.query';
 
 // External Modules
 import { GamesModule } from '../games/games.module';
@@ -61,6 +62,7 @@ import { User } from '../users/entities/user.entity';
         GetAllTournamentsQuery,
         GetTournamentQuery,
         GetSeedingQuery,
+        GetCheckinQuery,
     ],
     exports: [TournamentsService, BracketEngine, MatchNotifier, BracketPublisher],
 })

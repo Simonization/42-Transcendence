@@ -8,6 +8,7 @@ import { WithdrawTeamCommand } from './commands/withdraw-team.command';
 import { GetAllTournamentsQuery } from './queries/get-all-tournaments.query';
 import { GetTournamentQuery } from './queries/get-tournament-details.query';
 import { GetSeedingQuery } from './queries/get-seeding.query';
+import { GetCheckinQuery } from './queries/get-checkin.query';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
 
@@ -23,6 +24,7 @@ export class TournamentsService {
         private readonly getAllQuery: GetAllTournamentsQuery,
         private readonly getOneQuery: GetTournamentQuery,
         private readonly getSeedingQuery: GetSeedingQuery,
+        private readonly getCheckinQuery: GetCheckinQuery,
     ) {}
 
     create(dto: CreateTournamentDto) {
@@ -41,6 +43,10 @@ export class TournamentsService {
 
     getSeeding(id: number) {
         return this.getSeedingQuery.execute(id);
+    }
+
+    getCheckin(id: number) {
+        return this.getCheckinQuery.execute(id);
     }
 
     setSeeding(id: number, teamIds: number[]) {

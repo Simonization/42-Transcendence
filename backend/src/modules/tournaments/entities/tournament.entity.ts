@@ -50,6 +50,14 @@ export class Tournament {
     @Column({ type: 'timestamp', nullable: true })
     scheduledAt: Date | null;
 
+    /** Registration is closed from this time on, whatever the status says. Null: no deadline. */
+    @Column({ type: 'timestamp', nullable: true })
+    registration_closes_at: Date | null;
+
+    /** Check-in opens at this time and runs until start. Null: no check-in for this tournament. */
+    @Column({ type: 'timestamp', nullable: true })
+    checkin_opens_at: Date | null;
+
     /** Set when the last phase's final match finishes. */
     @Column({ type: 'timestamp', nullable: true })
     finished_at: Date | null;

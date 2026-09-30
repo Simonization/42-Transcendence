@@ -4,6 +4,7 @@ import { Tournament, TournamentStatus } from "../entities/tournament.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
 import { UpdateTournamentDto } from "../dto/update-tournament.dto";
+import { assertScheduleOrder } from "../services/registration-window";
 
 @Injectable()
 export class UpdateTournamentCommand {
@@ -32,7 +33,7 @@ export class UpdateTournamentCommand {
             }
 
             // 2. Update main fields
-            const { phases, scheduled_at, ...tournamentData } = dto;
+            const { phases, scheduled_at, registration_closes_at, checkin_opens_at, ...tournamentData } = dto;
             // Only assign fields that are explicitly defined (exclude undefined to avoid overwriting with null)
             const definedFields = Object.fromEntries(
                 Object.entries(tournamentData).filter(([, v]) => v !== undefined)
@@ -42,6 +43,18 @@ export class UpdateTournamentCommand {
             if (scheduled_at !== undefined) {
                 tournament.scheduledAt = scheduled_at ? new Date(scheduled_at) : null;
             }
+            if (registration_closes_at !== undefined) {
+                tournament.registration_closes_at = registration_closes_at ? new Date(registration_closes_at) : null;
+            }
+            if (checkin_opens_at !== undefined) {
+                tournament.checkin_opens_at = checkin_opens_at ? new Date(checkin_opens_at) : null;
+            }
+            // Checked against the merged values: a PATCH may send only one of the three dates.
+            assertScheduleOrder({
+                scheduledAt: tournament.scheduledAt,
+                registrationClosesAt: tournament.registration_closes_at,
+                checkinOpensAt: tournament.checkin_opens_at,
+            });
             await queryRunner.manager.save(tournament);
 
             // 3. Handle Phases

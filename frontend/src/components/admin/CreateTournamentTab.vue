@@ -11,6 +11,8 @@ import { tournamentsApi } from '../../api/tournaments'
 import { useNotificationsStore } from '../../stores/notifications'
 import { PhaseType } from '../../types'
 import type { BackendGame, CreateTournamentDto, CreatePhaseDto } from '../../types'
+import TournamentScheduleFields from './TournamentScheduleFields.vue'
+import { scheduleOrderError, type ScheduleValues } from '../../utils/registration'
 
 const emit = defineEmits<{ 'tournament-created': [] }>()
 
@@ -108,7 +110,8 @@ function needsGroupFields(type: PhaseType) { return type === PhaseType.GROUP_STA
 const name = ref('')
 const description = ref('')
 const maxParticipants = ref(16)
-const scheduledAt = ref('')
+const emptySchedule = (): ScheduleValues => ({ scheduledAt: '', registrationClosesAt: '', checkinOpensAt: '' })
+const schedule = ref<ScheduleValues>(emptySchedule())
 const twoPhases = ref(false)
 const isSubmitting = ref(false)
 // Only show validation errors after first submit attempt
@@ -161,6 +164,7 @@ const phaseErrors = computed<string[]>(() => {
 const canSubmit = computed(() =>
   name.value.trim().length >= 3 &&
   maxParticipants.value >= 2 &&
+  scheduleOrderError(schedule.value) === null &&
   phaseErrors.value.length === 0
 )
 
@@ -193,8 +197,14 @@ const handleSubmit = async () => {
     max_participants: maxParticipants.value,
     phases: dtoPhases,
   }
-  if (scheduledAt.value) {
-    dto.scheduled_at = new Date(scheduledAt.value).toISOString()
+  if (schedule.value.scheduledAt) {
+    dto.scheduled_at = new Date(schedule.value.scheduledAt).toISOString()
+  }
+  if (schedule.value.registrationClosesAt) {
+    dto.registration_closes_at = new Date(schedule.value.registrationClosesAt).toISOString()
+  }
+  if (schedule.value.checkinOpensAt) {
+    dto.checkin_opens_at = new Date(schedule.value.checkinOpensAt).toISOString()
   }
 
   try {
@@ -204,7 +214,7 @@ const handleSubmit = async () => {
     name.value = ''
     description.value = ''
     maxParticipants.value = 16
-    scheduledAt.value = ''
+    schedule.value = emptySchedule()
     twoPhases.value = false
     phases.value = [makePhase(1)]
     hasAttemptedSubmit.value = false
@@ -263,16 +273,9 @@ const handleSubmit = async () => {
           />
         </div>
 
-        <div class="form-group">
-          <label for="t-scheduled" class="form-label">{{ t('admin.scheduledAt') }}</label>
-          <input
-            id="t-scheduled"
-            v-model="scheduledAt"
-            type="datetime-local"
-            class="form-input form-input-datetime"
-          />
-        </div>
       </div>
+
+      <TournamentScheduleFields v-model="schedule" />
 
       <!-- ── Phases ── -->
       <div class="phases-section">

@@ -4,6 +4,7 @@ import { CreateTeamDto } from './dto/create-team.dto';
 import { User } from '../users/entities/user.entity';
 import { KickPlayerCommand } from './commands/kick-player.command';
 import { InvitePlayerCommand } from './commands/invite-player.command';
+import { CheckInTeamCommand } from './commands/check-in-team.command';
 import { LockTeamCommand } from './commands/lock-team.command';
 import { AcceptInvitationCommand } from './commands/accept-invitation.command';
 import { DeclineInvitationCommand } from './commands/decline-invitation.command';
@@ -42,6 +43,7 @@ export class TeamsService {
         private readonly getMyTeamQuery: GetMyTeamForTournamentQuery,
         private readonly renameCmd: RenameTeamCommand,
         private readonly unlockCmd: UnlockTeamCommand,
+        private readonly checkInCmd: CheckInTeamCommand,
         private readonly transferCmd: TransferCaptaincyCommand,
         private readonly cancelInviteCmd: CancelInvitationCommand,
         private readonly joinCodeCmd: JoinCodeCommand,
@@ -109,6 +111,10 @@ export class TeamsService {
 
     async rename(teamId: number, name: string, actorId: number) {
         return await this.renameCmd.execute(teamId, name, actorId);
+    }
+
+    async checkIn(teamId: number, actorId: number, asAdmin: boolean) {
+        return await this.checkInCmd.execute(teamId, actorId, asAdmin);
     }
 
     async unlock(teamId: number, actorId: number) {
