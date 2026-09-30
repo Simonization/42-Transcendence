@@ -107,7 +107,7 @@ sync. The backend also refuses to start without `JWT_SECRET`.
 
 ## 5. Tooling & docs
 
-- [ ] **Frontend TypeScript is never type-checked.** No `tsconfig`, no `vue-tsc`, and
+- [x] **Frontend TypeScript is never type-checked.** No `tsconfig`, no `vue-tsc`, and
       `npm run build` is plain `vite build`. Add `vue-tsc --noEmit` to the build.
 - [x] **Backend has one test, and it fails** (the Nest scaffold `app.controller.spec.ts`
       expects "Hello from Backend!"). Replace it with tests for the bracket generator,
