@@ -13,6 +13,13 @@ all: up
 setup:
 	@if [ ! -f .env ]; then cp .env.example .env; fi
 	@bash setup-pgadmin.sh
+	@if [ ! -f nginx/ssl/transcendence.key ] || [ ! -f nginx/ssl/transcendence.crt ]; then \
+		echo "Generating self-signed localhost dev cert (nginx/ssl/)..."; \
+		mkdir -p nginx/ssl; \
+		openssl req -x509 -nodes -newkey rsa:2048 -days 825 \
+			-keyout nginx/ssl/transcendence.key -out nginx/ssl/transcendence.crt \
+			-subj "/CN=localhost"; \
+	fi
 
 re: down up
 
