@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authApi } from '../../api/auth'
+import { consumePendingRedirect } from '../../utils/postLoginRedirect'
 import { useErrorHandler } from '../../composables/useErrorHandler'
 
 const REDIRECT_DELAY = 800
@@ -41,7 +42,7 @@ const handleSubmit = async () => {
       code: code.value,
     })
     isSuccess.value = true
-    setTimeout(() => router.push('/menu'), REDIRECT_DELAY)
+    setTimeout(() => router.push(consumePendingRedirect('/menu')), REDIRECT_DELAY)
   } catch (error) {
     isError.value = true
     errorMessage.value = error instanceof Error ? error.message : t('twoFactor.tryAgain')

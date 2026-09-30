@@ -120,6 +120,10 @@ const router = createRouter({
       ],
     },
 
+    // Team invite link. Public at the guard level so a logged-out visitor reaches the page, which
+    // remembers the link, sends them to /auth and brings them back afterwards.
+    { path: '/join/:code', name: 'join', component: () => import('../pages/JoinPage.vue') },
+
     // Legal pages (public)
     { path: '/privacy', name: 'privacy', component: () => import('../pages/PrivacyPolicyPage.vue') },
     { path: '/terms', name: 'terms', component: () => import('../pages/TermsOfServicePage.vue') },
@@ -136,7 +140,7 @@ const router = createRouter({
 // Auth guard - validates tokens with server before allowing access
 router.beforeEach(async (to) => {
   const publicPaths = ['/', '/auth', '/auth/verify-email', '/auth/2fa', '/auth/callback', '/privacy', '/terms']
-  const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/')
+  const isPublic = publicPaths.includes(to.path) || to.path.startsWith('/auth/') || to.path.startsWith('/join/')
 
   // Public routes don't need authentication
   if (isPublic) {

@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { setTokens, clearTokens } from '../../api'
+import { consumePendingRedirect } from '../../utils/postLoginRedirect'
 
 const router = useRouter()
 const route = useRoute()
@@ -22,7 +23,7 @@ onMounted(async () => {
     const isValid = await checkAuth()
 
     if (isValid) {
-      router.push('/menu')
+      router.push(consumePendingRedirect('/menu'))
     } else {
       // Validation failed, clear tokens and redirect
       clearTokens()
