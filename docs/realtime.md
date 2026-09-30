@@ -46,7 +46,7 @@ Defined once in `backend/src/modules/realtime/realtime.events.ts` and mirrored i
 | `TEAM_UPDATED` | `team:updated` | `team:<id>` | roster, status or name changed |
 | `TOURNAMENT_UPDATED` | `tournament:updated` | `tournament:<id>` | settings, status or registrations changed |
 | `BRACKET_UPDATED` | `bracket:updated` | `tournament:<id>` | bracket moved: started, match finished, team advanced |
-| `MATCH_UPDATED` | `match:updated` | `match:<id>` | score, confirmation or status of one match |
+| `MATCH_UPDATED` | `match:updated` | `match:<id>`, and `user:<id>` of the players | score, confirmation or status of one match. On the user room it is sent only when a result appears, changes or is undone, so the match history can refresh; `id` is still the match |
 | `INVITATION_RECEIVED` | `invitation:received` | `user:<id>` | a team invitation or join request concerning the user changed (received, answered, withdrawn), or they were removed from a team |
 
 Payload: `{ id, reason }` and nothing else that matters. `id` is the id of the resource the
@@ -166,6 +166,60 @@ notifications module already sends a bell notification for invitations, join req
 answers, so the pages only refetch. `useCoalescedRefresh` collapses bursts of events into at most
 one extra fetch.
 
+## Brackets and matches: who publishes what
+
+Publishing for the match loop goes through one service,
+`backend/src/modules/tournaments/services/bracket-publisher.service.ts` (`BracketPublisher`),
+which each command calls once after its transaction commits (`matchChanged(matchId, reason,
+events?)` or `tournamentChanged(tournamentId, reason, events?, extra?)`). `events` is what the
+bracket engine collected during the command: the matches that became READY and whether the
+tournament completed. The publisher also creates the chat of every match that became READY (see
+"Match chat" below), before it tells the teams.
+
+| Command | `match:<id>` (`MATCH_UPDATED`) | `tournament:<id>` | `team:<id>` (`TEAM_UPDATED`) | `user:<id>` (`MATCH_UPDATED`) |
+|---|---|---|---|---|
+| report | `score_reported` | `BRACKET_UPDATED` `score_reported` | both teams: `score_reported` | |
+| confirm | `match_finished` | `BRACKET_UPDATED` `match_finished` | both teams: `match_finished` | players: `match_finished` |
+| dispute | `match_disputed` | `BRACKET_UPDATED` `match_disputed` | both teams: `match_disputed` | |
+| resolve (admin) | `match_resolved` | `BRACKET_UPDATED` `match_resolved` | both teams: `match_resolved` | players: `match_resolved` |
+| undo (admin) | `match_undone` | `BRACKET_UPDATED` and `TOURNAMENT_UPDATED` `match_undone` | both teams: `match_undone` | players: `match_undone` |
+| edit, `PATCH /matches/:id` (admin) | `match_edited` | `BRACKET_UPDATED` `match_edited` | both teams: `match_edited` | players: `match_edited` |
+| start tournament | each match that is READY | `BRACKET_UPDATED` and `TOURNAMENT_UPDATED` `tournament_started` | teams of the READY matches: `tournament_started` | |
+| seeding change | | `BRACKET_UPDATED` and `TOURNAMENT_UPDATED` `seeding_changed` | | |
+| withdraw team | each settled match | `BRACKET_UPDATED` and `TOURNAMENT_UPDATED` `team_withdrawn` | the withdrawn team and the teams of the affected matches: `team_withdrawn` | players: `team_withdrawn` |
+
+On top of the row, any command whose result made another match READY (a winner advanced, a bye
+resolved, the next phase started) also sends that match `match:updated` and its two teams
+`team:updated`, with the command's reason. A command that completes the tournament also sends
+`TOURNAMENT_UPDATED` with reason `tournament_completed`.
+
+**Frontend.** `TournamentBracketsCard` joins `tournament:<id>` and refetches on `BRACKET_UPDATED`
+and `TOURNAMENT_UPDATED`. `MyTournamentsTab` joins the room of every tournament it lists
+(`useLiveChannels`, the multi-room variant of `useLiveChannel`) and refetches the list quietly.
+`MatchHistoryCard` listens for `MATCH_UPDATED` on the user room (`useUserEvents`). All three
+coalesce bursts and refetch after a reconnect. `TournamentDetailCard` (bracket tab) and
+`TeamSetupCard` already listen on the tournament room for `TOURNAMENT_UPDATED`, which start,
+seeding, withdrawal, completion and undo send; they do not need `BRACKET_UPDATED` unless they
+start to draw the bracket themselves.
+
+## Match chat
+
+When a match becomes READY (both slots filled, also after a bye advances or a winner moves on),
+`MatchChatService.ensureRoom` (chat module) creates one group chat, titled "<Team A> vs <Team B>",
+whose participants are every member of both teams. The link is `matches.chat_room_id`
+(nullable, FK to `chats` with `ON DELETE SET NULL`). Creation is idempotent: it locks the match
+row, reuses the existing room (also after an undo puts the match back to READY) and does nothing
+for WAITING, BYE, FINISHED or CANCELLED matches.
+
+- Members are copied once, at creation. People who join or leave a team later are not synced.
+  `POST /matches/:id/chat` (member of either team) returns `{ chatId }`, creating the room if the
+  match was READY before chats existed and adding the caller if they are a team member but not a
+  participant. The "Match chat" button on the bracket uses it, then opens
+  `/menu/chat?openRoom=<chatId>`.
+- The room is left as it is when the match finishes, so a result or dispute can still be
+  discussed and the history stays readable. Members can leave it like any group chat.
+- Creating the room is best effort: a failure is logged and never fails the command.
+
 ## Adding a new channel or event
 
 1. Add the event name to `realtime.events.ts` and `frontend/src/types/realtime.ts`.
@@ -176,5 +230,5 @@ one extra fetch.
 ## Where the match membership check lives
 
 `RealtimeAccessService.isMatchParticipant` is the one place that knows how a match points at its
-teams (currently the `match_teams` join table). If `Match` moves to explicit `team1_id` /
-`team2_id` columns, change that method only.
+teams (today the explicit `team1_id` / `team2_id` slots, read through the `team1` and `team2`
+relations). If that changes, change that method only.
