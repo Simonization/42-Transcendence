@@ -21,6 +21,7 @@ const { teamsApi, tournamentsApi, usersApi, push } = vi.hoisted(() => ({
     cancelInvitation: vi.fn(),
     lock: vi.fn(),
     unlock: vi.fn(),
+    checkIn: vi.fn(),
     promote: vi.fn(),
     demote: vi.fn(),
     kickPlayer: vi.fn(),
@@ -277,6 +278,95 @@ describe('TeamSetupCard', () => {
 
       expect(wrapper.text()).toContain('TOURNAMENT FULL')
       expect(buttonByText(wrapper, 'LOCK TEAM')!.attributes('disabled')).toBeDefined()
+    })
+  })
+
+  describe('registration deadline and check-in', () => {
+    const PAST = () => new Date(Date.now() - 3_600_000).toISOString()
+    const FUTURE = () => new Date(Date.now() + 3_600_000).toISOString()
+    const locked = (over: Record<string, unknown> = {}) =>
+      teamFixture({ status: 'LOCKED', members: [{ id: 1, username: 'cap' }, { id: 2, username: 'bob' }, { id: 3, username: 'eve' }], ...over })
+    const withTournament = (extra: Record<string, unknown>) => ({ ...TOURNAMENT, ...extra })
+
+    it('shows the check-in button to a captain of a locked team while the window is open', async () => {
+      setup({ team: locked(), tournament: withTournament({ checkin_opens_at: PAST() }) })
+      teamsApi.checkIn.mockResolvedValue({})
+      const wrapper = await mountCard()
+
+      const btn = wrapper.find('[data-testid="checkin-btn"]')
+      expect(btn.exists()).toBe(true)
+
+      await btn.trigger('click')
+      expect(teamsApi.checkIn).toHaveBeenCalledWith(5)
+    })
+
+    it('shows the button to a team admin, but not to a plain member', async () => {
+      setup({ me: 2, team: locked({ admins: [{ id: 1, userId: 2, teamId: 5, grantedBy: 1, grantedAt: '' }] }), tournament: withTournament({ checkin_opens_at: PAST() }) })
+      expect((await mountCard()).find('[data-testid="checkin-btn"]').exists()).toBe(true)
+
+      document.body.innerHTML = ''
+      setup({ me: 3, team: locked(), tournament: withTournament({ checkin_opens_at: PAST() }) })
+      const member = await mountCard()
+      expect(member.find('[data-testid="checkin-btn"]').exists()).toBe(false)
+      expect(member.find('[data-testid="checkin-row"]').exists()).toBe(true)
+    })
+
+    it('hides the button before the window opens and says when it opens', async () => {
+      setup({ team: locked(), tournament: withTournament({ checkin_opens_at: FUTURE() }) })
+      const wrapper = await mountCard()
+
+      expect(wrapper.find('[data-testid="checkin-btn"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="checkin-upcoming"]').exists()).toBe(true)
+    })
+
+    it('hides the button after the tournament started', async () => {
+      setup({ team: locked(), tournament: withTournament({ status: 'ONGOING', checkin_opens_at: PAST() }) })
+      const wrapper = await mountCard()
+      expect(wrapper.find('[data-testid="checkin-btn"]').exists()).toBe(false)
+    })
+
+    it('shows the checked-in status instead of the button once checked in', async () => {
+      setup({ team: locked({ checked_in_at: PAST() }), tournament: withTournament({ checkin_opens_at: PAST() }) })
+      const wrapper = await mountCard()
+
+      expect(wrapper.find('[data-testid="checked-in-badge"]').text()).toContain('Checked in')
+      expect(wrapper.find('[data-testid="checkin-btn"]').exists()).toBe(false)
+    })
+
+    it('shows nothing for a draft team or a tournament without check-in', async () => {
+      setup({ team: teamFixture(), tournament: withTournament({ checkin_opens_at: PAST() }) })
+      expect((await mountCard()).find('[data-testid="checkin-row"]').exists()).toBe(false)
+
+      document.body.innerHTML = ''
+      setup({ team: locked() })
+      expect((await mountCard()).find('[data-testid="checkin-row"]').exists()).toBe(false)
+    })
+
+    it('toasts the backend message when check-in is refused', async () => {
+      setup({ team: locked(), tournament: withTournament({ checkin_opens_at: PAST() }) })
+      teamsApi.checkIn.mockRejectedValue({ message: 'Check-in is closed' })
+      const wrapper = await mountCard()
+
+      await wrapper.find('[data-testid="checkin-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(useNotificationsStore().notifications.some((n) => n.message === 'Check-in is closed')).toBe(true)
+    })
+
+    it('shows the deadline countdown while registration is open, and blocks locking after it passes', async () => {
+      const closes = new Date(Date.now() + 2 * 86_400_000 + 4 * 3_600_000 + 60_000).toISOString()
+      setup({ tournament: withTournament({ registration_closes_at: closes }) })
+      const wrapper = await mountCard()
+      expect(wrapper.find('[data-testid="registration-countdown"]').text()).toBe('Registration closes in 2d 4h')
+
+      document.body.innerHTML = ''
+      setup({
+        team: teamFixture({ members: [{ id: 1, username: 'a' }, { id: 2, username: 'b' }, { id: 3, username: 'c' }] }),
+        tournament: withTournament({ registration_closes_at: PAST() }),
+      })
+      const closed = await mountCard()
+      const lock = closed.findAll('button').find((b) => b.classes().includes('ts-btn-lock'))
+      expect(lock!.attributes('disabled')).toBeDefined()
     })
   })
 

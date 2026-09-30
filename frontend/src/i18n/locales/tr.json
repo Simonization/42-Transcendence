@@ -527,7 +527,23 @@
     "noResults": "\"{query}\" ile eşleşen arkadaş yok",
     "selected": "Seçilenler:",
     "cancel": "İPTAL",
-    "register": "KAYIT OL"
+    "register": "KAYIT OL",
+    "closesIn": "Kayıtların kapanmasına {time} var",
+    "closed": "Kayıtlar kapandı",
+    "open": "Kayıtlar açık",
+    "ongoing": "Turnuva devam ediyor",
+    "completed": "Turnuva sona erdi",
+    "deadline": "Kayıt son tarihi",
+    "viewBracket": "Eşleşme ağacını gör",
+    "viewResults": "Sonuçları gör",
+    "closesAtLabel": "Kayıtların kapanışı",
+    "deadlineAfterStart": "Kayıt son tarihi başlangıçtan sonra olamaz.",
+    "units": {
+      "d": "g",
+      "h": "sa",
+      "m": "dk",
+      "s": "sn"
+    }
   },
   "validation": {
     "required": "Bu alan zorunludur",
@@ -899,5 +915,19 @@
     "tableCaption": "Ad, durum, tarih, takımlar ve işlemlerle turnuvalar",
     "descriptionPlaceholder": "Açıklama",
     "maxPlaceholder": "Maks"
+  },
+  "checkin": {
+    "opensAt": "Check-in açılışı",
+    "checkedIn": "Check-in yapıldı",
+    "notCheckedIn": "Check-in yapılmadı",
+    "done": "Takımınızın check-in işlemi yapıldı",
+    "failed": "Check-in yapılamadı",
+    "opensAtHint": "Check-in {time} tarihinde açılır. Oynamak için takımınız check-in yapmalı.",
+    "openHint": "Check-in açık. Takımınızın check-in işlemini yapın, yoksa eşleşme ağacının dışında kalır.",
+    "closed": "Check-in kapandı.",
+    "button": "Check-in yap",
+    "opensAtLabel": "Check-in açılışı",
+    "opensAtFieldHint": "İsteğe bağlı. Açıldıktan sonra turnuva başlarken yalnızca check-in yapan takımlar katılır.",
+    "opensAfterStart": "Check-in başlangıçtan sonra açılamaz."
   }
 }

@@ -89,6 +89,16 @@ export const teamsApi = {
   },
 
   /**
+   * Check a LOCKED team in while the tournament's check-in window is open
+   * (captain or team admin; a global admin can check any team in)
+   */
+  checkIn(teamId: number): Promise<BackendTeam> {
+    return api<BackendTeam>(`/teams/${teamId}/check-in`, {
+      method: 'POST',
+    })
+  },
+
+  /**
    * Get current user's pending team invitations
    */
   getMyInvitations(): Promise<TeamInvitation[]> {

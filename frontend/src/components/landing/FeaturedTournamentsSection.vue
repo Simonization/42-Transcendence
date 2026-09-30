@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { getAccessToken } from '../../api'
 import HudIcon from '../hud/HudIcon.vue'
 import { TournamentStatus } from '../../types'
+import { isRegistrationOpen } from '../../utils/registration'
 import type { BackendTournament } from '../../types'
 
 const props = defineProps<{
@@ -150,7 +151,7 @@ function getGameName(bt: BackendTournament): string {
               {{ $t('landing.viewDetails') }}
             </button>
             <button
-              v-if="bt.status === TournamentStatus.REGISTRATION_OPEN"
+              v-if="isRegistrationOpen(bt)"
               class="featured-register"
               :aria-label="`Register for ${bt.name}`"
               @click="handleRegister(bt)"

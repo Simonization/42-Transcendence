@@ -527,7 +527,23 @@
     "noResults": "No friends match \"{query}\"",
     "selected": "Selected:",
     "cancel": "CANCEL",
-    "register": "REGISTER"
+    "register": "REGISTER",
+    "closesIn": "Registration closes in {time}",
+    "closed": "Registration closed",
+    "open": "Registration open",
+    "ongoing": "Tournament in progress",
+    "completed": "Tournament finished",
+    "deadline": "Registration deadline",
+    "viewBracket": "View bracket",
+    "viewResults": "View results",
+    "closesAtLabel": "Registration closes",
+    "deadlineAfterStart": "The registration deadline cannot be after the start.",
+    "units": {
+      "d": "d",
+      "h": "h",
+      "m": "m",
+      "s": "s"
+    }
   },
   "validation": {
     "required": "This field is required",
@@ -899,5 +915,19 @@
     "tableCaption": "Tournaments with name, status, schedule, teams and actions",
     "descriptionPlaceholder": "Description",
     "maxPlaceholder": "Max"
+  },
+  "checkin": {
+    "opensAt": "Check-in opens",
+    "checkedIn": "Checked in",
+    "notCheckedIn": "Not checked in",
+    "done": "Your team is checked in",
+    "failed": "Could not check in",
+    "opensAtHint": "Check-in opens {time}. Your team must check in to play.",
+    "openHint": "Check-in is open. Check your team in or it will be left out of the bracket.",
+    "closed": "Check-in is closed.",
+    "button": "Check in",
+    "opensAtLabel": "Check-in opens",
+    "opensAtFieldHint": "Optional. Once open, only checked-in teams enter the bracket when you start.",
+    "opensAfterStart": "Check-in cannot open after the start."
   }
 }

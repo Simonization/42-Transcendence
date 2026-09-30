@@ -119,6 +119,8 @@ export interface BackendTeam {
   /** Promoted members only; the captain is an admin via captain_id and is never listed here. */
   admins?: BackendTeamAdmin[]
   tournament?: BackendTournament
+  /** When the team checked in; null or absent when it has not (or the tournament has no check-in). */
+  checked_in_at?: string | null
 }
 
 /** Returned by the promote/demote endpoints. */
@@ -149,7 +151,29 @@ export interface TournamentAvailability {
   lockedTeams: number
   spotsLeft: number | null
   full: boolean
+  /** Status is REGISTRATION_OPEN and the deadline, if any, has not passed (server clock). */
   registrationOpen: boolean
+  /** Deadline after which registration is refused; null when there is none. */
+  registrationClosesAt?: string | null
+  /** When check-in opens; null when the tournament has no check-in. */
+  checkinOpensAt?: string | null
+  /** off: no check-in; upcoming / open: around the window; closed: the tournament started. */
+  checkinState?: CheckinState
+}
+
+export type CheckinState = 'off' | 'upcoming' | 'open' | 'closed'
+
+/** GET /tournaments/:id/checkin */
+export interface CheckinView {
+  tournamentId: number
+  state: CheckinState
+  opensAt: string | null
+  /** True when starting now drops LOCKED teams that have not checked in. */
+  required: boolean
+  checkedIn: { id: number; name: string; checkedInAt: string | null }[]
+  notCheckedIn: { id: number; name: string; checkedInAt: string | null }[]
+  /** What starting now would archive: DRAFT teams, plus absent locked teams once check-in is required. */
+  willBeArchived: { id: number; name: string; status: string; reason: 'not_locked' | 'not_checked_in' }[]
 }
 
 /** One entry of the looking-for-team board. */
@@ -171,6 +195,10 @@ export interface BackendTournament {
   phases: BackendPhase[]
   teams: BackendTeam[]
   scheduledAt?: string | null
+  /** Registration is closed from this time on, whatever the status says. */
+  registration_closes_at?: string | null
+  /** Check-in opens at this time and runs until start; null: the tournament has no check-in. */
+  checkin_opens_at?: string | null
   createdAt: string
   updatedAt?: string
   finished_at?: string | null
@@ -187,14 +215,15 @@ export interface SeedingView {
   tournamentId: number
   started: boolean
   phaseType: PhaseType | null
-  /** Teams that enter (LOCKED only), seed 1 first. */
-  teams: { id: number; name: string; status: string; seed: number; memberCount: number }[]
+  /** Teams that enter (LOCKED, and checked in once check-in is required), seed 1 first. */
+  teams: { id: number; name: string; status: string; seed: number; memberCount: number; checkedInAt?: string | null }[]
   /** Knockout first round as team ids, null for a bye. */
   pairs: [number | null, number | null][]
   /** Group phases: team ids per group. */
   groups: number[][]
-  /** Registered teams that will not enter (not LOCKED). */
-  excluded: { id: number; name: string; status: string }[]
+  /** Registered teams that will not enter (not LOCKED, or LOCKED but not checked in). */
+  excluded: { id: number; name: string; status: string; reason?: 'not_locked' | 'not_checked_in' }[]
+  checkin?: { state: CheckinState; opensAt: string | null; required: boolean }
 }
 
 export interface StandingRow {
@@ -241,6 +270,10 @@ export interface CreateTournamentDto {
   description?: string
   max_participants?: number
   scheduled_at?: string
+  /** Must not be after scheduled_at. */
+  registration_closes_at?: string
+  /** Must not be after scheduled_at. */
+  checkin_opens_at?: string
   phases: CreatePhaseDto[]
 }
 
@@ -249,6 +282,8 @@ export interface UpdateTournamentDto {
   description?: string
   max_participants?: number
   scheduled_at?: string | null
+  registration_closes_at?: string | null
+  checkin_opens_at?: string | null
   status?: TournamentStatus
 }
 
@@ -363,4 +398,6 @@ export interface Tournament {
     name: string
   }
   featured?: boolean
+  /** Status is REGISTRATION_OPEN and the deadline has not passed (computed when mapped). */
+  registrationOpen?: boolean
 }

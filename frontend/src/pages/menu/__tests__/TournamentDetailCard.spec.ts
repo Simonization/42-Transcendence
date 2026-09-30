@@ -71,8 +71,9 @@ function setup(opts: {
   lft?: unknown[]
   requests?: unknown[]
   lookingForTeam?: unknown
+  extra?: Record<string, unknown>
 } = {}) {
-  tournamentRef.current = tournament(opts.status, opts.teams)
+  tournamentRef.current = { ...tournament(opts.status, opts.teams), ...opts.extra }
   useAuthStore().$patch({ user: { id: opts.me ?? 1, username: 'me' } as never })
   teamsApi.getMyTeam.mockResolvedValue({
     team: opts.team ?? null,
@@ -126,8 +127,8 @@ describe('TournamentDetailCard', () => {
       expect(wrapper.find('.spots-left').text()).toContain('2 spot(s) left')
     })
 
-    it('disables registration once registration is closed', async () => {
-      setup({ status: 'ONGOING', availability: { ...OPEN, registrationOpen: false } })
+    it('disables registration once the deadline has passed, although the status is still open', async () => {
+      setup({ extra: { registration_closes_at: new Date(Date.now() - 60_000).toISOString() } })
       const wrapper = await mountCard()
       expect(cta(wrapper).text()).toContain('Registration closed')
       expect(cta(wrapper).attributes('disabled')).toBeDefined()
@@ -146,6 +147,103 @@ describe('TournamentDetailCard', () => {
       setup({ availability: FULL, team: { id: 5, status: 'LOCKED', captain_id: 1, members: [{ id: 1 }], admins: [] } })
       const wrapper = await mountCard()
       expect(cta(wrapper).text()).toContain("YOU'RE REGISTERED")
+    })
+  })
+
+  describe('state per tournament status', () => {
+    const state = (w: VueWrapper) => w.find('[data-testid="registration-state"]')
+
+    it('open with a deadline: shows the countdown and the register button', async () => {
+      setup({ extra: { registration_closes_at: new Date(Date.now() + 2 * 86_400_000 + 4 * 3_600_000 + 60_000).toISOString() } })
+      const wrapper = await mountCard()
+
+      expect(state(wrapper).text()).toContain('Registration open')
+      expect(wrapper.find('[data-testid="registration-countdown"]').text()).toBe('Registration closes in 2d 4h')
+      expect(cta(wrapper).text()).toContain('REGISTER NOW')
+    })
+
+    it('open without a deadline: no countdown', async () => {
+      setup()
+      const wrapper = await mountCard()
+      expect(wrapper.find('[data-testid="registration-countdown"]').exists()).toBe(false)
+    })
+
+    it('ONGOING never offers REGISTER NOW: it links to the bracket', async () => {
+      setup({ status: 'ONGOING' })
+      const wrapper = await mountCard()
+
+      expect(state(wrapper).text()).toContain('Tournament in progress')
+      expect(cta(wrapper).text()).not.toContain('REGISTER NOW')
+      expect(cta(wrapper).text()).toContain('View bracket')
+      expect(cta(wrapper).attributes('disabled')).toBeUndefined()
+
+      await cta(wrapper).trigger('click')
+      expect(push).toHaveBeenCalledWith('/menu/brackets/1')
+      expect(wrapper.find('.mock-modal').attributes('data-open')).not.toBe('true')
+    })
+
+    it('COMPLETED shows finished and links to the results', async () => {
+      setup({ status: 'COMPLETED' })
+      const wrapper = await mountCard()
+
+      expect(state(wrapper).text()).toContain('Tournament finished')
+      expect(cta(wrapper).text()).toContain('View results')
+      expect(cta(wrapper).text()).not.toContain('REGISTER NOW')
+    })
+
+    it('ONGOING is not bypassed by a registered team or a stale "registration open" flag', async () => {
+      setup({
+        status: 'ONGOING',
+        availability: OPEN,
+        team: { id: 5, status: 'LOCKED', captain_id: 1, members: [{ id: 1 }], admins: [] },
+      })
+      const wrapper = await mountCard()
+      expect(cta(wrapper).text()).toContain('View bracket')
+    })
+
+    it('a deadline that passed shows the closed state and no countdown text of "closes in"', async () => {
+      setup({ extra: { registration_closes_at: new Date(Date.now() - 1000).toISOString() } })
+      const wrapper = await mountCard()
+      expect(state(wrapper).text()).toContain('Registration closed')
+      expect(wrapper.find('.detail-registration-closed').exists()).toBe(true)
+    })
+
+    it('a not-yet-started open tournament flips to closed as the deadline passes', async () => {
+      vi.useFakeTimers()
+      try {
+        setup({ extra: { registration_closes_at: new Date(Date.now() + 5000).toISOString() } })
+        const wrapper = await mountCard()
+        expect(cta(wrapper).text()).toContain('REGISTER NOW')
+
+        await vi.advanceTimersByTimeAsync(6000)
+
+        expect(cta(wrapper).text()).toContain('Registration closed')
+        expect(cta(wrapper).attributes('disabled')).toBeDefined()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
+  describe('check-in badge on the participants tab', () => {
+    const teams = [
+      { id: 10, name: 'Present', status: 'LOCKED', captain_id: 2, members: [{ id: 2, username: 'x' }], checked_in_at: '2027-01-01T10:00:00Z' },
+      { id: 11, name: 'Absent', status: 'LOCKED', captain_id: 3, members: [{ id: 3, username: 'y' }] },
+      { id: 12, name: 'Drafty', status: 'DRAFT', captain_id: 4, members: [{ id: 4, username: 'z' }] },
+    ]
+
+    it('marks locked teams as checked in or not when the tournament has a check-in', async () => {
+      setup({ teams, extra: { checkin_opens_at: '2027-01-01T09:00:00Z' } })
+      const wrapper = await mountCard()
+
+      const badges = wrapper.findAll('[data-testid="checkin-badge"]').map(b => b.text())
+      expect(badges).toEqual(['Checked in', 'Not checked in'])
+    })
+
+    it('shows no badge when the tournament has no check-in', async () => {
+      setup({ teams })
+      const wrapper = await mountCard()
+      expect(wrapper.find('[data-testid="checkin-badge"]').exists()).toBe(false)
     })
   })
 

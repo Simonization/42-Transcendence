@@ -10,7 +10,7 @@ import type {
   UpdateTournamentDto,
   RegisterTournamentDto,
 } from '../types'
-import type { PhaseStandings, SeedingView } from '../types/tournament'
+import type { CheckinView, PhaseStandings, SeedingView } from '../types/tournament'
 
 export const tournamentsApi = {
   /**
@@ -71,6 +71,11 @@ export const tournamentsApi = {
    */
   getSeeding(id: number): Promise<SeedingView> {
     return api<SeedingView>(`/tournaments/${id}/seeding`)
+  },
+
+  /** Check-in state, who checked in, and who starting now would archive. */
+  getCheckin(id: number): Promise<CheckinView> {
+    return api<CheckinView>(`/tournaments/${id}/checkin`)
   },
 
   /** Set the seed order before start (admin only). */

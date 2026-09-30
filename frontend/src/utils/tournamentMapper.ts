@@ -6,6 +6,7 @@
 import type { BackendTournament } from '../types'
 import { TournamentStatus, PhaseType } from '../types'
 import type { Tournament } from '../types'
+import { isRegistrationOpen } from './registration'
 
 const statusMap: Record<TournamentStatus, Tournament['status']> = {
   [TournamentStatus.DRAFT]: 'open',
@@ -34,6 +35,7 @@ export function toDisplayTournament(bt: BackendTournament): Tournament {
     date: bt.createdAt?.split('T')[0] ?? '',
     endDate: bt.finished_at?.split('T')[0] ?? '',
     status: statusMap[bt.status] ?? 'open',
+    registrationOpen: isRegistrationOpen(bt),
     maxParticipants: bt.max_participants,
     currentParticipants: bt.teams?.length ?? 0,
     format,

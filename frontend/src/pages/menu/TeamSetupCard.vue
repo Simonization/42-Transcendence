@@ -22,6 +22,9 @@ import { useCoalescedRefresh } from '../../composables/useCoalescedRefresh'
 import { RealtimeEvents } from '../../types/realtime'
 import HudIcon from '../../components/hud/HudIcon.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
+import RegistrationCountdown from '../../components/tournaments/RegistrationCountdown.vue'
+import { useNow } from '../../composables/useNow'
+import { checkinStateOf, isRegistrationOpen } from '../../utils/registration'
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -98,8 +101,19 @@ const isLocked = computed(() =>
   myTeam.value?.status === TeamStatus.LOCKED
 )
 
+// Ticks every second so the deadline and the check-in window open/close under the user's eyes.
+const now = useNow()
+
 const registrationOpen = computed(
-  () => tournament.value?.status === TournamentStatus.REGISTRATION_OPEN,
+  () => !!tournament.value && isRegistrationOpen(tournament.value, now.value),
+)
+
+const checkinState = computed(() =>
+  tournament.value ? checkinStateOf(tournament.value, now.value) : 'off',
+)
+const isCheckedIn = computed(() => !!myTeam.value?.checked_in_at)
+const canCheckIn = computed(
+  () => canManage.value && isLocked.value && checkinState.value === 'open' && !isCheckedIn.value,
 )
 
 const tournamentStarted = computed(
@@ -462,6 +476,22 @@ async function unlockTeam() {
   }
 }
 
+// ─── Check-in ─────────────────────────────────────────────────────────────────
+
+async function checkInTeam() {
+  if (!myTeam.value || !canCheckIn.value) return
+  isSubmitting.value = true
+  try {
+    await teamsApi.checkIn(myTeam.value.id)
+    await load(true)
+    notifications.success(t('checkin.done'))
+  } catch (err) {
+    notifications.error(errorText(err, 'checkin.failed'))
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 // ─── Roster management (captain or admin) ─────────────────────────────────────
 
 async function setAdmin(userId: number, makeAdmin: boolean) {
@@ -604,6 +634,15 @@ async function leaveTeam() {
     <div v-if="isLoading" class="ts-loading">{{ t('common.loadingDots') }}</div>
 
     <template v-else>
+
+      <!-- Registration deadline -->
+      <div
+        v-if="tournament?.registration_closes_at && tournament.status === 'REGISTRATION_OPEN'"
+        class="ts-banner"
+        role="status"
+      >
+        <RegistrationCountdown :closes-at="tournament.registration_closes_at" />
+      </div>
 
       <!-- Tournament full / registration state -->
       <div v-if="tournamentFull" class="ts-banner ts-banner-warning" role="status">
@@ -957,6 +996,29 @@ async function leaveTeam() {
           <div class="ts-locked-badge">
             ✓ {{ t('tournament.registrationComplete') }}
           </div>
+        </div>
+
+        <!-- Check-in (locked teams, when the tournament has a check-in window) -->
+        <div v-if="isLocked && checkinState !== 'off'" class="ts-checkin-row" data-testid="checkin-row">
+          <div v-if="isCheckedIn" class="ts-locked-badge" data-testid="checked-in-badge">
+            ✓ {{ t('checkin.checkedIn') }}
+          </div>
+          <template v-else>
+            <p v-if="checkinState === 'upcoming'" class="ts-lock-hint" data-testid="checkin-upcoming">
+              {{ t('checkin.opensAtHint', { time: new Date(tournament!.checkin_opens_at!).toLocaleString() }) }}
+            </p>
+            <p v-else-if="checkinState === 'open'" class="ts-lock-hint">{{ t('checkin.openHint') }}</p>
+            <p v-else class="ts-lock-hint">{{ t('checkin.closed') }}</p>
+            <button
+              v-if="canCheckIn"
+              class="ts-btn ts-btn-lock"
+              data-testid="checkin-btn"
+              :disabled="isSubmitting"
+              @click="checkInTeam"
+            >
+              {{ isSubmitting ? '...' : t('checkin.button') }}
+            </button>
+          </template>
         </div>
 
         <!-- Danger zone: delete (captain) or leave (member) -->
@@ -1393,6 +1455,13 @@ async function leaveTeam() {
 }
 
 /* Lock row */
+.ts-checkin-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
 .ts-lock-row {
   display: flex;
   flex-direction: column;
