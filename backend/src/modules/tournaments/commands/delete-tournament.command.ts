@@ -4,12 +4,14 @@ import { DataSource, Repository } from "typeorm";
 import { Tournament } from "../entities/tournament.entity";
 import { Team } from "../../teams/entities/team.entity";
 import { TeamInvitation } from "../../teams/entities/team-invitation.entity";
+import { BracketPublisher } from "../services/bracket-publisher.service";
 
 @Injectable()
 export class DeleteTournamentCommand {
     constructor(
         @InjectRepository(Tournament) private repo: Repository<Tournament>,
         private dataSource: DataSource,
+        private publisher: BracketPublisher,
     ) {}
 
     async execute(id: number) {
@@ -41,6 +43,7 @@ export class DeleteTournamentCommand {
             await queryRunner.manager.delete(Tournament, { id });
 
             await queryRunner.commitTransaction();
+            this.publisher.settingsChanged(id, 'tournament_deleted');
 
         } catch (err) {
             await queryRunner.rollbackTransaction();

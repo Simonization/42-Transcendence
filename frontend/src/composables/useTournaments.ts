@@ -6,6 +6,7 @@
 import { ref } from 'vue'
 import { tournamentsApi } from '../api/tournaments'
 import { getErrorMessage } from '../utils/error'
+import { ApiError } from '../types'
 import type { BackendTournament } from '../types'
 
 export function useTournaments() {
@@ -13,6 +14,8 @@ export function useTournaments() {
   const currentTournament = ref<BackendTournament | null>(null)
   const isLoading = ref(false)
   const error = ref('')
+  /** The last single-tournament fetch answered 404: it was deleted, or never existed. */
+  const notFound = ref(false)
   const demoMode = ref(false)
 
   const fetchTournaments = async () => {
@@ -32,9 +35,11 @@ export function useTournaments() {
   const fetchTournament = async (id: number) => {
     isLoading.value = true
     error.value = ''
+    notFound.value = false
     try {
       currentTournament.value = await tournamentsApi.getById(id)
     } catch (e) {
+      notFound.value = e instanceof ApiError && e.status === 404
       error.value = getErrorMessage(e, 'Failed to load tournament')
       currentTournament.value = null
     } finally {
@@ -60,6 +65,7 @@ export function useTournaments() {
     currentTournament,
     isLoading,
     error,
+    notFound,
     demoMode,
     fetchTournaments,
     fetchTournament,

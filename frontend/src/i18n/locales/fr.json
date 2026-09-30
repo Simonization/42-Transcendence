@@ -918,7 +918,13 @@
     "notEntering": "Non verrouillées, donc absentes : {teams}. Elles passent après les autres si elles se verrouillent avant le lancement.",
     "tableCaption": "Tournois avec nom, statut, date, équipes et actions",
     "descriptionPlaceholder": "Description",
-    "maxPlaceholder": "Max"
+    "maxPlaceholder": "Max",
+    "startArchivesNotLocked": "Non inscrites (équipe non verrouillée), archivées : {teams}.",
+    "startArchivesNotCheckedIn": "Check-in non effectué, archivées : {teams}.",
+    "startArchivesNone": "Aucune équipe ne sera archivée.",
+    "datesBelow": "Dates ci-dessous",
+    "closesAt": "Clôture des inscriptions le {time}",
+    "checkinAt": "Ouverture du check-in le {time}"
   },
   "checkin": {
     "opensAt": "Ouverture du check-in",

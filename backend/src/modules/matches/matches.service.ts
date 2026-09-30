@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Match } from './entities/match.entity';
 import { Repository } from 'typeorm';
 import { MatchChatService } from '../chat/services/match-chat.service';
+import { publicMatch } from '../users/public-views';
 
 @Injectable()
 export class MatchesService {
@@ -63,18 +64,19 @@ export class MatchesService {
     }
 
     async findOne(id: number) {
-        return await this.getMatchDetailsQuery.execute(id);
+        return publicMatch(await this.getMatchDetailsQuery.execute(id));
     }
 
     async getHistory(userId: number) {
-        return await this.getPlayerHistoryQuery.execute(userId);
+        return (await this.getPlayerHistoryQuery.execute(userId)).map(publicMatch);
     }
 
-    async findByPhase(phaseId: number): Promise<Match[]> {
-        return await this.repo.find({
+    async findByPhase(phaseId: number) {
+        const matches = await this.repo.find({
             where: { phase_id: phaseId },
             relations: ['team1', 'team2', 'userMatches', 'userMatches.user'],
             order: { round_order: 'ASC', id: 'ASC' }
         });
+        return matches.map(publicMatch);
     }
 }

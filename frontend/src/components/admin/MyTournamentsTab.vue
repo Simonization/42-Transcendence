@@ -12,7 +12,9 @@ import { useNotificationsStore } from '../../stores/notifications'
 import { getErrorMessage } from '../../utils/error'
 import ConfirmDialog from '../common/ConfirmDialog.vue'
 import type { BackendTournament } from '../../types'
-import type { SeedingView } from '../../types/tournament'
+import type { CheckinView, SeedingView } from '../../types/tournament'
+import TournamentScheduleFields from './TournamentScheduleFields.vue'
+import { fromDatetimeLocal, scheduleOrderError, toDatetimeLocal, type ScheduleValues } from '../../utils/registration'
 import { TournamentStatus } from '../../types'
 import { useLiveChannels } from '../../composables/useLiveChannels'
 import { useCoalescedRefresh } from '../../composables/useCoalescedRefresh'
@@ -29,7 +31,11 @@ const editingId = ref<number | null>(null)
 const editName = ref('')
 const editDescription = ref('')
 const editMaxParticipants = ref<number | undefined>(undefined)
-const editScheduledAt = ref('')
+const editSchedule = ref<ScheduleValues>({ scheduledAt: '', registrationClosesAt: '', checkinOpensAt: '' })
+/** The backend's refusal of the last save (for example a deadline after the start), shown in the row. */
+const editError = ref('')
+const isSaving = ref(false)
+const editScheduleInvalid = computed(() => scheduleOrderError(editSchedule.value) !== null)
 
 // Confirm delete
 const confirmDeleteId = ref<number | null>(null)
@@ -65,18 +71,17 @@ useLiveChannels('tournament', () => tournaments.value.map(tr => tr.id), {
   [RealtimeEvents.BRACKET_UPDATED]: refreshLive,
 }, { onResync: refreshLive })
 
-function toDatetimeLocal(iso?: string | null): string {
-  if (!iso) return ''
-  // slice to 'YYYY-MM-DDTHH:mm' for datetime-local input
-  return new Date(iso).toISOString().slice(0, 16)
-}
-
 function startEdit(t: BackendTournament) {
   editingId.value = t.id
   editName.value = t.name
   editDescription.value = t.description ?? ''
   editMaxParticipants.value = t.max_participants ?? undefined
-  editScheduledAt.value = toDatetimeLocal(t.scheduledAt)
+  editSchedule.value = {
+    scheduledAt: toDatetimeLocal(t.scheduledAt),
+    registrationClosesAt: toDatetimeLocal(t.registration_closes_at),
+    checkinOpensAt: toDatetimeLocal(t.checkin_opens_at),
+  }
+  editError.value = ''
 }
 
 function cancelEdit() {
@@ -84,41 +89,58 @@ function cancelEdit() {
 }
 
 async function saveEdit(id: number) {
+  if (isSaving.value || editScheduleInvalid.value) return
+  isSaving.value = true
+  editError.value = ''
   try {
     await tournamentsApi.update(id, {
       name: editName.value.trim(),
       description: editDescription.value.trim() || undefined,
       max_participants: editMaxParticipants.value,
-      scheduled_at: editScheduledAt.value
-        ? new Date(editScheduledAt.value).toISOString()
-        : null,
+      // null clears a date; the backend validates the order of the three
+      scheduled_at: fromDatetimeLocal(editSchedule.value.scheduledAt),
+      registration_closes_at: fromDatetimeLocal(editSchedule.value.registrationClosesAt),
+      checkin_opens_at: fromDatetimeLocal(editSchedule.value.checkinOpensAt),
     })
     notifications.success(t('admin.tournamentUpdated'))
     editingId.value = null
     await fetchTournaments()
   } catch (err) {
-    notifications.error(getErrorMessage(err, t('adminTournaments.updateFailed')))
+    editError.value = getErrorMessage(err, t('adminTournaments.updateFailed'))
+    notifications.error(editError.value)
+  } finally {
+    isSaving.value = false
   }
 }
 
 // --- Start, behind a confirmation that names the teams it drops ---
 
-const startCandidate = ref<{ tournament: BackendTournament; seeding: SeedingView } | null>(null)
+const startCandidate = ref<{ tournament: BackendTournament; seeding: SeedingView; checkin: CheckinView } | null>(null)
 const isStarting = ref(false)
 
 const startMessage = computed(() => {
   const c = startCandidate.value
   if (!c) return ''
   const entering = t('adminTournaments.startMessage', { count: c.seeding.teams.length })
-  const dropped = c.seeding.excluded.map(team => team.name).join(', ')
-  return `${entering} ${
-    dropped ? t('adminTournaments.startDropsDrafts', { teams: dropped }) : t('adminTournaments.startNoDrafts')
-  }`
+  // The server decides who is archived (not locked, or locked but absent from a required check-in).
+  const names = (reason: 'not_locked' | 'not_checked_in') =>
+    c.checkin.willBeArchived.filter(team => team.reason === reason).map(team => team.name).join(', ')
+  const notLocked = names('not_locked')
+  const notCheckedIn = names('not_checked_in')
+  const lines = [entering]
+  if (notLocked) lines.push(t('adminTournaments.startArchivesNotLocked', { teams: notLocked }))
+  if (notCheckedIn) lines.push(t('adminTournaments.startArchivesNotCheckedIn', { teams: notCheckedIn }))
+  if (!notLocked && !notCheckedIn) lines.push(t('adminTournaments.startArchivesNone'))
+  return lines.join('\n')
 })
 
 async function askStart(tournament: BackendTournament) {
   try {
-    startCandidate.value = { tournament, seeding: await tournamentsApi.getSeeding(tournament.id) }
+    const [seeding, checkin] = await Promise.all([
+      tournamentsApi.getSeeding(tournament.id),
+      tournamentsApi.getCheckin(tournament.id),
+    ])
+    startCandidate.value = { tournament, seeding, checkin }
   } catch (err) {
     notifications.error(getErrorMessage(err, t('adminTournaments.startFailed')))
   }
@@ -243,14 +265,14 @@ onMounted(() => fetchTournaments())
                 {{ statusLabel(tournament.status) }}
               </span>
             </td>
-            <td>
-              <input v-model="editScheduledAt" type="datetime-local" class="inline-input inline-input-datetime" />
+            <td class="scheduled-cell">
+              <span class="scheduled-hint">{{ t('adminTournaments.datesBelow') }}</span>
             </td>
             <td>
               <input v-model.number="editMaxParticipants" type="number" class="inline-input inline-input-small" min="2" max="256" :placeholder="t('adminTournaments.maxPlaceholder')" />
             </td>
             <td class="actions-cell">
-              <button class="action-link action-save" @click="saveEdit(tournament.id)">{{ t('common.save') }}</button>
+              <button class="action-link action-save" :disabled="isSaving || editScheduleInvalid" @click="saveEdit(tournament.id)">{{ t('common.save') }}</button>
               <button class="action-link" @click="cancelEdit">{{ t('common.cancel') }}</button>
             </td>
           </template>
@@ -270,6 +292,12 @@ onMounted(() => fetchTournaments())
                 {{ new Date(tournament.scheduledAt).toLocaleString() }}
               </span>
               <span v-else class="scheduled-none">—</span>
+              <span v-if="tournament.registration_closes_at" class="scheduled-sub">
+                {{ t('adminTournaments.closesAt', { time: new Date(tournament.registration_closes_at).toLocaleString() }) }}
+              </span>
+              <span v-if="tournament.checkin_opens_at" class="scheduled-sub">
+                {{ t('adminTournaments.checkinAt', { time: new Date(tournament.checkin_opens_at).toLocaleString() }) }}
+              </span>
             </td>
             <td>
               {{ tournament.teams?.length ?? 0 }}{{ tournament.max_participants ? ` / ${tournament.max_participants}` : '' }}
@@ -302,6 +330,13 @@ onMounted(() => fetchTournaments())
               </template>
             </td>
           </template>
+        </tr>
+        <!-- Dates of the tournament being edited: start, registration deadline, check-in -->
+        <tr v-if="editingId === tournament.id" class="edit-dates-row">
+          <td colspan="5">
+            <TournamentScheduleFields v-model="editSchedule" id-prefix="edit-tournament" />
+            <p v-if="editError" class="edit-error" role="alert">{{ editError }}</p>
+          </td>
         </tr>
         <!-- Seeding editor, under its tournament -->
         <tr v-if="seedingFor === tournament.id" class="seeding-row">
@@ -364,6 +399,19 @@ onMounted(() => fetchTournaments())
 </template>
 
 <style scoped>
+.scheduled-sub,
+.scheduled-hint {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.edit-error {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-error, var(--color-warning));
+}
+
 .action-start {
   color: var(--color-success);
   font-weight: var(--font-bold);

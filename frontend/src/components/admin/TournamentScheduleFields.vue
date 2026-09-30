@@ -1,14 +1,15 @@
 <script setup lang="ts">
 /**
  * The three dates of a tournament: start, registration deadline, check-in opening.
- * Used by the create form; the edit dialog can reuse it (same v-model, PATCH accepts the same
- * snake_case fields). Shows the ordering error the backend would also return.
+ * Used by the create form and the edit row (same v-model, PATCH accepts the same snake_case
+ * fields). Shows the ordering error the backend would also return. Both forms can be in the DOM
+ * at once, so the edit row passes its own `idPrefix` to keep the label targets unique.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { scheduleOrderError, type ScheduleValues } from '../../utils/registration'
 
-const props = defineProps<{ modelValue: ScheduleValues }>()
+const props = withDefaults(defineProps<{ modelValue: ScheduleValues; idPrefix?: string }>(), { idPrefix: 't' })
 const emit = defineEmits<{ 'update:modelValue': [value: ScheduleValues] }>()
 
 const { t } = useI18n()
@@ -23,9 +24,9 @@ const orderError = computed(() => scheduleOrderError(props.modelValue))
 <template>
   <div class="schedule-fields">
     <div class="form-group">
-      <label for="t-scheduled" class="form-label">{{ t('admin.scheduledAt') }}</label>
+      <label :for="`${idPrefix}-scheduled`" class="form-label">{{ t('admin.scheduledAt') }}</label>
       <input
-        id="t-scheduled"
+        :id="`${idPrefix}-scheduled`"
         :value="modelValue.scheduledAt"
         type="datetime-local"
         class="form-input form-input-datetime"
@@ -34,9 +35,9 @@ const orderError = computed(() => scheduleOrderError(props.modelValue))
     </div>
 
     <div class="form-group">
-      <label for="t-closes" class="form-label">{{ t('registration.closesAtLabel') }}</label>
+      <label :for="`${idPrefix}-closes`" class="form-label">{{ t('registration.closesAtLabel') }}</label>
       <input
-        id="t-closes"
+        :id="`${idPrefix}-closes`"
         :value="modelValue.registrationClosesAt"
         type="datetime-local"
         class="form-input form-input-datetime"
@@ -50,9 +51,9 @@ const orderError = computed(() => scheduleOrderError(props.modelValue))
     </div>
 
     <div class="form-group">
-      <label for="t-checkin" class="form-label">{{ t('checkin.opensAtLabel') }}</label>
+      <label :for="`${idPrefix}-checkin`" class="form-label">{{ t('checkin.opensAtLabel') }}</label>
       <input
-        id="t-checkin"
+        :id="`${idPrefix}-checkin`"
         :value="modelValue.checkinOpensAt"
         type="datetime-local"
         class="form-input form-input-datetime"

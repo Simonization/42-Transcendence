@@ -27,6 +27,7 @@ import { GetJoinRequestsQuery } from './queries/get-join-requests.query';
 import { GetLookingForTeamQuery } from './queries/get-looking-for-team.query';
 import { GetTournamentAvailabilityQuery } from './queries/get-tournament-availability.query';
 import { GetTeamProfileQuery } from './queries/get-team-profile.query';
+import { publicInvitation, publicLookingForTeam, publicTeam } from '../users/public-views';
 
 @Injectable()
 export class TeamsService {
@@ -64,19 +65,19 @@ export class TeamsService {
     }
 
     async create(dto: CreateTeamDto, user: User) {
-        return await this.createCmd.execute(dto, user);
+        return publicTeam(await this.createCmd.execute(dto, user));
     }
 
     async invite(teamId: number, targetId: number, actorId: number) {
-        return await this.inviteCmd.execute(teamId, targetId, actorId);
+        return publicInvitation(await this.inviteCmd.execute(teamId, targetId, actorId));
     }
 
     async kick(teamId: number, targetId: number, actorId: number) {
-        return await this.kickCmd.execute(teamId, targetId, actorId);
+        return publicTeam(await this.kickCmd.execute(teamId, targetId, actorId));
     }
 
     async lock(teamId: number, actorId: number) {
-        return await this.lockCmd.execute(teamId, actorId);
+        return publicTeam(await this.lockCmd.execute(teamId, actorId));
     }
 
     async promote(teamId: number, targetId: number, actorId: number) {
@@ -88,7 +89,7 @@ export class TeamsService {
     }
 
     async getMyInvitations(userId: number) {
-        return await this.getInvitesQuery.execute(userId);
+        return (await this.getInvitesQuery.execute(userId)).map(publicInvitation);
     }
 
     async acceptInvitation(inviteId: number, userId: number) {
@@ -96,7 +97,7 @@ export class TeamsService {
     }
 
     async declineInvitation(inviteId: number, userId: number) {
-        return await this.declineCmd.execute(inviteId, userId);
+        return publicInvitation(await this.declineCmd.execute(inviteId, userId));
     }
 
     async deleteTeam(teamId: number, userId: number) {
@@ -108,31 +109,38 @@ export class TeamsService {
     }
 
     async getMyTeamForTournament(tournamentId: number, userId: number) {
-        return await this.getMyTeamQuery.execute(tournamentId, userId);
+        const status = await this.getMyTeamQuery.execute(tournamentId, userId);
+        return {
+            ...status,
+            team: status.team && publicTeam(status.team),
+            invitation: status.invitation && publicInvitation(status.invitation),
+            requests: status.requests.map(publicInvitation),
+            lookingForTeam: status.lookingForTeam && publicLookingForTeam(status.lookingForTeam),
+        };
     }
 
     async getTeamPendingInvitations(teamId: number, requesterId: number) {
-        return await this.getMyTeamQuery.getPendingInvitations(teamId, requesterId);
+        return (await this.getMyTeamQuery.getPendingInvitations(teamId, requesterId)).map(publicInvitation);
     }
 
     async rename(teamId: number, name: string, actorId: number) {
-        return await this.renameCmd.execute(teamId, name, actorId);
+        return publicTeam(await this.renameCmd.execute(teamId, name, actorId));
     }
 
     async checkIn(teamId: number, actorId: number, asAdmin: boolean) {
-        return await this.checkInCmd.execute(teamId, actorId, asAdmin);
+        return publicTeam(await this.checkInCmd.execute(teamId, actorId, asAdmin));
     }
 
     async unlock(teamId: number, actorId: number) {
-        return await this.unlockCmd.execute(teamId, actorId);
+        return publicTeam(await this.unlockCmd.execute(teamId, actorId));
     }
 
     async transferCaptaincy(teamId: number, targetId: number, actorId: number) {
-        return await this.transferCmd.execute(teamId, targetId, actorId);
+        return publicTeam(await this.transferCmd.execute(teamId, targetId, actorId));
     }
 
     async cancelInvitation(invitationId: number, actorId: number) {
-        return await this.cancelInviteCmd.execute(invitationId, actorId);
+        return publicInvitation(await this.cancelInviteCmd.execute(invitationId, actorId));
     }
 
     async getJoinCode(teamId: number, requesterId: number) {
@@ -148,11 +156,11 @@ export class TeamsService {
     }
 
     async requestToJoin(teamId: number, userId: number, note?: string) {
-        return await this.createRequestCmd.execute(teamId, userId, note);
+        return publicInvitation(await this.createRequestCmd.execute(teamId, userId, note));
     }
 
     async getJoinRequests(teamId: number, requesterId: number) {
-        return await this.joinRequestsQuery.execute(teamId, requesterId);
+        return (await this.joinRequestsQuery.execute(teamId, requesterId)).map(publicInvitation);
     }
 
     async acceptJoinRequest(requestId: number, actorId: number) {
@@ -160,11 +168,11 @@ export class TeamsService {
     }
 
     async declineJoinRequest(requestId: number, actorId: number) {
-        return await this.declineRequestCmd.execute(requestId, actorId);
+        return publicInvitation(await this.declineRequestCmd.execute(requestId, actorId));
     }
 
     async flagLookingForTeam(tournamentId: number, userId: number, note?: string) {
-        return await this.lftCmd.flag(tournamentId, userId, note);
+        return publicLookingForTeam(await this.lftCmd.flag(tournamentId, userId, note));
     }
 
     async unflagLookingForTeam(tournamentId: number, userId: number) {
@@ -172,7 +180,7 @@ export class TeamsService {
     }
 
     async listLookingForTeam(tournamentId: number) {
-        return await this.lftQuery.execute(tournamentId);
+        return (await this.lftQuery.execute(tournamentId)).map(publicLookingForTeam);
     }
 
     async getTournamentAvailability(tournamentId: number) {

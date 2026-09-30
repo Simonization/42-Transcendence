@@ -75,6 +75,15 @@ export class BracketPublisher {
         }
     }
 
+    /**
+     * The tournament's own fields changed (edit, deletion) without the bracket moving: only
+     * `tournament:updated` goes out, so pages showing deadlines or the tournament itself refetch.
+     * Synchronous and never throws, like the realtime service it wraps.
+     */
+    settingsChanged(tournamentId: number, reason: 'tournament_edited' | 'tournament_deleted'): void {
+        this.realtime.toTournament(tournamentId, RealtimeEvents.TOURNAMENT_UPDATED, { id: tournamentId, reason });
+    }
+
     private async announce(a: Announcement): Promise<void> {
         const { tournamentId, reason } = a;
         const ready = a.events?.readyMatchIds ?? [];

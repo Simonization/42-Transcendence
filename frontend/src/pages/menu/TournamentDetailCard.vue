@@ -38,7 +38,7 @@ const { success: showSuccess, error: showError } = notificationsStore
 const activeTab = ref<TabType>('overview')
 const registrationModalOpen = ref(false)
 
-const { currentTournament, isLoading, error, fetchTournament } = useTournaments()
+const { currentTournament, isLoading, error, notFound, fetchTournament } = useTournaments()
 
 const tournamentId = computed(() => Number(route.params.id))
 
@@ -633,7 +633,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
 
   <div v-else class="tournament-not-found glass-panel">
     <HudIcon name="warning" :size="28" class="not-found-icon" />
-    <h2 class="not-found-title">{{ error || $t('tournament.notFound') }}</h2>
+    <h2 class="not-found-title">{{ notFound ? $t('tournament.notFound') : error || $t('tournament.notFound') }}</h2>
   </div>
 
   <!-- Registration Modal -->

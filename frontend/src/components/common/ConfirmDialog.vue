@@ -131,6 +131,7 @@ onUnmounted(() => {
   color: var(--text-secondary);
   margin: 0 0 var(--space-6) 0;
   line-height: var(--leading-relaxed);
+  white-space: pre-line;
 }
 
 .dialog-actions {

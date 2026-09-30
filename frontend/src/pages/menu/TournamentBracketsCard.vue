@@ -28,7 +28,7 @@ import { RealtimeEvents } from '../../types/realtime'
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const { tournaments, currentTournament, isLoading, fetchTournament, fetchTournaments } = useTournaments()
+const { tournaments, currentTournament, isLoading, notFound, fetchTournament, fetchTournaments } = useTournaments()
 const { isAdmin } = useRbac()
 
 const tournamentId = computed(() => Number(route.params.id) || null)
@@ -144,6 +144,14 @@ function open(id: number) {
         @changed="refresh"
         @open-chat="openMatchChat"
       />
+      <!-- Deleted while someone was looking at it: the live refetch answers 404 -->
+      <div v-else-if="notFound" class="bracket-guidance">
+        <HudIcon name="warning" :size="28" class="guidance-icon" />
+        <h3 class="guidance-title">{{ $t('tournament.notFound') }}</h3>
+        <button class="guidance-btn" @click="router.push({ name: 'tournament-brackets' })">
+          {{ t('bracket.allTournaments') }}
+        </button>
+      </div>
       <div v-else class="bracket-guidance">
         <HudIcon name="brackets" :size="28" class="guidance-icon" />
         <h3 class="guidance-title">{{ $t('tournament.noBracketData') }}</h3>

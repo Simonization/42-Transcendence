@@ -113,6 +113,8 @@ describe('tournament DTO validation', () => {
     });
 });
 
+const publisherStub = () => ({ settingsChanged: jest.fn() }) as any;
+
 describe('commands enforce the ordering', () => {
     it('create refuses a deadline after the start before touching the database', async () => {
         const dataSource: any = { createQueryRunner: jest.fn() };
@@ -132,7 +134,7 @@ describe('commands enforce the ordering', () => {
             release: jest.fn(),
             manager: { findOne: jest.fn().mockResolvedValue(tournament), save: jest.fn() },
         };
-        const command = new UpdateTournamentCommand({} as any, {} as any, { createQueryRunner: () => runner } as any);
+        const command = new UpdateTournamentCommand({} as any, {} as any, { createQueryRunner: () => runner } as any, publisherStub());
 
         await expect(command.execute(3, { registration_closes_at: '2027-02-05T00:00:00Z' } as any))
             .rejects.toBeInstanceOf(BadRequestException);
@@ -148,7 +150,7 @@ describe('commands enforce the ordering', () => {
             manager: { findOne: jest.fn().mockResolvedValue(tournament), save: jest.fn() },
         };
         const repo: any = { findOne: jest.fn().mockResolvedValue(tournament) };
-        const command = new UpdateTournamentCommand(repo, {} as any, { createQueryRunner: () => runner } as any);
+        const command = new UpdateTournamentCommand(repo, {} as any, { createQueryRunner: () => runner } as any, publisherStub());
 
         await command.execute(3, { checkin_opens_at: '2027-02-01T10:00:00Z', registration_closes_at: null } as any);
 

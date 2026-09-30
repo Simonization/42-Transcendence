@@ -187,6 +187,12 @@ tournament completed. The publisher also creates the chat of every match that be
 | start tournament | each match that is READY | `BRACKET_UPDATED` and `TOURNAMENT_UPDATED` `tournament_started` | teams of the READY matches: `tournament_started` | |
 | seeding change | | `BRACKET_UPDATED` and `TOURNAMENT_UPDATED` `seeding_changed` | | |
 | withdraw team | each settled match | `BRACKET_UPDATED` and `TOURNAMENT_UPDATED` `team_withdrawn` | the withdrawn team and the teams of the affected matches: `team_withdrawn` | players: `team_withdrawn` |
+| edit, `PATCH /tournaments/:id` (admin) | | `TOURNAMENT_UPDATED` `tournament_edited` | | |
+| delete, `DELETE /tournaments/:id` (admin) | | `TOURNAMENT_UPDATED` `tournament_deleted` | | |
+
+Edit and delete go through `BracketPublisher.settingsChanged` (no bracket event). After a
+`tournament_deleted` the refetch answers 404, which the tournament and bracket pages show as "not
+found". Creating a tournament publishes nothing: nobody can be subscribed to its room yet.
 
 On top of the row, any command whose result made another match READY (a winner advanced, a bye
 resolved, the next phase started) also sends that match `match:updated` and its two teams
