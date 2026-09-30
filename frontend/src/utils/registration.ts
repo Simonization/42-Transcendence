@@ -39,6 +39,20 @@ export function checkinStateOf(
   return now >= new Date(t.checkin_opens_at).getTime() ? 'open' : 'upcoming'
 }
 
+/** ISO timestamp to a datetime-local value in the viewer's time zone ('' when unset). */
+export function toDatetimeLocal(iso?: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** datetime-local value to an ISO timestamp, or null when empty (PATCH treats null as "clear"). */
+export function fromDatetimeLocal(value: string): string | null {
+  return value ? new Date(value).toISOString() : null
+}
+
 export interface ScheduleValues {
   /** datetime-local strings ('' when unset) */
   scheduledAt: string
