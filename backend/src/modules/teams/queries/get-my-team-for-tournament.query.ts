@@ -2,11 +2,22 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from '../entities/team.entity';
-import { InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
+import { InvitationDirection, InvitationStatus, TeamInvitation } from '../entities/team-invitation.entity';
+import { Tournament } from '../../tournaments/entities/tournament.entity';
+import { LookingForTeam } from '../entities/looking-for-team.entity';
+import { GetTournamentAvailabilityQuery, TournamentAvailability } from './get-tournament-availability.query';
 
 export interface MyTournamentStatus {
     team: Team | null;
     invitation: TeamInvitation | null;
+    /** Pending join requests the user sent to teams of this tournament. */
+    requests: TeamInvitation[];
+    /** Roster spots left on my team (game team size minus members), null without a team. */
+    teamSpotsLeft: number | null;
+    /** Registration capacity of the tournament ("full" state for the UI). */
+    availability: TournamentAvailability | null;
+    /** The user's looking-for-team flag for this tournament, if any. */
+    lookingForTeam: LookingForTeam | null;
 }
 
 @Injectable()
@@ -14,6 +25,9 @@ export class GetMyTeamForTournamentQuery {
     constructor(
         @InjectRepository(Team) private teamRepo: Repository<Team>,
         @InjectRepository(TeamInvitation) private inviteRepo: Repository<TeamInvitation>,
+        @InjectRepository(Tournament) private tournamentRepo: Repository<Tournament>,
+        @InjectRepository(LookingForTeam) private lftRepo: Repository<LookingForTeam>,
+        private readonly availabilityQuery: GetTournamentAvailabilityQuery,
     ) {}
 
     async execute(tournamentId: number, userId: number): Promise<MyTournamentStatus> {
@@ -38,11 +52,37 @@ export class GetMyTeamForTournamentQuery {
             .leftJoinAndSelect('inv.sender', 'sender')
             .where('inv.receiver_id = :userId', { userId })
             .andWhere('inv.status = :status', { status: InvitationStatus.PENDING })
+            .andWhere('inv.direction = :direction', { direction: InvitationDirection.INVITE })
             // Exclude invitation to the team the user is already in
             .andWhere(team ? 'inv.team_id != :currentTeamId' : '1=1', { currentTeamId: team?.id })
             .getOne();
 
-        return { team, invitation };
+        const requests = await this.inviteRepo
+            .createQueryBuilder('req')
+            .innerJoin('req.team', 'reqTeamFilter')
+            .innerJoin('reqTeamFilter.tournament', 'tournament', 'tournament.id = :tournamentId', { tournamentId })
+            .leftJoinAndSelect('req.team', 'reqTeam')
+            .where('req.sender_id = :userId', { userId })
+            .andWhere('req.status = :status', { status: InvitationStatus.PENDING })
+            .andWhere('req.direction = :direction', { direction: InvitationDirection.REQUEST })
+            .getMany();
+
+        const tournament = await this.tournamentRepo.findOne({
+            where: { id: tournamentId },
+            relations: ['phases', 'phases.game'],
+        });
+        const availability = tournament ? await this.availabilityQuery.compute(tournament) : null;
+
+        let teamSpotsLeft: number | null = null;
+        if (team && tournament) {
+            const phase1 = tournament.phases?.find((p) => p.order === 1);
+            const size = phase1?.game?.teamSize ?? 1;
+            teamSpotsLeft = Math.max(0, size - (team.members?.length ?? 0));
+        }
+
+        const lookingForTeam = await this.lftRepo.findOneBy({ userId, tournamentId });
+
+        return { team, invitation, requests, teamSpotsLeft, availability, lookingForTeam };
     }
 
     /** Restricted to team members: the roster reveals who has been invited. */
@@ -56,7 +96,11 @@ export class GetMyTeamForTournamentQuery {
         }
 
         return this.inviteRepo.find({
-            where: { team_id: teamId, status: InvitationStatus.PENDING },
+            where: {
+                team_id: teamId,
+                status: InvitationStatus.PENDING,
+                direction: InvitationDirection.INVITE,
+            },
             relations: ['receiver'],
         });
     }
