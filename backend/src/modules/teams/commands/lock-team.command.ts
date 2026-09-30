@@ -1,7 +1,8 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
+import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
 
 @Injectable()
@@ -24,6 +25,10 @@ export class LockTeamCommand {
       throw new BadRequestException('Team is already locked');
     }
 
+    if (team.tournament?.status !== TournamentStatus.REGISTRATION_OPEN) {
+      throw new BadRequestException('Tournament is not open for registration');
+    }
+
     // Look at Phase 1's game to see required team size
     const phase1 = team.tournament?.phases?.find(p => p.order === 1);
     if (!phase1) {
@@ -33,6 +38,15 @@ export class LockTeamCommand {
 
     if (team.members.length !== requiredSize) {
       throw new BadRequestException(`Team must have exactly ${requiredSize} players to lock.`);
+    }
+
+    if (team.tournament.max_participants != null) {
+      const lockedCount = await this.teamRepo.count({
+        where: { tournament: { id: team.tournament.id }, status: TeamStatus.LOCKED },
+      });
+      if (lockedCount >= team.tournament.max_participants) {
+        throw new ConflictException('This tournament is full');
+      }
     }
 
     team.status = TeamStatus.LOCKED;
