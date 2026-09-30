@@ -18,7 +18,17 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:bot": "ts-node -r tsconfig-paths/register src/modules/notifications/scripts/seed-bot-user.ts"
+    "seed:bot": "ts-node -r tsconfig-paths/register src/modules/notifications/scripts/seed-bot-user.ts",
+    "typeorm": "node -r tsconfig-paths/register ./node_modules/typeorm/cli-ts-node-commonjs.js",
+    "migration:generate": "npm run typeorm -- migration:generate --pretty -d src/database/data-source.ts",
+    "migration:create": "npm run typeorm -- migration:create",
+    "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
+    "migration:show": "npm run typeorm -- migration:show -d src/database/data-source.ts",
+    "migration:run:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
+    "migration:revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/data-source.js",
+    "migration:show:prod": "node ./node_modules/typeorm/cli.js migration:show -d dist/database/data-source.js",
+    "migration:verify": "ts-node -r tsconfig-paths/register scripts/verify-migrations.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -60,6 +70,7 @@
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-jwt": "^3.0.8",
     "@types/supertest": "^6.0.2",
+    "embedded-postgres": "^15.18.0-beta.17",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
