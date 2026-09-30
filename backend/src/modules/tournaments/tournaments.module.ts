@@ -20,6 +20,9 @@ import { WithdrawTeamCommand } from './commands/withdraw-team.command';
 import { GetAllTournamentsQuery } from './queries/get-all-tournaments.query';
 import { GetTournamentQuery } from './queries/get-tournament-details.query';
 import { GetSeedingQuery } from './queries/get-seeding.query';
+import { GetPublicTournamentQuery } from './public/get-public-tournament.query';
+import { OgImageService } from './public/og-image.service';
+import { PublicTournamentsController, ShareController } from './public/public-tournaments.controller';
 
 // External Modules
 import { GamesModule } from '../games/games.module';
@@ -38,7 +41,7 @@ import { User } from '../users/entities/user.entity';
         forwardRef(() => MatchesModule),
         NotificationsModule,
     ],
-    controllers: [TournamentsController],
+    controllers: [TournamentsController, PublicTournamentsController, ShareController],
     providers: [
         TournamentsService,
         BracketGeneratorService,
@@ -57,6 +60,8 @@ import { User } from '../users/entities/user.entity';
         GetAllTournamentsQuery,
         GetTournamentQuery,
         GetSeedingQuery,
+        GetPublicTournamentQuery,
+        OgImageService,
     ],
     exports: [TournamentsService, BracketEngine, MatchNotifier],
 })
