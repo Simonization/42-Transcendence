@@ -24,6 +24,8 @@ const props = defineProps<{
   teamSize: number
   /** Game name for display */
   gameName: string
+  /** Every registration spot is taken: registering is blocked. */
+  isFull?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -90,7 +92,7 @@ const toggleFriend = (friendId: number) => {
 
 const canProceedTeam = computed(() => teamName.value.trim().length >= 3)
 const canProceedInvite = computed(() => selectedFriends.value.length > 0)
-const canSubmit = computed(() => acceptRules.value)
+const canSubmit = computed(() => acceptRules.value && !props.isFull)
 
 const handleNext = async () => {
   if (currentStep.value === 'team') {
@@ -219,6 +221,12 @@ const totalSteps = computed(() => isSolo.value ? 1 : 3)
 
           <!-- Content -->
           <div class="modal-content">
+            <!-- Tournament full -->
+            <div v-if="isFull" class="full-banner" role="alert">
+              <strong>{{ $t('teams.tournamentFull') }}</strong>
+              <span>{{ $t('teams.tournamentFullHint') }}</span>
+            </div>
+
             <!-- Solo info banner -->
             <div v-if="isSolo" class="solo-banner">
               <HudIcon name="user" :size="18" class="solo-icon" />
@@ -500,6 +508,24 @@ const totalSteps = computed(() => isSolo.value ? 1 : 3)
   width: 30px;
   height: 1px;
   background: var(--border-subtle);
+}
+
+/* Full banner */
+.full-banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-warning);
+  background: rgba(234, 179, 8, 0.08);
+  border: var(--hud-border) solid var(--color-warning);
+}
+
+.full-banner strong {
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-widest);
 }
 
 /* Content */
