@@ -39,7 +39,7 @@ sync. The backend also refuses to start without `JWT_SECRET`.
 
 ## 2. Security & permissions bugs
 
-- [ ] **Any logged-in user can create, edit or delete any match, and set any winner.**
+- [x] **Any logged-in user can create, edit or delete any match, and set any winner.**
       `backend/src/modules/matches/matches.controller.ts` guards only with `JwtAuthGuard`.
       Also `winner_id` is never checked to be one of the match's teams
       (`matches/commands/update-match.command.ts`).
@@ -53,50 +53,50 @@ sync. The backend also refuses to start without `JWT_SECRET`.
       stays LOCKED while short-handed and still enters the bracket.
 - [x] **One user can create several teams in the same tournament.** `create-team.command.ts`
       has no "already in a team here" check.
-- [~] **`max_participants` is stored but never enforced** (not on team creation, not on start). — enforced at lock time 2026-09-30; start-time check pending
+- [x] **`max_participants` is stored but never enforced** (not on team creation, not on start). — enforced at lock time and at start
 
 ## 3. Tournament / bracket engine
 
-- [ ] **Byes are clustered at the end → matches with zero teams.**
+- [x] **Byes are clustered at the end → matches with zero teams.**
       `tournaments/services/generators/single-elimination.generator.ts:43` pops teams two at a
       time, so 5 or 6 teams in an 8-slot bracket create a leaf match with no teams that can
       never finish. The frontend preview does the same (`frontend/src/utils/bracket.ts:146`:
       5 teams → `[1v2][3v4][5vBYE][BYEvBYE]`). Fix: standard seeding, byes to the top seeds,
       at most one per match; then **auto-resolve byes** (`MatchStatus.BYE` exists, nothing
       assigns it) so the winner advances at start.
-- [ ] **Winner propagation drops a team.** `matches/commands/update-match.command.ts:99` —
+- [x] **Winner propagation drops a team.** `matches/commands/update-match.command.ts:99` —
       `filter(Boolean)` compacts the array, so if the slot-2 feeder finishes before the slot-1
       feeder, the slot-1 winner overwrites index 0 and the slot-2 winner is removed from the
       next match. `match_teams` is ManyToMany with no slot order; store slots explicitly
       (`team1_id` / `team2_id`, or a slot column on the join table). Latent today only
       because no UI reports results.
-- [ ] **Preview bracket ≠ real bracket.** The preview seeds locked-first by id; the generator
+- [x] **Preview bracket ≠ real bracket.** The preview seeds locked-first by id; the generator
       pops from an unordered relation. Pairings change at start. The preview also shows DRAFT
       teams, which `start()` silently drops — and those teams stay DRAFT forever
       (`TeamStatus.ARCHIVED` is never set anywhere). Share one seeding function, or have the
       backend return the seeding.
-- [ ] **Group stage is not rendered as groups.** Group matches are saved with
+- [x] **Group stage is not rendered as groups.** Group matches are saved with
       `round_order: 1`, and `bracket.ts` groups by `round_order`, so they merge with knockout
       round 1. No standings table; `calculateGroupStageStandings` has no tiebreaker.
-- [ ] *(reasoned)* **Deleting a started tournament probably 500s.** `Match.phase` has no
+- [x] *(reasoned)* **Deleting a started tournament probably 500s.** `Match.phase` has no
       `onDelete`, phases cascade from the tournament → FK violation.
-- [ ] `update-match.command.ts`: if `checkAndAdvance` throws after `commitTransaction`, the
+- [x] `update-match.command.ts`: if `checkAndAdvance` throws after `commitTransaction`, the
       catch calls `rollbackTransaction` on a committed transaction and masks the real error.
-- [ ] Bracket `completedAt` shows `created_at` — there is no `finished_at` column.
+- [x] Bracket `completedAt` shows `created_at` — there is no `finished_at` column.
 
 ## 4. Frontend & UX
 
 - [ ] **No realtime for teams/tournaments.** Captain doesn't see an accepted invite, bracket
       doesn't move, until reload. The socket exists; add a `tournament:<id>` room.
-- [ ] **No confirm on irreversible actions:** start tournament
+- [x] **No confirm on irreversible actions:** start tournament
       (`components/admin/MyTournamentsTab.vue:195`, also drops DRAFT teams), delete team
       (`pages/menu/TeamSetupCard.vue:520`). `ConfirmDialog` already exists.
 - [x] **Player search races.** `TeamSetupCard.vue:159` fires on every keystroke; a slow
       earlier response overwrites a newer one. Debounce + ignore stale responses.
-- [ ] **13 hard-coded English toasts** (`TeamSetupCard.vue`, `MyTournamentsTab.vue`) plus the
+- [x] **13 hard-coded English toasts** (`TeamSetupCard.vue`, `MyTournamentsTab.vue`) plus the
       "← Back" label — weakens the FR/TR i18n module.
 - [x] **No 404 route**; `/menu` alone renders an empty layout (add a redirect to `/menu/user`).
-- [ ] Bracket page shows **"GO TO ADMIN" to everyone**, and with no `:id` it should list
+- [x] Bracket page shows **"GO TO ADMIN" to everyone**, and with no `:id` it should list
       tournaments to pick from.
 - [x] **`DemoBanner` "Demo mode — backend unavailable"** still on 5 pages although demo data was
       removed; it's just an error state now, and doubles the error message. Remove or rename.
@@ -109,7 +109,7 @@ sync. The backend also refuses to start without `JWT_SECRET`.
 
 - [ ] **Frontend TypeScript is never type-checked.** No `tsconfig`, no `vue-tsc`, and
       `npm run build` is plain `vite build`. Add `vue-tsc --noEmit` to the build.
-- [ ] **Backend has one test, and it fails** (the Nest scaffold `app.controller.spec.ts`
+- [x] **Backend has one test, and it fails** (the Nest scaffold `app.controller.spec.ts`
       expects "Hello from Backend!"). Replace it with tests for the bracket generator,
       winner propagation and team permissions — where the bugs above live.
 - [x] Frontend `predev` runs `npm install` of three fonts on every `npm run dev`; they're
@@ -123,7 +123,7 @@ sync. The backend also refuses to start without `JWT_SECRET`.
 
 Ranked by value for "make a team, enter a tournament".
 
-1. [ ] **Close the match loop.** Captain reports the score → the opposing captain confirms or
+1. [x] **Close the match loop.** Captain reports the score → the opposing captain confirms or
    disputes → admin override. Auto-advance, byes resolved, notifications ("your match is
    ready", "confirm the score"). Without this, tournaments can't finish.
    `PATCH /matches/:id` exists with no UI caller.
@@ -135,7 +135,7 @@ Ranked by value for "make a team, enter a tournament".
 5. [ ] **Check-in window** before start (start.gg / Battlefy / Toornament standard). Removes
    no-shows and resolves the DRAFT-team limbo.
 6. [ ] **Registration deadline + countdown** (`scheduledAt` exists; add a deadline, auto-close).
-7. [ ] **Admin tools:** drag-to-seed, disqualify / withdraw a team, undo a result.
+7. [x] **Admin tools:** drag-to-seed, disqualify / withdraw a team, undo a result.
 8. [ ] **Per-match chat room** for the two teams, reusing the chat module.
 9. [ ] **Results & history:** podium page on completion, team profile with past results,
    `ARCHIVED` set on completion, substitutes (bench slot beyond `teamSize`).
