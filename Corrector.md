@@ -18,7 +18,7 @@
 | 2 | Real-time features (Socket.io WebSockets) | Major | 2 | ✅ Done |
 | 3 | User interaction (chat + profiles + friends) | Major | 2 | ✅ Done |
 | 4 | ORM (TypeORM + PostgreSQL) | Minor | 1 | ✅ Done |
-| 5 | Notification system (toast notifications) | Minor | 1 | ✅ Done |
+| 5 | Notification system (persisted, per-user: bell panel + toast pop-ups, unread count, mark-read/-all, optional bot-chat delivery) | Minor | 1 | ✅ Done |
 | 6 | Custom design system (19+ reusable components) | Minor | 1 | ✅ Done |
 | 7 | Advanced search (filters, sorting, pagination) | Minor | 1 | ✅ Done |
 
@@ -42,7 +42,7 @@
 
 | # | Module | Type | Pts | Status |
 |---|--------|------|-----|--------|
-| 14 | Advanced chat features (block, invite, typing, history) | Minor | 1 | ✅ Done |
+| 14 | Advanced chat features (block, typing indicators, persisted history; "invite" is a plain-text message with a game icon, not a real invite/accept flow) | Minor | 1 | ✅ Done |
 
 **Listed subtotal: 19 points**
 
@@ -56,8 +56,8 @@ APIs rather than implementing our own game.
 
 | # | Module | Type | Pts | Status | Justification |
 |---|--------|------|-----|--------|---------------|
-| 15 | Match history (chess.com API integration) | Minor | 1 | ✅ Done | External API proxy with user history display, stats aggregation. Demonstrates API integration, data transformation, and caching. |
-| 16 | Tournament tracking system | Minor | 1 | ✅ Done | Tournament bracket display, registration, matchup tracking for external competitions. Demonstrates state management and real-time updates. |
+| 15 | Match history (own in-platform tournament matches) | Minor | 1 | ✅ Done | Per-user history of matches played inside this platform's own tournaments — opponent, game, result, date, win/loss stats. There is no external gaming API (e.g. chess.com); "game" is the admin-configured game record (`games` module), not a third-party integration. |
+| 16 | Tournament tracking system | Minor | 1 | ✅ Done | In-platform tournaments: admins create a tournament and its games, teams register, an admin starts it to generate the first phase's bracket, and results/standings are tracked as matches are recorded. Brackets and standings are for tournaments run *on* this platform, not external competitions. |
 
 **Free subtotal: 2 points**
 
