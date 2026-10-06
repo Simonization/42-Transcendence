@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { Message } from '../entities/message.entity';
 import { ChatParticipant } from '../entities/chat-participant.entity';
+import { toPublicUserOrNil } from '../../users/public-user';
 
 @Injectable()
 export class GetChatHistoryQuery {
@@ -52,6 +53,9 @@ export class GetChatHistoryQuery {
             });
             return {
                 ...msg,
+                // Every participant reads this, and match chats put two teams of strangers in
+                // one room: never the sender's email, role or 2FA flags.
+                sender: toPublicUserOrNil(msg.sender),
                 readBy: readByArray
             };
         });

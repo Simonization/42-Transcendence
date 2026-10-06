@@ -17,6 +17,7 @@ import { GetLookingForTeamQuery } from '../teams/queries/get-looking-for-team.qu
 import { GetTeamProfileQuery } from '../teams/queries/get-team-profile.query';
 import { MatchesService } from '../matches/matches.service';
 import { GetMatchDetailsQuery } from '../matches/queries/get-match-details.query';
+import { GetChatHistoryQuery } from '../chat/queries/get-chat-history.query';
 import { toPublicUser } from './public-user';
 import { publicInvitation, publicLookingForTeam, publicMatch, publicTeam, publicTournament } from './public-views';
 
@@ -297,5 +298,19 @@ describe('match read endpoints', () => {
         });
         expectNoPrivateUserData(await svc.findOne(1));
         expectNoPrivateUserData(await svc.findByPhase(1));
+    });
+});
+
+describe('chat read endpoints', () => {
+    it('GET /chat/rooms/:id/messages: the other participants see the sender as a public user', async () => {
+        const message = { id: 1, chatId: 5, senderId: 11, sender: user(11), content: 'gg', createdAt: new Date() };
+        const query = new GetChatHistoryQuery(
+            { find: async () => [message] } as any,
+            { existsBy: async () => true, find: async () => [{ chatId: 5, userId: 12, lastReadAt: new Date() }] } as any,
+        );
+        const history = await query.execute(5, 12);
+        expect(history[0].sender).toEqual({ id: 11, username: 'player11', avatarUrl: '/avatars/11.png' });
+        expect(history[0].readBy).toEqual([12]);
+        expectNoPrivateUserData(history);
     });
 });
