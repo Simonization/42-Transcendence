@@ -26,6 +26,7 @@ import { useNow } from '../../composables/useNow'
 import RegistrationCountdown from '../../components/tournaments/RegistrationCountdown.vue'
 import { isRegistrationOpen, registrationPhase } from '../../utils/registration'
 import { RealtimeEvents } from '../../types/realtime'
+import { isDeletedUser, userLabel } from '../../utils/deletedUser'
 
 type TabType = 'overview' | 'bracket' | 'participants' | 'lft' | 'chat'
 
@@ -86,7 +87,7 @@ const filteredTeams = computed(() => {
   const q = searchParticipant.value.toLowerCase()
   return teamsList.value.filter(team =>
     team.name.toLowerCase().includes(q) ||
-    team.members.some(m => m.username.toLowerCase().includes(q))
+    team.members.some(m => !isDeletedUser(m) && m.username.toLowerCase().includes(q))
   )
 })
 
@@ -489,12 +490,13 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
                   class="participant-item"
                 >
                   <span class="participant-avatar">
-                    <img v-if="member.avatarUrl" :src="member.avatarUrl" :alt="member.username" class="avatar-img" />
+                    <img v-if="member.avatarUrl && !isDeletedUser(member)" :src="member.avatarUrl" :alt="member.username" class="avatar-img" />
                     <HudIcon v-else name="user" :size="18" />
                   </span>
                   <div class="participant-info">
                     <span class="participant-name">
-                      @{{ member.username }}
+                      <em v-if="isDeletedUser(member)">{{ userLabel(member, t) }}</em>
+                      <template v-else>@{{ member.username }}</template>
                       <span v-if="member.id === team.captain_id" class="captain-badge">{{ $t('teams.captain') }}</span>
                     </span>
                   </div>

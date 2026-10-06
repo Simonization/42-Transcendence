@@ -7,6 +7,8 @@ defineProps<{
   confirmLabel?: string
   cancelLabel?: string
   danger?: boolean
+  /** Keeps the confirm button disabled, e.g. until a typed confirmation matches. */
+  confirmDisabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -65,6 +67,7 @@ onUnmounted(() => {
       >
         <h3 id="confirm-dialog-title" class="dialog-title">{{ title }}</h3>
         <p class="dialog-message">{{ message }}</p>
+        <slot />
         <div class="dialog-actions">
           <button ref="cancelButtonRef" class="btn btn-secondary" @click="emit('cancel')">
             {{ cancelLabel || $t('confirm.defaultCancel') }}
@@ -72,6 +75,7 @@ onUnmounted(() => {
           <button
             class="btn"
             :class="danger ? 'btn-danger' : 'btn-primary'"
+            :disabled="confirmDisabled"
             @click="emit('confirm')"
           >
             {{ confirmLabel || $t('common.confirm') }}

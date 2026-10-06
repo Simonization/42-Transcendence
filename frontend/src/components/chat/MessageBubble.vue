@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import type { Message } from '../../types'
 import HudIcon from '../hud/HudIcon.vue'
+import { useI18n } from 'vue-i18n'
+import { isDeletedUser, userLabel } from '../../utils/deletedUser'
 
 const props = defineProps<{
   message: Message
@@ -13,6 +15,9 @@ const emit = defineEmits<{
   delete: [messageId: number]
   viewProfile: [userId: number]
 }>()
+
+const { t } = useI18n()
+const senderDeleted = computed(() => isDeletedUser(props.message.sender))
 
 const isOwn = computed(() => Number(props.message.senderId) === Number(props.currentUserId))
 const isDeleted = computed(() => !!props.message.deletedAt)
@@ -45,7 +50,8 @@ const time = computed(() => {
   <div class="bubble-row" :class="{ own: isOwn }">
     <div class="bubble" :class="{ own: isOwn, deleted: isDeleted, blocked: isBlocked, 'game-invite': isGameInvite }">
       <p v-if="!isOwn && message.sender" class="bubble-sender">
-        <button class="sender-link" @click.stop="emit('viewProfile', message.senderId)">
+        <span v-if="senderDeleted" class="sender-deleted">{{ userLabel(message.sender, t) }}</span>
+        <button v-else class="sender-link" @click.stop="emit('viewProfile', message.senderId)">
           {{ message.sender.username }}
         </button>
       </p>
@@ -118,6 +124,11 @@ const time = computed(() => {
   font-weight: var(--font-semibold);
   color: var(--accent-primary);
   margin: 0 0 var(--space-1) 0;
+}
+
+.sender-deleted {
+  font-style: italic;
+  color: var(--text-tertiary);
 }
 
 .sender-link {

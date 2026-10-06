@@ -9,7 +9,7 @@ export interface Organization {
   description: string | null
   avatarUrl: string | null
   ownerId: number
-  owner?: { id: number; username: string }
+  owner?: { id: number; username: string; isDeleted?: boolean }
   memberCount: number
   createdAt: string
   updatedAt: string
@@ -25,6 +25,7 @@ export interface OrgMember {
     id: number
     username: string
     avatarUrl?: string | null
+    isDeleted?: boolean
   }
 }
 

@@ -78,7 +78,7 @@ const router = useRouter()
           <p>You have the right to:</p>
           <ul>
             <li><strong>Access</strong> your personal data through your profile settings.</li>
-            <li><strong>Delete</strong> your account and all associated data at any time from the User settings page.</li>
+            <li><strong>Delete</strong> your account at any time from the User settings page. Your personal data (username, email, password, profile, settings, friends, invitations, notifications) is erased; the messages you sent and tournament results stay, shown as from a deleted user, so other people's conversations and brackets remain intact.</li>
             <li><strong>Export</strong> your data upon request.</li>
             <li><strong>Modify</strong> your profile information, display name, and bio.</li>
             <li><strong>Block</strong> other users to prevent unwanted communication.</li>

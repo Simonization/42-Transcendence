@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isDeletedUser, userLabel } from '../../utils/deletedUser'
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
@@ -12,9 +13,11 @@ import { storeToRefs } from 'pinia'
 import { usersApi } from '../../api/users'
 import type { User } from '../../types'
 import HudIcon from '../../components/hud/HudIcon.vue'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
+const { t } = useI18n()
 const chatStore = useChatStore()
 const {
   activeRoomId,
@@ -93,7 +96,7 @@ const myId = computed(() => Number(user.value?.id) || 0)
 const activeRoomTitle = computed(() => {
   if (!activeRoom.value) return 'Chat'
   const partner = activeRoom.value.participants.find(p => Number(p.id) !== myId.value)
-  return activeRoom.value.title || partner?.username || 'Chat'
+  return activeRoom.value.title || userLabel(partner, t, 'Chat')
 })
 
 const dmPartnerId = computed(() => {
@@ -160,6 +163,8 @@ const handleViewProfile = (userId: number) => {
   // Find username from active room participants or message senders
   const participant = activeRoom.value?.participants.find(p => p.id === userId)
   const msgSender = messages.value.find(m => m.senderId === userId)?.sender
+  // A deleted account has no profile to open.
+  if (isDeletedUser(participant) || isDeletedUser(msgSender)) return
   const username = participant?.username || msgSender?.username || `User #${userId}`
   profilePopupUser.value = { id: userId, username }
 }

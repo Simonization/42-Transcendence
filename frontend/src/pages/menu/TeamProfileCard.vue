@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { teamsApi } from '../../api/teams'
 import { getErrorMessage } from '../../utils/error'
 import type { TeamProfile, TeamProfileMatch } from '../../types'
+import { isDeletedUser, userLabel } from '../../utils/deletedUser'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -118,13 +119,14 @@ const record = computed(() => {
             {{ t('teamProfile.roster') }}
             <span class="tp-count num">{{ profile.members.length }} / {{ profile.teamSize }}</span>
           </h4>
+          <p v-if="profile.captainless" class="tp-captainless">{{ t('teamProfile.captainless') }}</p>
           <ul class="tp-roster">
             <li v-for="m in starters" :key="m.id" class="tp-member">
-              <span class="tp-member-name">{{ m.username }}</span>
+              <span class="tp-member-name" :class="{ 'tp-member-deleted': isDeletedUser(m) }">{{ userLabel(m, t) }}</span>
               <span v-if="m.isCaptain" class="tp-tag tp-tag-captain">{{ t('teamProfile.captain') }}</span>
             </li>
             <li v-for="m in bench" :key="m.id" class="tp-member tp-member-sub">
-              <span class="tp-member-name">{{ m.username }}</span>
+              <span class="tp-member-name" :class="{ 'tp-member-deleted': isDeletedUser(m) }">{{ userLabel(m, t) }}</span>
               <span class="tp-tag tp-tag-sub">{{ t('teamProfile.sub') }}</span>
             </li>
           </ul>
@@ -166,6 +168,17 @@ const record = computed(() => {
 </template>
 
 <style scoped>
+.tp-member-deleted {
+  font-style: italic;
+  color: var(--text-tertiary);
+}
+
+.tp-captainless {
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
 .card-page {
   width: 100%;
   max-width: 900px;

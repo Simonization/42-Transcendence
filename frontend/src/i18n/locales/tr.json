@@ -128,11 +128,21 @@
     "loadingUserData": "Kullanıcı verileri yükleniyor...",
     "dangerZone": "TEHLİKELİ BÖLGE",
     "deleteAccount": "Hesabı Sil",
-    "deleteAccountWarning": "Bu işlem geri alınamaz.",
+    "deleteAccountWarning": "Kişisel verileriniz kalıcı olarak silinir. Bu işlem geri alınamaz.",
     "deleteAccountConfirmTitle": "Hesabı Sil",
-    "deleteAccountConfirmMessage": "Hesabınızı silmek istediğinizden emin misiniz? Tüm veriler kalıcı olarak kaybolacaktır.",
+    "deleteAccountConfirmMessage": "Hesabınız anonimleştirilir, geçmişten silinmez: diğer oyuncuların sohbetleri ve tabloları kalır, siz \"Silinmiş kullanıcı\" olarak görünürsünüz.",
     "deleteAccountConfirm": "HESABI SİL",
-    "failedToDelete": "Hesap silme başarısız"
+    "failedToDelete": "Hesap silme başarısız",
+    "deletedUser": "Silinmiş kullanıcı",
+    "deleteErasedTitle": "Silinenler",
+    "deleteErasedIdentity": "Kullanıcı adınız, e-postanız, şifreniz, adınız, avatarınız, biyografiniz, ayarlarınız ve iki adımlı doğrulamanız.",
+    "deleteErasedSocial": "Arkadaşlarınız, arkadaşlık istekleriniz, engellemeleriniz, bildirimleriniz ve bağlı oyun hesaplarınız.",
+    "deleteErasedTeams": "Takım davetleriniz, katılma istekleriniz ve takım arama ilanlarınız. Kaptansanız kaptanlık bir takım yöneticisine ya da en eski üyeye geçer; turnuva başlamadan tek üyesi olduğunuz takım silinir.",
+    "deleteErasedAccess": "Tüm oturumlarınız: her yerden çıkış yapılır ve tekrar giriş yapamazsınız.",
+    "deleteKeptTitle": "Saklananlar, \"Silinmiş kullanıcı\" olarak görünür",
+    "deleteKeptMessages": "Gönderdiğiniz mesajlar, diğerlerinin sohbetleri okunabilir kalsın diye.",
+    "deleteKeptResults": "Maç sonuçları, tablolar, kürsüler ve başlamış turnuvaların kadrolarındaki yeriniz.",
+    "deleteTypeUsername": "Onaylamak için kullanıcı adınızı, {username}, yazın:"
   },
   "matchChat": {
     "open": "Maç sohbeti",
@@ -1005,6 +1015,7 @@
     "colOpponent": "RAKİP",
     "colScore": "SKOR",
     "colResult": "G/M",
-    "pending": "BEKLİYOR"
+    "pending": "BEKLİYOR",
+    "captainless": "Bu takımın artık kaptanı yok: kaptanı hesabını sildi."
   }
 }

@@ -72,6 +72,24 @@ describe('TeamProfileCard', () => {
     expect(wrapper.find('[data-testid="placement"]').text()).toContain('02')
   })
 
+  it('shows a deleted member as "Deleted user" and says when the team has no captain left', async () => {
+    getProfile.mockResolvedValue({
+      ...profile,
+      captainless: true,
+      members: [
+        { id: 1, username: '', avatarUrl: null, isDeleted: true, isCaptain: true, isSubstitute: false },
+        ...profile.members.slice(1),
+      ],
+    })
+    const wrapper = await mountAt()
+
+    const first = wrapper.findAll('.tp-member')[0]
+    expect(first.text()).toContain('Deleted user')
+    expect(first.find('.tp-member-deleted').exists()).toBe(true)
+    expect(first.find('a').exists()).toBe(false)
+    expect(wrapper.find('.tp-captainless').text()).toContain('no captain')
+  })
+
   it('says so when the team cannot be loaded', async () => {
     getProfile.mockRejectedValue(new Error('nope'))
     const wrapper = await mountAt(404)

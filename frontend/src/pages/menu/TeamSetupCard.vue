@@ -14,6 +14,7 @@ import { teamsApi } from '../../api/teams'
 import { usersApi } from '../../api/users'
 import type { BackendTournament, BackendTeam, TeamInvitation } from '../../types'
 import { TeamStatus, TournamentStatus } from '../../types'
+import { isDeletedUser, userLabel } from '../../utils/deletedUser'
 import type { User } from '../../types'
 import type { TournamentAvailability } from '../../types/tournament'
 import { useLiveChannel } from '../../composables/useLiveChannel'
@@ -793,10 +794,10 @@ async function leaveTeam() {
             <!-- Member slot -->
             <template v-if="slot.kind === 'member'">
               <div class="ts-slot-avatar">
-                {{ slot.user.username?.charAt(0).toUpperCase() }}
+                {{ isDeletedUser(slot.user) ? '?' : slot.user.username?.charAt(0).toUpperCase() }}
               </div>
               <div class="ts-slot-info">
-                <span class="ts-slot-name">{{ slot.user.username }}</span>
+                <span class="ts-slot-name">{{ userLabel(slot.user, t) }}</span>
                 <span v-if="slot.user.id === myTeam.captain_id" class="ts-slot-tag ts-tag-captain">
                   {{ t('tournament.captain') }}
                 </span>
@@ -809,7 +810,7 @@ async function leaveTeam() {
               </div>
 
               <div
-                v-if="slot.user.id !== myTeam.captain_id && (rosterEditable || isCaptain)"
+                v-if="slot.user.id !== myTeam.captain_id && !isDeletedUser(slot.user) && (rosterEditable || isCaptain)"
                 class="ts-slot-actions"
               >
                 <template v-if="rosterEditable">

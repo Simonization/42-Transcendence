@@ -128,11 +128,21 @@
     "loadingUserData": "Loading user data...",
     "dangerZone": "DANGER ZONE",
     "deleteAccount": "Delete Account",
-    "deleteAccountWarning": "This action cannot be undone.",
+    "deleteAccountWarning": "Your personal data is erased for good. This cannot be undone.",
     "deleteAccountConfirmTitle": "Delete Account",
-    "deleteAccountConfirmMessage": "Are you sure you want to delete your account? All data will be permanently lost.",
+    "deleteAccountConfirmMessage": "Your account is anonymised, not wiped from history: other players keep their conversations and brackets, with you shown as \"Deleted user\".",
     "deleteAccountConfirm": "DELETE ACCOUNT",
-    "failedToDelete": "Failed to delete account"
+    "failedToDelete": "Failed to delete account",
+    "deletedUser": "Deleted user",
+    "deleteErasedTitle": "Erased",
+    "deleteErasedIdentity": "Your username, email, password, name, avatar, bio, settings and two-factor setup.",
+    "deleteErasedSocial": "Your friends, friend requests, blocks, notifications and linked game accounts.",
+    "deleteErasedTeams": "Your team invitations, join requests and looking-for-team posts. If you captain a team, the captaincy passes to a team admin or the longest-standing member; a team you are alone in before its tournament starts is deleted.",
+    "deleteErasedAccess": "Every session: you are signed out everywhere and cannot sign in again.",
+    "deleteKeptTitle": "Kept, shown as \"Deleted user\"",
+    "deleteKeptMessages": "The messages you sent, so the other people's conversations stay readable.",
+    "deleteKeptResults": "Match results, brackets, podiums and your place in rosters of tournaments that have started.",
+    "deleteTypeUsername": "Type your username, {username}, to confirm:"
   },
   "matchChat": {
     "open": "Match chat",
@@ -1005,6 +1015,7 @@
     "colOpponent": "OPPONENT",
     "colScore": "SCORE",
     "colResult": "W/L",
-    "pending": "PENDING"
+    "pending": "PENDING",
+    "captainless": "This team has no captain any more: its captain deleted their account."
   }
 }

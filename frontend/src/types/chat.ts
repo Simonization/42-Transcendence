@@ -11,6 +11,8 @@ export enum ChatType {
 export interface ChatParticipant {
   id: number
   username: string
+  /** A deleted account (tombstone): render as "Deleted user", not as a link. */
+  isDeleted?: boolean
 }
 
 export interface Message {
@@ -24,6 +26,7 @@ export interface Message {
   sender?: {
     id: number
     username: string
+    isDeleted?: boolean
   }
   readBy?: number[]
   deliveredAt?: string | null

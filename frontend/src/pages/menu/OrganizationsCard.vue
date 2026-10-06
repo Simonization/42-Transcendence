@@ -6,6 +6,7 @@ import { useOrganizations } from '../../composables/useOrganizations'
 import { usersApi } from '../../api/users'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import type { Organization, User } from '../../types'
+import { isDeletedUser, userLabel } from '../../utils/deletedUser'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -294,9 +295,9 @@ const getInitials = (name: string) => name.slice(0, 2).toUpperCase()
         </div>
         <div v-else class="members-list">
           <div v-for="member in members" :key="member.id" class="member-row">
-            <div class="member-avatar">{{ getInitials(member.user.username) }}</div>
+            <div class="member-avatar">{{ isDeletedUser(member.user) ? '?' : getInitials(member.user.username) }}</div>
             <div class="member-info">
-              <span class="member-name">{{ member.user.username }}</span>
+              <span class="member-name">{{ userLabel(member.user, t) }}</span>
               <span class="member-role badge" :class="'badge-' + member.role">{{ member.role }}</span>
             </div>
             <button

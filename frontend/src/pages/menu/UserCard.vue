@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -21,6 +21,16 @@ const { checkAuth, logout } = authStore
 
 const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
+/** The user types their username to arm the delete button. */
+const deleteConfirmation = ref('')
+const deleteArmed = computed(
+  () => !!user.value && deleteConfirmation.value.trim() === user.value.username && !isDeleting.value,
+)
+
+const openDeleteDialog = () => {
+  deleteConfirmation.value = ''
+  showDeleteDialog.value = true
+}
 const { message: deleteError, handleError } = useErrorHandler()
 
 const refreshUser = () => {
@@ -28,7 +38,7 @@ const refreshUser = () => {
 }
 
 const handleDeleteAccount = async () => {
-  if (!user.value) return
+  if (!user.value || !deleteArmed.value) return
   isDeleting.value = true
   try {
     await usersApi.deleteAccount(user.value.id)
@@ -62,7 +72,7 @@ const handleDeleteAccount = async () => {
             <p class="danger-label">{{ $t('user.deleteAccount') }}</p>
             <p class="danger-hint">{{ $t('user.deleteAccountWarning') }}</p>
           </div>
-          <button class="btn btn-danger btn-sm" @click="showDeleteDialog = true">
+          <button class="btn btn-danger btn-sm" @click="openDeleteDialog">
             {{ $t('common.delete') }}
           </button>
         </div>
@@ -78,13 +88,66 @@ const handleDeleteAccount = async () => {
       :message="$t('user.deleteAccountConfirmMessage')"
       :confirm-label="$t('user.deleteAccountConfirm')"
       :danger="true"
+      :confirm-disabled="!deleteArmed"
       @confirm="handleDeleteAccount"
       @cancel="showDeleteDialog = false"
-    />
+    >
+      <div class="delete-details">
+        <p class="delete-heading">{{ $t('user.deleteErasedTitle') }}</p>
+        <ul class="delete-erased">
+          <li>{{ $t('user.deleteErasedIdentity') }}</li>
+          <li>{{ $t('user.deleteErasedSocial') }}</li>
+          <li>{{ $t('user.deleteErasedTeams') }}</li>
+          <li>{{ $t('user.deleteErasedAccess') }}</li>
+        </ul>
+        <p class="delete-heading">{{ $t('user.deleteKeptTitle') }}</p>
+        <ul class="delete-kept">
+          <li>{{ $t('user.deleteKeptMessages') }}</li>
+          <li>{{ $t('user.deleteKeptResults') }}</li>
+        </ul>
+        <label class="delete-confirm-label" for="delete-confirm-input">
+          {{ $t('user.deleteTypeUsername', { username: user?.username ?? '' }) }}
+        </label>
+        <input
+          id="delete-confirm-input"
+          v-model="deleteConfirmation"
+          class="input delete-confirm-input"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+    </ConfirmDialog>
   </div>
 </template>
 
 <style scoped>
+.delete-details {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.delete-heading {
+  margin: var(--space-3) 0 var(--space-1) 0;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.delete-details ul {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.delete-confirm-label {
+  display: block;
+  margin: var(--space-4) 0 var(--space-2) 0;
+}
+
+.delete-confirm-input {
+  width: 100%;
+}
+
 .card-page {
   width: 100%;
   max-width: 720px;

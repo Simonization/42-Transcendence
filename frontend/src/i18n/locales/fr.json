@@ -128,11 +128,21 @@
     "loadingUserData": "Chargement des données utilisateur...",
     "dangerZone": "ZONE DE DANGER",
     "deleteAccount": "Supprimer le compte",
-    "deleteAccountWarning": "Cette action est irréversible.",
+    "deleteAccountWarning": "Vos données personnelles sont effacées définitivement. Cette action est irréversible.",
     "deleteAccountConfirmTitle": "Supprimer le compte",
-    "deleteAccountConfirmMessage": "Êtes-vous sûr de vouloir supprimer votre compte ? Toutes les données seront définitivement perdues.",
+    "deleteAccountConfirmMessage": "Votre compte est anonymisé, pas effacé de l'historique : les autres joueurs gardent leurs conversations et leurs tableaux, où vous apparaissez comme « Utilisateur supprimé ».",
     "deleteAccountConfirm": "SUPPRIMER LE COMPTE",
-    "failedToDelete": "Échec de la suppression du compte"
+    "failedToDelete": "Échec de la suppression du compte",
+    "deletedUser": "Utilisateur supprimé",
+    "deleteErasedTitle": "Effacé",
+    "deleteErasedIdentity": "Votre nom d'utilisateur, e-mail, mot de passe, nom, avatar, bio, paramètres et double authentification.",
+    "deleteErasedSocial": "Vos amis, demandes d'ami, blocages, notifications et comptes de jeu liés.",
+    "deleteErasedTeams": "Vos invitations d'équipe, demandes pour rejoindre et annonces de recherche d'équipe. Si vous êtes capitaine, le rôle passe à un admin de l'équipe ou au membre le plus ancien ; une équipe dont vous êtes le seul membre avant le début du tournoi est supprimée.",
+    "deleteErasedAccess": "Toutes vos sessions : vous êtes déconnecté partout et ne pouvez plus vous reconnecter.",
+    "deleteKeptTitle": "Conservé, affiché comme « Utilisateur supprimé »",
+    "deleteKeptMessages": "Les messages que vous avez envoyés, pour que les conversations des autres restent lisibles.",
+    "deleteKeptResults": "Les résultats de matchs, tableaux, podiums et votre place dans les effectifs des tournois commencés.",
+    "deleteTypeUsername": "Saisissez votre nom d'utilisateur, {username}, pour confirmer :"
   },
   "matchChat": {
     "open": "Chat du match",
@@ -1005,6 +1015,7 @@
     "colOpponent": "ADVERSAIRE",
     "colScore": "SCORE",
     "colResult": "V/D",
-    "pending": "À JOUER"
+    "pending": "À JOUER",
+    "captainless": "Cette équipe n'a plus de capitaine : son capitaine a supprimé son compte."
   }
 }

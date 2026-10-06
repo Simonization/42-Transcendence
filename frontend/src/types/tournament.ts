@@ -99,6 +99,8 @@ export interface BackendTeamMember {
   id: number
   username: string
   avatarUrl?: string | null
+  /** A deleted account (tombstone): render as "Deleted user", not as a link. */
+  isDeleted?: boolean
 }
 
 export interface BackendTeamAdmin {
@@ -234,6 +236,7 @@ export interface TeamProfileMember {
   id: number
   username: string
   avatarUrl: string | null
+  isDeleted?: boolean
   isCaptain: boolean
   /** Bench player: beyond the game's team size, in join order. */
   isSubstitute: boolean
@@ -259,6 +262,8 @@ export interface TeamProfile {
   id: number
   name: string
   status: string
+  /** The captain deleted their account and nobody was left to take over (read-only shell). */
+  captainless?: boolean
   tournament: { id: number; name: string; status: string } | null
   teamSize: number
   maxMembers: number

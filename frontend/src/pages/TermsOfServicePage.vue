@@ -79,7 +79,7 @@ import ThemeToggle from '../components/ThemeToggle.vue'
             <li>Harassment or abuse of other users.</li>
             <li>Creating multiple accounts to circumvent bans.</li>
           </ul>
-          <p>You may delete your own account at any time from the User settings page. Account deletion is permanent and cannot be reversed.</p>
+          <p>You may delete your own account at any time from the User settings page. Deletion is permanent and cannot be reversed: your personal data is erased, while messages you sent and tournament results remain, attributed to a deleted user.</p>
         </section>
 
         <section class="legal-section">

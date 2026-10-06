@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { userLabel } from '../../utils/deletedUser'
 import { useI18n } from 'vue-i18n'
 import type { ChatRoom } from '../../types'
 
@@ -17,7 +18,7 @@ const { t } = useI18n()
 const getRoomName = (room: ChatRoom, currentUserId: number): string => {
   if (room.title) return room.title
   const other = room.participants.find(p => Number(p.id) !== Number(currentUserId))
-  return other?.username || t('chat.unknownUser')
+  return userLabel(other, t, t('chat.unknownUser'))
 }
 
 const getPreview = (room: ChatRoom): string => {
