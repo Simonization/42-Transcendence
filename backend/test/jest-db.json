@@ -1,0 +1,17 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "roots": ["<rootDir>/src"],
+  "testEnvironment": "node",
+  "testRegex": ".*\\.db-spec\\.ts$",
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1"
+  },
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "globalSetup": "<rootDir>/test/db/global-setup.mjs",
+  "globalTeardown": "<rootDir>/test/db/global-teardown.mjs",
+  "maxWorkers": 1,
+  "testTimeout": 60000
+}
