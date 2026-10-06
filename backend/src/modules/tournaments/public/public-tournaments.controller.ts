@@ -1,4 +1,6 @@
-import { Controller, Get, Header, Param, ParseIntPipe, Req, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Header, Param, ParseIntPipe, Req, StreamableFile, UseGuards } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { OG_IMAGE_THROTTLE } from './public-throttle';
 import { ConfigService } from '@nestjs/config';
 import { GetPublicTournamentQuery } from './get-public-tournament.query';
 import { OgImageService } from './og-image.service';
@@ -8,10 +10,11 @@ import { resolveBaseUrl } from './base-url';
 
 /**
  * Anonymous, read-only tournament data. Deliberately no JwtAuthGuard: these routes are for
- * people (and link crawlers) who have no account. The app registers no global guard or
- * throttler, so nothing else stands in the way; the PNG is memoised (og-image.service.ts).
+ * people (and link crawlers) who have no account. Rate-limited per IP (public-throttle.ts); the
+ * PNG is also memoised (og-image.service.ts).
  */
 @Controller('public/tournaments')
+@UseGuards(ThrottlerGuard)
 export class PublicTournamentsController {
     constructor(private readonly query: GetPublicTournamentQuery) {}
 
@@ -25,6 +28,7 @@ export class PublicTournamentsController {
 
 /** What a link unfurler fetches when someone pastes a tournament link. */
 @Controller('share/t')
+@UseGuards(ThrottlerGuard)
 export class ShareController {
     constructor(
         private readonly query: GetPublicTournamentQuery,
@@ -51,6 +55,7 @@ export class ShareController {
      * handler is serialised as JSON ({"type":"Buffer","data":[...]}), not sent as bytes.
      */
     @Get(':id/og.png')
+    @Throttle(OG_IMAGE_THROTTLE)
     @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
     @Header('X-Content-Type-Options', 'nosniff')
     async image(@Param('id', ParseIntPipe) id: number): Promise<StreamableFile> {

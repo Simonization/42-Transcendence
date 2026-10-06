@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { MailService } from './modules/mail/mail.service';
@@ -6,7 +7,12 @@ import { DataSource } from 'typeorm';
 import { seedBotUser } from './modules/notifications/scripts/seed-bot-user';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // The app runs behind a reverse proxy (Caddy). Trusting proxies on loopback and private
+  // networks makes req.ip the real client, which the anonymous routes' rate limit counts by.
+  // TRUST_PROXY overrides it (any Express 'trust proxy' value, e.g. a hop count).
+  app.set('trust proxy', process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal');
   
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,

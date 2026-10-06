@@ -2,7 +2,9 @@ import { INestApplication, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { ShareController } from './public-tournaments.controller';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { PublicTournamentsController, ShareController } from './public-tournaments.controller';
+import { PUBLIC_THROTTLE } from './public-throttle';
 import { computePodium, placementOf } from './podium';
 import { buildPublicTournament } from './public-tournament.view';
 import { GetPublicTournamentQuery } from './get-public-tournament.query';
@@ -285,6 +287,7 @@ describe('share routes over HTTP', () => {
 
     beforeAll(async () => {
         const moduleRef = await Test.createTestingModule({
+            imports: [ThrottlerModule.forRoot(PUBLIC_THROTTLE)],
             controllers: [ShareController],
             providers: [
                 {
@@ -320,5 +323,41 @@ describe('share routes over HTTP', () => {
         expect(res.status).toBe(200);
         expect(res.headers['content-type']).toMatch(/^text\/html/);
         expect(res.text).toContain('https://cup.example/api/share/t/7/og.png');
+    });
+});
+
+describe('anonymous routes are rate-limited per client', () => {
+    let app: INestApplication;
+
+    beforeAll(async () => {
+        const query = new GetPublicTournamentQuery({ findOne: async () => knockout() } as any);
+        const moduleRef = await Test.createTestingModule({
+            imports: [ThrottlerModule.forRoot(PUBLIC_THROTTLE)],
+            controllers: [ShareController, PublicTournamentsController],
+            providers: [
+                { provide: GetPublicTournamentQuery, useValue: query },
+                { provide: OgImageService, useValue: { render: async () => Buffer.from('png') } },
+                { provide: ConfigService, useValue: { get: () => 'https://cup.example' } },
+            ],
+        }).compile();
+        app = moduleRef.createNestApplication();
+        await app.init();
+    });
+
+    afterAll(() => app.close());
+
+    it('answers 429 past 20 og.png a minute', async () => {
+        for (let i = 0; i < 20; i++) {
+            expect((await request(app.getHttpServer()).get('/share/t/7/og.png')).status).toBe(200);
+        }
+        const res = await request(app.getHttpServer()).get('/share/t/7/og.png');
+        expect(res.status).toBe(429);
+    });
+
+    it('answers 429 past 60 public reads a minute', async () => {
+        for (let i = 0; i < 60; i++) {
+            expect((await request(app.getHttpServer()).get('/public/tournaments/7')).status).toBe(200);
+        }
+        expect((await request(app.getHttpServer()).get('/public/tournaments/7')).status).toBe(429);
     });
 });

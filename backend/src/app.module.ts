@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { PUBLIC_THROTTLE } from './modules/tournaments/public/public-throttle';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseOptions } from './database/database-options';
@@ -33,6 +35,8 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
     // DB_* variables, entities and migrations: see database/database-options.ts. Migrations
     // run on boot unless DB_SYNCHRONIZE=true or DB_MIGRATIONS_RUN=false (docs/migrations.md).
     TypeOrmModule.forRoot(databaseOptions()),
+    // Limits only the controllers that opt in (the anonymous ones); no global guard.
+    ThrottlerModule.forRoot(PUBLIC_THROTTLE),
     UsersModule,
     AuthModule,
     MailModule,
