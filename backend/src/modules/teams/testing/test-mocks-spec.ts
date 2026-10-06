@@ -19,7 +19,7 @@ export function mockQueryBuilder(result: { many?: any[]; one?: any; exists?: boo
 }
 
 export function mockRepo(overrides: Record<string, any> = {}) {
-    return {
+    const repo: any = {
         findOne: jest.fn(),
         findOneBy: jest.fn(),
         find: jest.fn(),
@@ -32,7 +32,24 @@ export function mockRepo(overrides: Record<string, any> = {}) {
         update: jest.fn(),
         createQueryBuilder: jest.fn(),
         ...overrides,
-    } as any;
+    };
+    // `repo.manager.transaction(fn)` runs fn with an EntityManager that forwards to this repo
+    // (the entity-class argument is dropped), for commands that lock rows in a transaction.
+    const forward = (method: string) => (...args: any[]) =>
+        typeof args[0] === 'function' ? repo[method](...args.slice(1)) : repo[method](...args);
+    const manager: any = {
+        findOne: forward('findOne'),
+        findOneBy: forward('findOneBy'),
+        find: forward('find'),
+        count: forward('count'),
+        save: forward('save'),
+        update: forward('update'),
+        delete: forward('delete'),
+        query: jest.fn().mockResolvedValue([]),
+    };
+    manager.transaction = jest.fn(async (fn: (m: any) => any) => fn(manager));
+    repo.manager = repo.manager ?? manager;
+    return repo;
 }
 
 /** A DataSource whose single QueryRunner exposes `manager`; returns handles for assertions. */
@@ -43,6 +60,7 @@ export function mockDataSource(managerOverrides: Record<string, any> = {}) {
         save: jest.fn(async (x) => x),
         delete: jest.fn().mockResolvedValue({ affected: 1 }),
         createQueryBuilder: jest.fn(),
+        query: jest.fn().mockResolvedValue([]),
         ...managerOverrides,
     };
     const runner: any = {

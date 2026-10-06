@@ -1,7 +1,8 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
+import { Tournament } from '../../tournaments/entities/tournament.entity';
 import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 import { TeamPermissionsService } from '../services/team-permissions.service';
 import { RealtimeService } from '../../realtime/realtime.service';
@@ -17,7 +18,27 @@ export class LockTeamCommand {
   ) {}
 
   async execute(teamId: number, actorId: number) {
-    const team = await this.teamRepo.findOne({
+    const saved = await this.teamRepo.manager.transaction(async (manager) => {
+      // Lock the tournament, then the team (the bracket engine's order: tournament first), so
+      // two teams locking at once cannot both take the last spot under max_participants, and
+      // the roster cannot change between the size check and the lock.
+      const peek = await manager.findOne(Team, { where: { id: teamId }, relations: ['tournament'] });
+      if (!peek) throw new NotFoundException('Team not found');
+      if (peek.tournament?.id != null) {
+        await manager.findOne(Tournament, { where: { id: peek.tournament.id }, lock: { mode: 'pessimistic_write' } });
+      }
+      await manager.findOne(Team, { where: { id: teamId }, lock: { mode: 'pessimistic_write' } });
+      return this.lockLocked(manager, teamId, actorId);
+    });
+
+    this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'team_locked' });
+    this.realtime.toTournament(saved.tournament.id, RealtimeEvents.TOURNAMENT_UPDATED, { id: saved.tournament.id, reason: 'team_locked' });
+    return saved;
+  }
+
+  /** The checks and the write, on rows this transaction holds locked. */
+  private async lockLocked(manager: EntityManager, teamId: number, actorId: number): Promise<Team> {
+    const team = await manager.findOne(Team, {
       where: { id: teamId },
       relations: ['members', 'tournament', 'tournament.phases', 'tournament.phases.game']
     });
@@ -47,7 +68,7 @@ export class LockTeamCommand {
     }
 
     if (team.tournament.max_participants != null) {
-      const lockedCount = await this.teamRepo.count({
+      const lockedCount = await manager.count(Team, {
         where: { tournament: { id: team.tournament.id }, status: TeamStatus.LOCKED },
       });
       if (lockedCount >= team.tournament.max_participants) {
@@ -56,10 +77,6 @@ export class LockTeamCommand {
     }
 
     team.status = TeamStatus.LOCKED;
-    const saved = await this.teamRepo.save(team);
-
-    this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'team_locked' });
-    this.realtime.toTournament(team.tournament.id, RealtimeEvents.TOURNAMENT_UPDATED, { id: team.tournament.id, reason: 'team_locked' });
-    return saved;
+    return manager.save(team);
   }
 }

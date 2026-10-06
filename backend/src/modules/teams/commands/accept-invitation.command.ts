@@ -31,6 +31,12 @@ export class AcceptInvitationCommand {
         let departed: DepartedTeam[] = [];
 
         try {
+            // Lock the team first (roster cap, see join-by-code.command.ts), then read it.
+            await queryRunner.manager.query(
+                `SELECT t."id" FROM "teams" t JOIN "team_invitations" i ON i."team_id" = t."id"
+                  WHERE i."id" = $1 FOR UPDATE OF t`,
+                [invitationId],
+            );
             const invite = await queryRunner.manager.findOne(TeamInvitation, {
                 where: {
                     id: invitationId,

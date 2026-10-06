@@ -25,6 +25,9 @@ export class JoinByCodeCommand {
         let departed: DepartedTeam[] = [];
 
         try {
+            // Lock the team row first so two people joining at once cannot both take the last
+            // roster spot: the second waits here and then reads the roster the first wrote.
+            await queryRunner.manager.query(`SELECT "id" FROM "teams" WHERE "join_code" = $1 FOR UPDATE`, [code]);
             const team = await queryRunner.manager
                 .createQueryBuilder(Team, 'team')
                 .addSelect('team.join_code')
