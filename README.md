@@ -65,7 +65,9 @@ make up / make re / make down / make fclean
 
 # Backend (in /backend)
 npm run start:dev          # dev server
-npm test                   # tests
+npm test                   # unit tests
+npm run test:db            # concurrency / migration tests on a throwaway embedded Postgres
+npm run migration:verify   # migrations vs entities, and the upgrade of old data
 
 # Frontend (in /frontend)
 npm run dev                # dev server

@@ -139,3 +139,49 @@ Ranked by value for "make a team, enter a tournament".
 8. [x] **Per-match chat room** for the two teams, reusing the chat module.
 9. [x] **Results & history:** podium page on completion, team profile with past results,
    `ARCHIVED` set on completion, substitutes (bench slot beyond `teamSize`).
+
+## 7. After the QA pass (branch `post-qa-fixes`, 2026-10-06)
+
+Found by a QA review of `main`; fixed on the branch, not merged yet.
+
+- [x] **Bracket races.** Two results confirmed at the same time left the final with both
+      teams but `WAITING`, or never closed the phase; a withdrawal racing a result dropped a
+      team; undo and a report on the next match could both succeed. Every bracket operation now
+      locks the tournament row, then the matches it changes (`bracket-engine.service.ts`).
+      `npm run test:db` reproduces each race on real Postgres.
+- [x] **og.png could take the app down at boot** (top-level import of the native resvg
+      binding). Now loaded lazily (503 if it fails), rendered with `renderAsync`, cached per
+      tournament id with a TTL.
+- [x] **Opening a join link joined immediately**, silently leaving the user's other DRAFT team
+      (captaincy handed on, solo team deleted). `/join/<code>` now previews team, tournament and
+      what joining would cost, and joins on click (`POST /teams/join/preview`).
+- [x] **Brackets the old engine started (production, `bb033ea`) stall**: first-round matches
+      with one team or none, never settled. `LegacyBracketRepair` migration (byes resolved,
+      empty leaves cancelled, seed order backfilled) — see `docs/migrations.md`.
+- [x] **`DELETE /users/:id` returned 500 for everyone.** Accounts are now anonymised
+      (tombstone, `users.deleted_at`): personal data erased, messages and match history kept and
+      shown as "Deleted user", captaincy handed on, account locked out everywhere.
+- [x] Rate limit on the anonymous `/public` and `/share` routes (`@nestjs/throttler`, per IP;
+      `TRUST_PROXY`, see `.env.example`).
+- [x] DRAFT tournaments hidden from the open `/tournaments` read routes for non-admins.
+- [x] Row locks on lock-team (tournament) and on join / accept (team): roster and
+      `max_participants` can no longer be exceeded by concurrent requests.
+- [x] Deleting a team is refused once its tournament left registration or it has matches.
+- [x] "Registered n/max" and "spots left" count the same teams.
+- [x] Missing i18n keys `common.create`, `friends.invalidUserId`, `friends.updating`.
+
+Still open from that pass:
+
+- [ ] **First deploy of this branch runs three migrations** (`TournamentFlowWaves`,
+      `LegacyBracketRepair`, `AccountTombstone`) in one transaction. Take the dump as usual;
+      check after boot that old ONGOING brackets show READY matches.
+- [ ] **Check `TRUST_PROXY` on the box**: the default trusts loopback / private proxies, which
+      fits Caddy → `127.0.0.1:3000`. If every visitor shares one rate-limit bucket, `req.ip`
+      is the proxy's; set `TRUST_PROXY` to the hop count.
+- [ ] The admin user list (`ManageUsersTab`) shows deleted accounts under their placeholder
+      name (`deleted-user-<id>`); the API now sends `isDeleted`, the tab does not use it yet.
+- [ ] *(reasoned)* **Google sign-up creates no user**: `AuthService.googleLogin` builds the
+      new user from `googleUser.email`, but the strategy sets `mail`. Untouched here.
+- [ ] Old group stages where a group got a single team have no match for it, so that team never
+      reaches the standings; the legacy repair does not handle it.
+- [ ] `npm run test:db` is separate from `npm test` (it needs a free port and ~10 s); run both.
