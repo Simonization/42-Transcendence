@@ -1,4 +1,8 @@
-import { NotFoundException } from '@nestjs/common';
+import { INestApplication, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
+import { ShareController } from './public-tournaments.controller';
 import { computePodium, placementOf } from './podium';
 import { buildPublicTournament } from './public-tournament.view';
 import { GetPublicTournamentQuery } from './get-public-tournament.query';
@@ -273,5 +277,48 @@ describe('og image', () => {
         expect(png.readUInt32BE(20)).toBe(630);
         expect(service.render(7, model)).toBe(png);
         expect(service.render(7, { ...model, title: 'Renamed' })).not.toBe(png);
+    });
+});
+
+describe('share routes over HTTP', () => {
+    let app: INestApplication;
+
+    beforeAll(async () => {
+        const moduleRef = await Test.createTestingModule({
+            controllers: [ShareController],
+            providers: [
+                {
+                    provide: GetPublicTournamentQuery,
+                    useValue: new GetPublicTournamentQuery({ findOne: async () => knockout() } as any),
+                },
+                OgImageService,
+                { provide: ConfigService, useValue: { get: () => 'https://cup.example' } },
+            ],
+        }).compile();
+        app = moduleRef.createNestApplication();
+        await app.init();
+    });
+
+    afterAll(() => app.close());
+
+    it('sends og.png as PNG bytes, not as a JSON-serialised Buffer', async () => {
+        const res = await request(app.getHttpServer())
+            .get('/share/t/7/og.png')
+            .buffer(true)
+            .parse((r, cb) => {
+                const chunks: Buffer[] = [];
+                r.on('data', (c: Buffer) => chunks.push(c));
+                r.on('end', () => cb(null, Buffer.concat(chunks)));
+            });
+        expect(res.status).toBe(200);
+        expect(res.headers['content-type']).toBe('image/png');
+        expect((res.body as Buffer).subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+    });
+
+    it('sends the share page as HTML', async () => {
+        const res = await request(app.getHttpServer()).get('/share/t/7');
+        expect(res.status).toBe(200);
+        expect(res.headers['content-type']).toMatch(/^text\/html/);
+        expect(res.text).toContain('https://cup.example/api/share/t/7/og.png');
     });
 });

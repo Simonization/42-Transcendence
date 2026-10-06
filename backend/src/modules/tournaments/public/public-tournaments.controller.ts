@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Param, ParseIntPipe, Req } from '@nestjs/common';
+import { Controller, Get, Header, Param, ParseIntPipe, Req, StreamableFile } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GetPublicTournamentQuery } from './get-public-tournament.query';
 import { OgImageService } from './og-image.service';
@@ -46,13 +46,16 @@ export class ShareController {
         return buildSharePage(tournament, shareUrls(base, id));
     }
 
-    /** The 1200x630 preview card. */
+    /**
+     * The 1200x630 preview card. Wrapped in a StreamableFile: a bare Buffer returned from a Nest
+     * handler is serialised as JSON ({"type":"Buffer","data":[...]}), not sent as bytes.
+     */
     @Get(':id/og.png')
-    @Header('Content-Type', 'image/png')
     @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
     @Header('X-Content-Type-Options', 'nosniff')
-    async image(@Param('id', ParseIntPipe) id: number) {
+    async image(@Param('id', ParseIntPipe) id: number): Promise<StreamableFile> {
         const tournament = await this.query.execute(id);
-        return this.images.render(id, ogModelOf(tournament));
+        const png = this.images.render(id, ogModelOf(tournament));
+        return new StreamableFile(png, { type: 'image/png', length: png.length });
     }
 }
