@@ -4,7 +4,7 @@
  */
 
 import type { BackendTournament } from '../types'
-import { TournamentStatus, PhaseType } from '../types'
+import { TournamentStatus, PhaseType, TeamStatus } from '../types'
 import type { Tournament } from '../types'
 import { isRegistrationOpen } from './registration'
 
@@ -23,6 +23,17 @@ const formatMap: Partial<Record<PhaseType, Tournament['format']>> = {
   [PhaseType.GROUP_STAGE]: 'round-robin',
 }
 
+/**
+ * Registered teams, counted like the backend's availability (`lockedTeams`), so "Registered n/max"
+ * and "spots left" agree: LOCKED teams before start (DRAFT teams are still recruiting and do not
+ * hold a spot), the entrants once started (completion archives every team).
+ */
+export function registeredTeamCount(bt: Pick<BackendTournament, 'status' | 'teams' | 'seed_order'>): number {
+  const started = bt.status === TournamentStatus.ONGOING || bt.status === TournamentStatus.COMPLETED
+  if (started && bt.seed_order) return bt.seed_order.length
+  return (bt.teams ?? []).filter((t) => t.status === TeamStatus.LOCKED).length
+}
+
 export function toDisplayTournament(bt: BackendTournament): Tournament {
   const firstPhase = bt.phases[0]
   const gameName = firstPhase?.game?.name ?? 'Unknown'
@@ -37,7 +48,7 @@ export function toDisplayTournament(bt: BackendTournament): Tournament {
     status: statusMap[bt.status] ?? 'open',
     registrationOpen: isRegistrationOpen(bt),
     maxParticipants: bt.max_participants,
-    currentParticipants: bt.teams?.length ?? 0,
+    currentParticipants: registeredTeamCount(bt),
     format,
     description: bt.description ?? '',
     rules: '',

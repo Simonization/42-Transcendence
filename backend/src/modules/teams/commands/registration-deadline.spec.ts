@@ -137,4 +137,12 @@ describe('registration deadline', () => {
         });
         await expect(query.compute({ ...t, registration_closes_at: future })).resolves.toMatchObject({ registrationOpen: true });
     });
+
+    it('availability counts the entrants of a started tournament, not its (archived) LOCKED teams', async () => {
+        const teamRepo = mockRepo({ count: jest.fn().mockResolvedValue(0) });
+        const query = new GetTournamentAvailabilityQuery(teamRepo, mockRepo());
+        const done: any = { ...tournament(past), status: TournamentStatus.COMPLETED, max_participants: 8, seed_order: [1, 2, 3] };
+        await expect(query.compute(done)).resolves.toMatchObject({ lockedTeams: 3, spotsLeft: 5 });
+        expect(teamRepo.count).not.toHaveBeenCalled();
+    });
 });

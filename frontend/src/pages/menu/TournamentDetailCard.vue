@@ -410,7 +410,7 @@ const tabs = computed<Array<{ id: TabType; label: string; icon: string }>>(() =>
                 ></div>
               </div>
               <p
-                v-if="availability && availability.spotsLeft !== null"
+                v-if="availability && availability.spotsLeft !== null && availability.registrationOpen"
                 class="spots-left"
                 :class="{ 'spots-left-full': availability.full }"
               >
