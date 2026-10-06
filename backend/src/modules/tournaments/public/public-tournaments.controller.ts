@@ -55,7 +55,7 @@ export class ShareController {
     @Header('X-Content-Type-Options', 'nosniff')
     async image(@Param('id', ParseIntPipe) id: number): Promise<StreamableFile> {
         const tournament = await this.query.execute(id);
-        const png = this.images.render(id, ogModelOf(tournament));
+        const png = await this.images.render(id, ogModelOf(tournament));
         return new StreamableFile(png, { type: 'image/png', length: png.length });
     }
 }

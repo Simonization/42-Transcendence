@@ -268,15 +268,15 @@ describe('og image', () => {
         expect(wrapTitle('The Very Long Tournament Name That Goes On', 22).length).toBeLessThanOrEqual(2);
     });
 
-    it('renders a real 1200x630 PNG and memoises it', () => {
+    it('renders a real 1200x630 PNG and memoises it', async () => {
         const service = new OgImageService();
         const model = ogModelOf(buildPublicTournament(knockout()));
-        const png = service.render(7, model);
+        const png = await service.render(7, model);
         expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
         expect(png.readUInt32BE(16)).toBe(1200);
         expect(png.readUInt32BE(20)).toBe(630);
-        expect(service.render(7, model)).toBe(png);
-        expect(service.render(7, { ...model, title: 'Renamed' })).not.toBe(png);
+        expect(await service.render(7, model)).toBe(png);
+        expect(await service.render(7, { ...model, title: 'Renamed' })).not.toBe(png);
     });
 });
 
