@@ -61,6 +61,7 @@ export function mockDataSource(managerOverrides: Record<string, any> = {}) {
         delete: jest.fn().mockResolvedValue({ affected: 1 }),
         createQueryBuilder: jest.fn(),
         query: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
         ...managerOverrides,
     };
     const runner: any = {

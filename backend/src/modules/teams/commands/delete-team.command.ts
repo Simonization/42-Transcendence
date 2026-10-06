@@ -2,6 +2,8 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { DataSource } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
 import { TeamInvitation } from '../entities/team-invitation.entity';
+import { Match } from '../../matches/entities/match.entity';
+import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
 
@@ -26,6 +28,16 @@ export class DeleteTeamCommand {
             if (!team) throw new NotFoundException('Team not found');
             if (team.captain_id !== userId) throw new ForbiddenException('Only the captain can delete this team');
             if (team.status === TeamStatus.LOCKED) throw new ForbiddenException('Cannot delete a locked team');
+            // Once its tournament has left registration (or the team ever played), the team is
+            // part of the bracket's history: deleting it would blank its match slots (the FK is
+            // ON DELETE SET NULL) and drop it from standings and podiums.
+            if (team.tournament && team.tournament.status !== TournamentStatus.REGISTRATION_OPEN) {
+                throw new ForbiddenException('Teams cannot be deleted once their tournament has started');
+            }
+            const played = await queryRunner.manager.count(Match, {
+                where: [{ team1_id: teamId }, { team2_id: teamId }],
+            });
+            if (played > 0) throw new ForbiddenException('Cannot delete a team that has matches');
 
             // Delete all invitations (FK constraint prevents team deletion if rows remain)
             await queryRunner.manager.delete(TeamInvitation, { team_id: teamId });
