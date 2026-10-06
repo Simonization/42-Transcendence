@@ -18,6 +18,7 @@ import { GetTeamProfileQuery } from '../teams/queries/get-team-profile.query';
 import { MatchesService } from '../matches/matches.service';
 import { GetMatchDetailsQuery } from '../matches/queries/get-match-details.query';
 import { GetChatHistoryQuery } from '../chat/queries/get-chat-history.query';
+import { GetBlocksQuery } from '../friends/queries/get-blocks.query';
 import { toPublicUser } from './public-user';
 import { publicInvitation, publicLookingForTeam, publicMatch, publicTeam, publicTournament } from './public-views';
 
@@ -298,6 +299,15 @@ describe('match read endpoints', () => {
         });
         expectNoPrivateUserData(await svc.findOne(1));
         expectNoPrivateUserData(await svc.findByPhase(1));
+    });
+});
+
+describe('social read endpoints', () => {
+    it('GET /social/blocks: the blocked user is a public user', async () => {
+        const query = new GetBlocksQuery({ find: async () => [{ id: 1, blocked: user(12), reason: null }] } as any);
+        const blocks = await query.execute(11);
+        expect(blocks[0].blocked).toEqual({ id: 12, username: 'player12', avatarUrl: null });
+        expectNoPrivateUserData(blocks);
     });
 });
 
