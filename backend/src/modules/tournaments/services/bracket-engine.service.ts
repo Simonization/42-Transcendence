@@ -23,6 +23,25 @@ export interface MatchScores {
 
 const isSettled = (m: Match) => SETTLED_MATCH_STATUSES.includes(m.status);
 
+/*
+ * Locking. Every operation that changes a bracket runs in one transaction and takes row locks in
+ * the same order, so two of them can never deadlock: the tournament row first, then match rows.
+ * Callers (MatchFlowService, WithdrawTeamCommand, StartTournamentCommand) lock the tournament
+ * before anything else; the engine re-locks it where it needs it (a no-op inside the same
+ * transaction) and locks each match it reads to change. After taking a lock it reads the row
+ * again, so it acts on what a concurrent transaction committed, not on a stale copy.
+ */
+
+/** SELECT ... FOR UPDATE on a tournament row. */
+export function lockTournament(manager: EntityManager, id: number): Promise<Tournament | null> {
+    return manager.findOne(Tournament, { where: { id }, lock: { mode: 'pessimistic_write' } });
+}
+
+/** SELECT ... FOR UPDATE on a match row. */
+export function lockMatch(manager: EntityManager, id: number): Promise<Match | null> {
+    return manager.findOne(Match, { where: { id }, lock: { mode: 'pessimistic_write' } });
+}
+
 /**
  * The bracket's state machine: finishing a match, moving its winner into the right slot of the
  * next match, resolving byes and walkovers, closing a phase (next phase or tournament complete),
@@ -89,8 +108,13 @@ export class BracketEngine {
     async advanceWinner(manager: EntityManager, match: Match, events: EngineEvents): Promise<void> {
         if (!match.winner_next_match_id || match.winner_id == null) return;
 
-        const next = await manager.findOne(Match, { where: { id: match.winner_next_match_id } });
+        // Locked: two feeders finishing at the same time would otherwise both read the next
+        // match with one empty slot, and the second write would leave it WAITING for ever.
+        const next = await lockMatch(manager, match.winner_next_match_id);
         if (!next) return;
+        if (isSettled(next)) {
+            throw new ConflictException('The next match is already settled; undo it first.');
+        }
 
         if (match.winner_next_match_slot === 2) next.team2_id = match.winner_id;
         else next.team1_id = match.winner_id;
@@ -123,12 +147,15 @@ export class BracketEngine {
      * which makes it safe to call more than once.
      */
     async checkPhase(manager: EntityManager, phaseId: number, events: EngineEvents): Promise<void> {
+        const phase = await manager.findOne(TournamentPhase, { where: { id: phaseId } });
+        if (!phase) return;
+        // Lock the tournament before reading the matches: when the last two matches of a phase
+        // finish concurrently, the second transaction waits here until the first commits, then
+        // sees both settled. Without it each saw the other still open and nobody closed the phase.
+        const tournament = await lockTournament(manager, phase.tournament_id);
         const matches = await manager.find(Match, { where: { phase_id: phaseId } });
         if (!matches.length || matches.some((m) => !isSettled(m))) return;
 
-        const phase = await manager.findOne(TournamentPhase, { where: { id: phaseId } });
-        if (!phase) return;
-        const tournament = await manager.findOne(Tournament, { where: { id: phase.tournament_id } });
         if (!tournament || tournament.status !== TournamentStatus.ONGOING) return;
         if (tournament.active_phase_id !== phaseId) return;
 
@@ -211,16 +238,14 @@ export class BracketEngine {
         }
 
         const phase = await manager.findOne(TournamentPhase, { where: { id: match.phase_id } });
-        const tournament = phase
-            ? await manager.findOne(Tournament, { where: { id: phase.tournament_id } })
-            : null;
+        const tournament = phase ? await lockTournament(manager, phase.tournament_id) : null;
         if (!phase || !tournament) throw new NotFoundException('Tournament not found for this match.');
         if (tournament.active_phase_id !== match.phase_id) {
             throw new ConflictException('A later phase has already started; this result is final.');
         }
 
         if (match.winner_next_match_id) {
-            const next = await manager.findOne(Match, { where: { id: match.winner_next_match_id } });
+            const next = await lockMatch(manager, match.winner_next_match_id);
             if (next) {
                 const untouched =
                     [MatchStatus.WAITING, MatchStatus.READY, MatchStatus.ONGOING].includes(next.status) &&
@@ -305,8 +330,9 @@ export class BracketEngine {
         await manager.update(Team, { id: teamId }, { status: TeamStatus.ARCHIVED });
 
         for (const { id } of pending) {
-            // Re-read: finishing an earlier walkover may have moved this match on already.
-            const m = await manager.findOne(Match, { where: { id } });
+            // Re-read under lock: finishing an earlier walkover may have moved this match on
+            // already, and a captain may be confirming it right now.
+            const m = await lockMatch(manager, id);
             if (!m || isSettled(m)) continue;
             m.game_data = { ...(m.game_data ?? {}), withdrawn_team_id: teamId };
             const opponent = m.team1_id === teamId ? m.team2_id : m.team1_id;

@@ -12,7 +12,14 @@ import { Match, MatchStatus, SETTLED_MATCH_STATUSES } from '../entities/match.en
 import { UserMatch } from '../entities/user-match.entity';
 import { Team } from '../../teams/entities/team.entity';
 import { TeamPermissionsService } from '../../teams/services/team-permissions.service';
-import { BracketEngine, EngineEvents, newEvents } from '../../tournaments/services/bracket-engine.service';
+import {
+    BracketEngine,
+    EngineEvents,
+    lockMatch,
+    lockTournament,
+    newEvents,
+} from '../../tournaments/services/bracket-engine.service';
+import { TournamentPhase } from '../../tournaments/entities/tournament-phase.entity';
 import { MatchNotifier } from '../../tournaments/services/match-notifier.service';
 import { BracketPublisher } from '../../tournaments/services/bracket-publisher.service';
 import { ReportScoreDto } from '../dto/report-score.dto';
@@ -179,8 +186,18 @@ export class MatchFlowService {
         void this.publisher.matchChanged(matchId, reason, events);
     }
 
+    /**
+     * Locks the match's tournament, then the match (the engine's lock order, see
+     * bracket-engine.service.ts), and returns the match as read under the lock.
+     */
     private async lock(manager: EntityManager, matchId: number): Promise<Match> {
-        const match = await manager.findOne(Match, { where: { id: matchId }, lock: { mode: 'pessimistic_write' } });
+        const peek = await manager.findOne(Match, { where: { id: matchId } });
+        if (!peek) throw new NotFoundException(`Match ${matchId} not found`);
+        const tournamentId =
+            peek.tournament_id ??
+            (await manager.findOne(TournamentPhase, { where: { id: peek.phase_id } }))?.tournament_id;
+        if (tournamentId != null) await lockTournament(manager, tournamentId);
+        const match = await lockMatch(manager, matchId);
         if (!match) throw new NotFoundException(`Match ${matchId} not found`);
         return match;
     }
