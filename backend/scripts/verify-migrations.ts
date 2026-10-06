@@ -148,6 +148,22 @@ const SEED = `
         VALUES (200, 2, 1, 'WAITING', '{"group": "B"}');
     INSERT INTO "match_teams" ("match_id", "team_id") VALUES
         (100, 13), (101, 11), (101, 10), (102, 13), (102, 12), (200, 20);
+    -- A 3-team knockout as the old generator built it: final 300 fed by 301 (slot 1) and 302
+    -- (slot 2); teams popped off the end two at a time, so leaf 302 holds team 30 alone. It
+    -- stalls: nothing ever settles 302. (LegacyBracketRepair)
+    INSERT INTO "tournaments" ("id", "name", "status") VALUES (3, 'Legacy', 'ONGOING');
+    INSERT INTO "tournament_phases" ("id", "tournament_id", "order", "type", "game_id")
+        VALUES (3, 3, 1, 'SINGLE_ELIMINATION', 1);
+    UPDATE "tournaments" SET "active_phase_id" = 3 WHERE "id" = 3;
+    INSERT INTO "teams" ("id", "name", "status", "captain_id", "tournamentId") VALUES
+        (30, 'Thirty', 'LOCKED', 1, 3), (31, 'Thirty-one', 'LOCKED', 2, 3), (32, 'Thirty-two', 'LOCKED', 3, 3);
+    INSERT INTO "team_members" ("team_id", "user_id") VALUES (30, 1), (31, 2), (32, 3);
+    INSERT INTO "matches" ("id", "phase_id", "round_order", "status",
+                           "winner_next_match_id", "winner_next_match_slot") VALUES
+        (300, 3, 2, 'WAITING', NULL, NULL),
+        (301, 3, 1, 'WAITING', 300, 1),
+        (302, 3, 1, 'WAITING', 300, 2);
+    INSERT INTO "match_teams" ("match_id", "team_id") VALUES (301, 32), (301, 31), (302, 30);
 `;
 
 async function checkUpgrade(): Promise<void> {
@@ -179,9 +195,19 @@ async function checkUpgrade(): Promise<void> {
         assert(byId.get(200).team1_id === 20 && byId.get(200).group_index === 1, 'group match');
         assert(matches.every((m) => m.game_id === 1), 'game_id backfilled from the phase');
         assert(byId.get(100).tournament_id === 1 && byId.get(200).tournament_id === 2, 'tournament_id backfilled');
+        // Legacy bracket repaired: the lone team's leaf is a bye, its team waits in the final's
+        // slot 2, the full leaf is playable.
+        assert(byId.get(302).status === 'BYE' && byId.get(302).team1_id === 30, 'legacy bye resolved');
+        assert(byId.get(300).team1_id === null && byId.get(300).team2_id === 30, 'legacy bye advanced to its slot');
+        assert(byId.get(300).status === 'WAITING' && byId.get(301).status === 'READY', 'legacy bracket playable');
+        const seeds: any[] = await ds.query(`SELECT "id", "seed_order" FROM "tournaments" ORDER BY "id"`);
+        assert(
+            JSON.stringify(seeds.map((t) => t.seed_order)) === JSON.stringify([[10, 11, 12, 13], [], [30, 31, 32]]),
+            'seed_order backfilled from LOCKED teams',
+        );
 
         const teams: any[] = await ds.query(`SELECT "id", "join_code" FROM "teams" ORDER BY "id"`);
-        assert(teams.length === 5, 'teams kept');
+        assert(teams.length === 8, 'teams kept');
         assert(teams.every((t) => /^[A-HJ-NP-Za-km-z2-9]{10}$/.test(t.join_code)), 'join codes in the app format');
         assert(new Set(teams.map((t) => t.join_code)).size === teams.length, 'join codes unique');
 
@@ -189,7 +215,7 @@ async function checkUpgrade(): Promise<void> {
         assert(invitations.length === 2 && invitations.every((i) => i.direction === 'INVITE'), 'invitations kept as INVITE');
         assert(invitations[1].status === 'DECLINED', 'invitation status kept');
         const [{ count: members }] = await ds.query(`SELECT count(*)::int AS count FROM "team_members"`);
-        assert(members === 5, 'team members kept');
+        assert(members === 8, 'team members kept');
         const [{ count: notifications }] = await ds.query(`SELECT count(*)::int AS count FROM "notifications"`);
         assert(notifications === 1, 'notifications kept');
         const [{ exists }] = await ds.query(`SELECT to_regclass('public.match_teams') IS NOT NULL AS exists`);
@@ -200,12 +226,18 @@ async function checkUpgrade(): Promise<void> {
         await ds.query(`UPDATE "team_invitations" SET "status" = 'CANCELLED' WHERE "status" = 'PENDING'`);
         await ds.query(`INSERT INTO "team_invitations" ("team_id", "sender_id", "receiver_id", "direction")
                         VALUES (20, 4, 5, 'REQUEST')`);
-        await ds.undoLastMigration({ transaction: 'all' });
+        // Back to the Baseline, one migration at a time.
+        for (;;) {
+            const [{ count }] = await ds.query(`SELECT count(*)::int AS count FROM "migrations"`);
+            if (count <= 1) break;
+            await ds.undoLastMigration({ transaction: 'all' });
+        }
         const pairs: any[] = await ds.query(
             `SELECT "match_id", "team_id" FROM "match_teams" ORDER BY "match_id", "team_id"`);
         assert(
             JSON.stringify(pairs.map((p) => [p.match_id, p.team_id])) ===
-                JSON.stringify([[100, 13], [101, 10], [101, 11], [102, 12], [102, 13], [200, 20]]),
+                JSON.stringify([[100, 13], [101, 10], [101, 11], [102, 12], [102, 13], [200, 20],
+                                [300, 30], [301, 31], [301, 32], [302, 30]]),
             'match_teams restored on revert',
         );
         const statuses: any[] = await ds.query(`SELECT "status" FROM "team_invitations" ORDER BY "id"`);

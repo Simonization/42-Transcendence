@@ -125,8 +125,11 @@ export class BracketEngine {
 
     /** A match whose second team just arrived is READY, or a walkover if one side withdrew. */
     private async onSlotsChanged(manager: EntityManager, match: Match, events: EngineEvents): Promise<void> {
-        if (match.team1_id == null || match.team2_id == null) return;
         if (match.status !== MatchStatus.WAITING) return;
+        if (match.team1_id == null || match.team2_id == null) {
+            await this.byeIfUnfillable(manager, match, events);
+            return;
+        }
 
         const withdrawn = match.game_data?.withdrawn_team_id;
         if (withdrawn === match.team1_id || withdrawn === match.team2_id) {
@@ -139,6 +142,28 @@ export class BracketEngine {
         match.status = MatchStatus.READY;
         await manager.save(Match, match);
         events.readyMatchIds.push(match.id);
+    }
+
+    /**
+     * A match holding one team whose other slot can no longer be filled (every match feeding
+     * that slot settled without a winner, i.e. CANCELLED) is a bye: the lone team moves on.
+     * The current generator never produces this; brackets carried over from the old engine do
+     * (see the LegacyBracketRepair migration, which applies the same rule).
+     */
+    private async byeIfUnfillable(manager: EntityManager, match: Match, events: EngineEvents): Promise<void> {
+        const lone = match.team1_id ?? match.team2_id;
+        if (lone == null) return;
+        const emptySlot = match.team1_id == null ? 1 : 2;
+        const feeders = (await manager.find(Match, { where: { winner_next_match_id: match.id } })).filter(
+            (f) => (f.winner_next_match_slot ?? 1) === emptySlot,
+        );
+        if (!feeders.length || !feeders.every((f) => isSettled(f) && f.winner_id == null)) return;
+
+        match.status = MatchStatus.BYE;
+        match.winner_id = lone;
+        match.finished_at = new Date();
+        await manager.save(Match, match);
+        await this.advanceWinner(manager, match, events);
     }
 
     /**

@@ -19,6 +19,7 @@ Current migrations:
 |---|---|---|
 | `1790793062515` | `Baseline1790793062515` | The schema as `synchronize` built it before migrations existed. |
 | `1790793133773` | `TournamentFlowWaves1790793133773` | Match slots and scores, match chat, check-in, registration deadline, seeding, join codes, join requests, looking-for-team. Carries existing brackets over from the old `match_teams` table. |
+| `1790800000000` | `LegacyBracketRepair1790800000000` | Data only: makes brackets the old engine started playable (byes resolved, empty leaves cancelled) and gives started tournaments a seed order. No-op on current data. |
 
 ## Environment
 
@@ -72,8 +73,9 @@ Starts a throwaway Postgres 15 (the `embedded-postgres` dev dependency, no Docke
 - an empty database migrated with every migration has exactly the schema `synchronize` builds
   from the current entities, and `migration:generate` would find nothing to do. It fails when
   an entity changed without a migration;
-- a database at the Baseline, holding rows in the old shape, goes through the later migrations
-  with its data carried over, reverts, and migrates again.
+- a database at the Baseline, holding rows in the old shape (including a stalled old-engine
+  bracket), goes through the later migrations with its data carried over and repaired, reverts
+  to the Baseline, and migrates again.
 
 It is not part of `npm test` (it needs ~30 s and a free port).
 
@@ -126,3 +128,33 @@ changed; run the SQL and restart.
 Reverting it rebuilds `match_teams` from the slots, turns `CANCELLED` invitations into
 `DECLINED`, and deletes join requests (the old schema cannot tell them from invitations). The
 new columns and the looking-for-team board are dropped with their data.
+
+### What the legacy bracket repair does
+
+Production at `bb033ea` ran the old engine. Its single-elimination generator popped teams two at
+a time into an unseeded tree, so any field that is not a power of two left first-round matches
+with one team or none, all `WAITING`, with no feeder: nothing ever moved them on and the bracket
+stalled (5 teams: leaves `[5v4] [3v2] [1] []`). Started tournaments also had no `seed_order`.
+
+For `ONGOING` tournaments, single-elimination phases only, the migration applies the engine's
+own rules until nothing changes:
+
+- a settled feeder's winner sits in the slot it feeds;
+- a `WAITING` match short of a team, whose empty slot nothing can fill any more (no feeder, or
+  its feeders settled without a winner), becomes a `BYE` won by its lone team, who moves into
+  the next match's slot — or `CANCELLED` when it holds no team;
+- a `WAITING` match with both teams becomes `READY`.
+
+So the 5-team bracket above becomes: leaf `[1]` a bye, leaf `[]` cancelled, their semi-final a
+bye too, team 1 waiting in the final's slot 2, the two real leaves `READY`. The engine has the
+matching rule at runtime: a match whose other side was fed only by cancelled matches becomes a
+bye when its first team arrives (6 teams: leaf `[]` cancelled, its semi-final turns into a bye
+once the winner of the sibling leaf arrives).
+
+`ONGOING` and `COMPLETED` tournaments without a `seed_order` get their `LOCKED` and `ARCHIVED`
+teams by id, the order the engine already falls back to.
+
+Not handled: an old group stage where a group got a single team (it has no matches, so that team
+never appears in the standings). `down()` is a no-op. `npm run test:db` plays repaired 4-, 5-
+and 6-team old brackets to completion and checks the migration leaves current-engine brackets
+untouched.
