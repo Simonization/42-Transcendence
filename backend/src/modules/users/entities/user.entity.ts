@@ -45,14 +45,14 @@ export class User {
     @Column({ default: false })
     isEmailVerified: boolean;
 
-    @Column({ nullable: true, select: false })
-    verificationToken?: string;
+    @Column({ type: 'varchar', nullable: true, select: false })
+    verificationToken?: string | null;
 
     @Column({ default: false })
     twoFactorEnabled: boolean;
 
-    @Column({ nullable: true, select: false })
-    twoFactorCode?: string;
+    @Column({ type: 'varchar', nullable: true, select: false })
+    twoFactorCode?: string | null;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

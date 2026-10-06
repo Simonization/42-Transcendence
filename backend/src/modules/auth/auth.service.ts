@@ -16,6 +16,12 @@ import { ADMIN_ROLE, SUPER_ADMIN_ROLE } from '../users/constants/user-roles';
 
 const DEFAULT_ADMIN_INVITE_EXPIRATION_HOURS = 24;
 
+/**
+ * Wrong guesses allowed against one emailed 2FA code. The code is then thrown away and the user
+ * has to ask for a new one, so the 10^6 code space cannot be walked through /auth/2fa/verify.
+ */
+export const MAX_2FA_ATTEMPTS = 5;
+
 @Injectable()
 export class AuthService {
     constructor(
@@ -29,6 +35,33 @@ export class AuthService {
         @InjectRepository(AdminInvite)
         private readonly adminInviteRepository: Repository<AdminInvite>,
     ) {}
+
+    /** Wrong 2FA guesses per user since their current code was issued (single process). */
+    private readonly failed2faAttempts = new Map<number, number>();
+
+    private async issue2faCode(user: User): Promise<string> {
+        const code = crypto.randomInt(100000, 1000000).toString();
+        user.twoFactorCode = code;
+        await this.userRepository.save(user);
+        this.failed2faAttempts.delete(user.id);
+        return code;
+    }
+
+    /** Throws unless `code` is the user's current one; a code is good for one success only. */
+    private async consume2faCode(user: User, code: string): Promise<void> {
+        if (!user.twoFactorCode || user.twoFactorCode !== code) {
+            const attempts = (this.failed2faAttempts.get(user.id) ?? 0) + 1;
+            if (user.twoFactorCode && attempts >= MAX_2FA_ATTEMPTS) {
+                this.failed2faAttempts.delete(user.id);
+                await this.userRepository.update(user.id, { twoFactorCode: null });
+                throw new BadRequestException('Too many invalid codes. Request a new code.');
+            }
+            this.failed2faAttempts.set(user.id, attempts);
+            throw new BadRequestException('Invalid verification code');
+        }
+        this.failed2faAttempts.delete(user.id);
+        user.twoFactorCode = null;
+    }
 
     private isBannedUser(user: Pick<User, 'status' | 'banUntil'>): boolean {
         return user.status === 1 || (!!user.banUntil && new Date(user.banUntil) > new Date());
@@ -94,11 +127,7 @@ export class AuthService {
 
         // If 2FA enabled, send code
         if (user.twoFactorEnabled) {
-            // Generate a 6-digit code
-            const code = Math.floor(100000 + Math.random() * 900000).toString();
-            
-            user.twoFactorCode = code;
-            await this.userRepository.save(user);
+            const code = await this.issue2faCode(user);
 
             // Send the code via email
             try {
@@ -160,7 +189,7 @@ export class AuthService {
         }
 
         user.isEmailVerified = true;
-        user.verificationToken = undefined;
+        user.verificationToken = null;
         await this.userRepository.save(user);
 
         return {
@@ -348,10 +377,7 @@ export class AuthService {
             throw new BadRequestException('User not found');
         }
 
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        user.twoFactorCode = code;
-        await this.userRepository.save(user);
+        const code = await this.issue2faCode(user);
 
         try {
             await this.mailService.send2FACode(user.mail, code, user.username);
@@ -375,13 +401,10 @@ export class AuthService {
             throw new BadRequestException('User not found');
         }
 
-        if (user.twoFactorCode !== code) {
-            throw new BadRequestException('Invalid verification code');
-        }
+        await this.consume2faCode(user, code);
 
-        // Enable 2FA and clear temporary code
+        // Enable 2FA (consume2faCode cleared the temporary code)
         user.twoFactorEnabled = true;
-        user.twoFactorCode = undefined;
         await this.userRepository.save(user);
 
         return {
@@ -400,9 +423,8 @@ export class AuthService {
             throw new BadRequestException('Two-factor authentication is not enabled');
         }
 
-        if (user.twoFactorCode !== code) {
-            throw new BadRequestException('Invalid verification code');
-        }
+        await this.consume2faCode(user, code);
+        await this.userRepository.update(user.id, { twoFactorCode: null });
 
         // Valid code -> generate tokens for login
         const payload = { sub: user.id, username: user.username };
@@ -438,7 +460,7 @@ export class AuthService {
         }
 
         user.twoFactorEnabled = false;
-        user.twoFactorCode = undefined;
+        user.twoFactorCode = null;
         await this.userRepository.save(user);
 
         return {
@@ -540,9 +562,7 @@ export class AuthService {
             user.avatarUrl = googleUser.picture;
         }
         if (user.twoFactorEnabled) {
-            const code = Math.floor(100000 + Math.random() * 900000).toString();
-            user.twoFactorCode = code;
-            await this.userRepository.save(user);
+            const code = await this.issue2faCode(user);
 
             try {
                 await this.mailService.send2FACode(user.mail, code, user.username);
