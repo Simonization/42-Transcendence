@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 /**
  * No read endpoint of the tournaments, teams or matches modules may put another user's private
  * data on the wire. Every user in the fixtures below carries every private field the entity has;
@@ -164,6 +165,7 @@ describe('tournament read endpoints', () => {
             new GetTournamentQuery(repoReturning(t)),
             new GetSeedingQuery(repoReturning(t)),
             new GetCheckinQuery(repoReturning(t)),
+            repoReturning(t),
         );
 
     it('GET /tournaments', async () => {
@@ -196,10 +198,38 @@ describe('tournament read endpoints', () => {
         const t = tournament();
         const svc = new TournamentsService(
             { execute: async () => t } as any, { execute: async () => t } as any, {} as any, {} as any, {} as any, {} as any,
-            {} as any, {} as any, {} as any, {} as any,
+            {} as any, {} as any, {} as any, {} as any, {} as any,
         );
         expectNoPrivateUserData(await svc.create({} as any));
         expectNoPrivateUserData(await svc.update(1, {} as any));
+    });
+});
+
+describe('DRAFT tournaments on the open read routes', () => {
+    const draft = () => ({ ...tournament(), status: TournamentStatus.DRAFT });
+    const service = (t: any) =>
+        new TournamentsService(
+            {} as any, {} as any, {} as any, {} as any, {} as any, {} as any,
+            new GetAllTournamentsQuery(repoReturning([t, { ...tournament(), id: 2 }])),
+            new GetTournamentQuery(repoReturning(t)),
+            new GetSeedingQuery(repoReturning(t)),
+            new GetCheckinQuery(repoReturning(t)),
+            repoReturning(t),
+        );
+
+    it('are left out of the list and 404 everywhere for anyone but an admin', async () => {
+        const svc = service(draft());
+        expect((await svc.findAll()).map((t) => t.id)).toEqual([2]);
+        for (const call of [() => svc.findOne(1), () => svc.getSeeding(1), () => svc.getCheckin(1), () => svc.getStandings(1)]) {
+            await expect(call()).rejects.toBeInstanceOf(NotFoundException);
+        }
+    });
+
+    it('are visible to an admin', async () => {
+        const svc = service(draft());
+        expect(await svc.findAll(true)).toHaveLength(2);
+        await expect(svc.findOne(1, true)).resolves.toMatchObject({ status: TournamentStatus.DRAFT });
+        await expect(svc.getSeeding(1, true)).resolves.toBeDefined();
     });
 });
 

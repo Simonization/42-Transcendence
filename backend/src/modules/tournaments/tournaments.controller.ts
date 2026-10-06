@@ -8,14 +8,21 @@ import {
         Param,
         Delete,
         ParseIntPipe,
-        UseGuards
+        UseGuards,
+        Req
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { OptionalUserGuard } from '../auth/guards/optional-user.guard';
+import { ADMIN_ROLE, SUPER_ADMIN_ROLE } from '../users/constants/user-roles';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
 import { SetSeedingDto } from './dto/set-seeding.dto';
 import { TournamentsService } from './tournaments.service';
+
+/** DRAFT tournaments are an admin's work in progress: only admins see them on the read routes. */
+const viewerIsAdmin = (req: { user?: { role?: number } | null }) =>
+    req.user?.role === ADMIN_ROLE || req.user?.role === SUPER_ADMIN_ROLE;
 
 @Controller('tournaments')
 export class TournamentsController {
@@ -28,8 +35,9 @@ export class TournamentsController {
     }
 
     @Get()
-    findAll() {
-        return this.tournamentsService.findAll();
+    @UseGuards(OptionalUserGuard)
+    findAll(@Req() req) {
+        return this.tournamentsService.findAll(viewerIsAdmin(req));
     }
 
     /** Freezes the field and generates phase 1's matches. */
@@ -41,14 +49,16 @@ export class TournamentsController {
 
     /** The teams that would enter (or entered), seed 1 first, with the first-round layout. */
     @Get(':id/seeding')
-    getSeeding(@Param('id', ParseIntPipe) id: number) {
-        return this.tournamentsService.getSeeding(id);
+    @UseGuards(OptionalUserGuard)
+    getSeeding(@Param('id', ParseIntPipe) id: number, @Req() req) {
+        return this.tournamentsService.getSeeding(id, viewerIsAdmin(req));
     }
 
     /** Check-in state and who would be archived if the tournament started now. */
     @Get(':id/checkin')
-    getCheckin(@Param('id', ParseIntPipe) id: number) {
-        return this.tournamentsService.getCheckin(id);
+    @UseGuards(OptionalUserGuard)
+    getCheckin(@Param('id', ParseIntPipe) id: number, @Req() req) {
+        return this.tournamentsService.getCheckin(id, viewerIsAdmin(req));
     }
 
     /** Sets the seed order. Before start only. */
@@ -60,8 +70,9 @@ export class TournamentsController {
 
     /** Group / round-robin standings for every such phase that has matches. */
     @Get(':id/standings')
-    getStandings(@Param('id', ParseIntPipe) id: number) {
-        return this.tournamentsService.getStandings(id);
+    @UseGuards(OptionalUserGuard)
+    getStandings(@Param('id', ParseIntPipe) id: number, @Req() req) {
+        return this.tournamentsService.getStandings(id, viewerIsAdmin(req));
     }
 
     /** The team forfeits its remaining match(es) in the active phase: walkover to the opponent. */
@@ -75,8 +86,9 @@ export class TournamentsController {
     }
 
     @Get(':id')
-    findOne(@Param('id', ParseIntPipe) id: number) {
-        return this.tournamentsService.findOne(id);
+    @UseGuards(OptionalUserGuard)
+    findOne(@Param('id', ParseIntPipe) id: number, @Req() req) {
+        return this.tournamentsService.findOne(id, viewerIsAdmin(req));
     }
 
     @Patch(':id')

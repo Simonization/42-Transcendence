@@ -1,4 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Tournament, TournamentStatus } from './entities/tournament.entity';
 import { CreateTournamentCommand } from './commands/create-tournament.command';
 import { UpdateTournamentCommand } from './commands/update-tournament.command';
 import { DeleteTournamentCommand } from './commands/delete-tournament.command';
@@ -26,7 +29,18 @@ export class TournamentsService {
         private readonly getOneQuery: GetTournamentQuery,
         private readonly getSeedingQuery: GetSeedingQuery,
         private readonly getCheckinQuery: GetCheckinQuery,
+        @InjectRepository(Tournament) private readonly tournamentRepo: Repository<Tournament>,
     ) {}
+
+    /**
+     * The read routes are open to anyone. A DRAFT tournament is an admin's work in progress: for
+     * everyone else it does not exist (404, like the public share routes).
+     */
+    private async assertVisible(id: number, includeDrafts: boolean): Promise<void> {
+        if (includeDrafts) return;
+        const t = await this.tournamentRepo.findOne({ where: { id }, select: ['id', 'status'] });
+        if (!t || t.status === TournamentStatus.DRAFT) throw new NotFoundException(`Tournament ${id} not found`);
+    }
 
     async create(dto: CreateTournamentDto) {
         return publicTournament(await this.createCmd.execute(dto));
@@ -42,11 +56,13 @@ export class TournamentsService {
         return this.startCmd.execute(id);
     }
 
-    getSeeding(id: number) {
+    async getSeeding(id: number, includeDrafts = false) {
+        await this.assertVisible(id, includeDrafts);
         return this.getSeedingQuery.execute(id);
     }
 
-    getCheckin(id: number) {
+    async getCheckin(id: number, includeDrafts = false) {
+        await this.assertVisible(id, includeDrafts);
         return this.getCheckinQuery.execute(id);
     }
 
@@ -54,7 +70,8 @@ export class TournamentsService {
         return this.setSeedingCmd.execute(id, teamIds);
     }
 
-    getStandings(id: number) {
+    async getStandings(id: number, includeDrafts = false) {
+        await this.assertVisible(id, includeDrafts);
         return this.getOneQuery.standings(id);
     }
 
@@ -64,11 +81,13 @@ export class TournamentsService {
 
     // --- Standard CRUD ---
 
-    async findAll() {
-        return (await this.getAllQuery.execute()).map(publicTournament);
+    async findAll(includeDrafts = false) {
+        const all = await this.getAllQuery.execute();
+        return all.filter((t) => includeDrafts || t.status !== TournamentStatus.DRAFT).map(publicTournament);
     }
 
-    async findOne(id: number) {
+    async findOne(id: number, includeDrafts = false) {
+        await this.assertVisible(id, includeDrafts);
         return publicTournament(await this.getOneQuery.execute(id));
     }
 
