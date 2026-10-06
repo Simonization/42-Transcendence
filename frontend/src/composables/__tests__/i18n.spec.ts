@@ -8,10 +8,18 @@ import { i18n } from '@/i18n'
 import en from '@/i18n/locales/en.json'
 import fr from '@/i18n/locales/fr.json'
 import tr from '@/i18n/locales/tr.json'
+import i18nPackage from 'vue-i18n/package.json'
 
 describe('i18n', () => {
   beforeEach(() => {
     i18n.global.locale.value = 'en'
+  })
+
+  // 12.0.0-alpha.3 declares "sideEffects": false although its entry registers the message
+  // compiler as a side effect: Rollup dropped it, and every label of the production build
+  // rendered as its raw key ("auth.login"). The dev server and these tests never noticed.
+  it('uses a stable vue-i18n release', () => {
+    expect(i18nPackage.version).toMatch(/^\d+\.\d+\.\d+$/)
   })
 
   describe('locale files exist and have matching keys', () => {
