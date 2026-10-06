@@ -59,7 +59,7 @@ describe('GetTeamProfileQuery', () => {
         expect(profile.maxMembers).toBe(4);
         const json = JSON.stringify(profile);
         for (const leak of ['private@example.org', 'mail', 'passwordHash']) expect(json).not.toContain(leak);
-        expect(Object.keys(profile.members[0]).sort()).toEqual(['avatarUrl', 'id', 'isCaptain', 'isSubstitute', 'username']);
+        expect(Object.keys(profile.members[0]).sort()).toEqual(['avatarUrl', 'id', 'isCaptain', 'isDeleted', 'isSubstitute', 'username']);
     });
 
     it('reports the matches from the team\'s side, skipping byes, with W/L and round', async () => {

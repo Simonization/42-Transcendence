@@ -122,8 +122,13 @@ describe('the fixtures really are private', () => {
 
 describe('toPublicUser', () => {
     it('keeps id, username and avatar, and nothing else', () => {
-        expect(toPublicUser(user(1))).toEqual({ id: 1, username: 'player1', avatarUrl: '/avatars/1.png' });
-        expect(toPublicUser(user(2))).toEqual({ id: 2, username: 'player2', avatarUrl: null });
+        expect(toPublicUser(user(1))).toEqual({ id: 1, username: 'player1', avatarUrl: '/avatars/1.png', isDeleted: false });
+        expect(toPublicUser(user(2))).toEqual({ id: 2, username: 'player2', avatarUrl: null, isDeleted: false });
+    });
+
+    it('blanks the identity of a deleted account (a tombstone), keeping only its id', () => {
+        const tombstone = { ...user(3), username: 'deleted-user-3', avatarUrl: '/avatars/3.png', deletedAt: new Date() };
+        expect(toPublicUser(tombstone)).toEqual({ id: 3, username: '', avatarUrl: null, isDeleted: true });
     });
 });
 
@@ -132,7 +137,7 @@ describe('graph mappers', () => {
         const t = tournament();
         const out = publicTournament(t);
         expect(t.teams[0].members[0].mail).toBe(SECRETS[0]);
-        expect(out.teams?.[0].members?.[0]).toEqual({ id: 11, username: 'player11', avatarUrl: '/avatars/11.png' });
+        expect(out.teams?.[0].members?.[0]).toEqual({ id: 11, username: 'player11', avatarUrl: '/avatars/11.png', isDeleted: false });
         expect(out.teams?.[0].captain_id).toBe(11);
         expect(out.phases?.[0].matches?.[0].team1?.name).toBe('Team 1');
         expectNoPrivateUserData(out);
@@ -205,7 +210,7 @@ describe('team read endpoints', () => {
     it('GET /teams/invitations/my', async () => {
         const inviteRepo: any = { find: jest.fn(async () => [invitation(1), invitation(2)]) };
         const out = await service({ getInvitesQuery: new GetMyInvitationsQuery(inviteRepo) }).getMyInvitations(12);
-        expect(out[0].sender).toEqual({ id: 11, username: 'player11', avatarUrl: '/avatars/11.png' });
+        expect(out[0].sender).toEqual({ id: 11, username: 'player11', avatarUrl: '/avatars/11.png', isDeleted: false });
         expectNoPrivateUserData(out);
     });
 
@@ -245,7 +250,7 @@ describe('team read endpoints', () => {
     it('GET /teams/lft/:tournamentId', async () => {
         const query = new GetLookingForTeamQuery({ find: jest.fn(async () => [lft(1), lft(2)]) } as any);
         const out = await service({ lftQuery: query }).listLookingForTeam(1);
-        expect(out[0].user).toEqual({ id: 12, username: 'player12', avatarUrl: null });
+        expect(out[0].user).toEqual({ id: 12, username: 'player12', avatarUrl: null, isDeleted: false });
         expectNoPrivateUserData(out);
     });
 
@@ -286,7 +291,7 @@ describe('match read endpoints', () => {
     it('GET /matches/my-history and /matches/history/:userId', async () => {
         const svc = service({ getPlayerHistoryQuery: { execute: async () => matches() } });
         const mine = await svc.getHistory(11);
-        expect(mine[0].team1?.members?.[0]).toEqual({ id: 11, username: 'player11', avatarUrl: '/avatars/11.png' });
+        expect(mine[0].team1?.members?.[0]).toEqual({ id: 11, username: 'player11', avatarUrl: '/avatars/11.png', isDeleted: false });
         expectNoPrivateUserData(mine);
         expectNoPrivateUserData(await svc.getHistory(99));
     });
@@ -306,7 +311,7 @@ describe('social read endpoints', () => {
     it('GET /social/blocks: the blocked user is a public user', async () => {
         const query = new GetBlocksQuery({ find: async () => [{ id: 1, blocked: user(12), reason: null }] } as any);
         const blocks = await query.execute(11);
-        expect(blocks[0].blocked).toEqual({ id: 12, username: 'player12', avatarUrl: null });
+        expect(blocks[0].blocked).toEqual({ id: 12, username: 'player12', avatarUrl: null, isDeleted: false });
         expectNoPrivateUserData(blocks);
     });
 });
@@ -319,7 +324,7 @@ describe('chat read endpoints', () => {
             { existsBy: async () => true, find: async () => [{ chatId: 5, userId: 12, lastReadAt: new Date() }] } as any,
         );
         const history = await query.execute(5, 12);
-        expect(history[0].sender).toEqual({ id: 11, username: 'player11', avatarUrl: '/avatars/11.png' });
+        expect(history[0].sender).toEqual({ id: 11, username: 'player11', avatarUrl: '/avatars/11.png', isDeleted: false });
         expect(history[0].readBy).toEqual([12]);
         expectNoPrivateUserData(history);
     });

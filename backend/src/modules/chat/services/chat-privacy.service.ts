@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Friend } from '../../friends/entities/friend.entity';
 import { Block } from '../../friends/entities/block.entity';
 import { UserSettings } from '../../users/entities/user-settings.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class ChatPrivacyService {
@@ -11,6 +12,7 @@ export class ChatPrivacyService {
         @InjectRepository(Friend) private readonly friendRepo: Repository<Friend>,
         @InjectRepository(Block) private readonly blockRepo: Repository<Block>,
         @InjectRepository(UserSettings) private readonly settingsRepo: Repository<UserSettings>,
+        @InjectRepository(User) private readonly userRepo: Repository<User>,
     ) {}
 
     async validateAccess(senderId: number, receiverId: number): Promise<void> {
@@ -21,6 +23,12 @@ export class ChatPrivacyService {
             console.error('Error: ChatPrivacyService does not have senderId.');
             throw new ForbiddenException('Authentication error: Sender ID is missing or invalid.');
         }
+        // A deleted account keeps its conversations (history) but takes no new messages.
+        const receiver = await this.userRepo.findOne({ where: { id: rid }, select: ['id', 'deletedAt'] });
+        if (!receiver || receiver.deletedAt) {
+            throw new ForbiddenException('This account no longer exists.');
+        }
+
         // A block must win outright. Blocking removes the friendship, so without this the
         // check falls through to the receiver's openMessage setting and a blocked sender can
         // still reach anyone who accepts messages from non-friends.

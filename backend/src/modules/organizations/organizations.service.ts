@@ -11,6 +11,14 @@ import { OrgMember } from './entities/org-member.entity';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { AddMemberDto } from './dto/add-member.dto';
+import { toPublicUser } from '../users/public-user';
+import type { User } from '../users/entities/user.entity';
+
+/** A deleted owner shows as a deleted user, not under its placeholder name. */
+const publicOwner = (owner: User) => {
+    const u = toPublicUser(owner);
+    return { id: u.id, username: u.username, isDeleted: u.isDeleted };
+};
 
 @Injectable()
 export class OrganizationsService {
@@ -40,7 +48,7 @@ export class OrganizationsService {
             description: org.description,
             avatarUrl: org.avatarUrl,
             ownerId: org.ownerId,
-            owner: org.owner ? { id: org.owner.id, username: org.owner.username } : undefined,
+            owner: org.owner ? publicOwner(org.owner) : undefined,
             memberCount: (org as any).memberCount ?? 0,
             createdAt: org.createdAt,
             updatedAt: org.updatedAt,
@@ -62,7 +70,7 @@ export class OrganizationsService {
             description: org.description,
             avatarUrl: org.avatarUrl,
             ownerId: org.ownerId,
-            owner: org.owner ? { id: org.owner.id, username: org.owner.username } : undefined,
+            owner: org.owner ? publicOwner(org.owner) : undefined,
             memberCount: (org as any).memberCount ?? 0,
             createdAt: org.createdAt,
             updatedAt: org.updatedAt,
@@ -126,11 +134,7 @@ export class OrganizationsService {
             orgId: m.orgId,
             role: m.role,
             joinedAt: m.joinedAt,
-            user: {
-                id: m.user.id,
-                username: m.user.username,
-                avatarUrl: m.user.avatarUrl ?? null,
-            },
+            user: toPublicUser(m.user),
         })));
     }
 
@@ -162,11 +166,7 @@ export class OrganizationsService {
             orgId: m!.orgId,
             role: m!.role,
             joinedAt: m!.joinedAt,
-            user: {
-                id: m!.user.id,
-                username: m!.user.username,
-                avatarUrl: m!.user.avatarUrl ?? null,
-            },
+            user: toPublicUser(m!.user),
         };
     }
 

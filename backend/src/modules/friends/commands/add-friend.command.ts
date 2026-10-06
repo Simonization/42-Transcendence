@@ -23,7 +23,7 @@ export class AddFriendCommand {
         }
 
         const targetUser = await this.userRepo.findOne({ where: { id: dto.friendId } });
-        if (!targetUser) {
+        if (!targetUser || targetUser.deletedAt) {
             throw new NotFoundException("No User found"); 
         }
         

@@ -12,7 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
-import { extractTokenFromSocket, isBannedUser } from '../auth/socket-auth.util';
+import { extractTokenFromSocket, isLockedOut } from '../auth/socket-auth.util';
 import { RealtimeService } from './realtime.service';
 import { RealtimeAccessService } from './realtime-access.service';
 import { roomName } from './realtime.events';
@@ -85,7 +85,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
             if (!token) return null;
             const payload = this.jwtService.verify(token);
             const user = await this.userRepo.findOne({ where: { id: payload.sub } });
-            if (!user || isBannedUser(user)) return null;
+            if (!user || isLockedOut(user)) return null;
             // ChatGateway sets the same value; whichever gateway runs first wins, both agree.
             client.data.user = client.data.user ?? payload;
             return payload.sub;

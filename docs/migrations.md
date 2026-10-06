@@ -20,6 +20,7 @@ Current migrations:
 | `1790793062515` | `Baseline1790793062515` | The schema as `synchronize` built it before migrations existed. |
 | `1790793133773` | `TournamentFlowWaves1790793133773` | Match slots and scores, match chat, check-in, registration deadline, seeding, join codes, join requests, looking-for-team. Carries existing brackets over from the old `match_teams` table. |
 | `1790800000000` | `LegacyBracketRepair1790800000000` | Data only: makes brackets the old engine started playable (byes resolved, empty leaves cancelled) and gives started tournaments a seed order. No-op on current data. |
+| `1790800100000` | `AccountTombstone1790800100000` | `users.deleted_at`: deleted accounts are anonymised tombstones (see `DeleteUserCommand`). |
 
 ## Environment
 

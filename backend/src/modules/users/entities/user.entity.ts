@@ -67,6 +67,15 @@ export class User {
     @Column({ type: 'varchar', nullable: true })
     avatarUrl: string | null;
 
+    /**
+     * Set when the account was deleted. The row stays (a tombstone) so the messages, matches
+     * and results it is part of keep their sender / player; every personal field is erased
+     * (see DeleteUserCommand) and the account can no longer sign in. A plain column on purpose:
+     * TypeORM's @DeleteDateColumn would hide the row from every relation that loads it.
+     */
+    @Column({ name: 'deleted_at', type: 'timestamp', nullable: true })
+    deletedAt: Date | null;
+
     // =====================
     // RELATIONSHIPS
     // =====================

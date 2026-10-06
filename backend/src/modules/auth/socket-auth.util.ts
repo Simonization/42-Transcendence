@@ -21,3 +21,8 @@ export function extractTokenFromSocket(client: Socket): string | undefined {
 export function isBannedUser(user: User): boolean {
     return user.status === 1 || (!!user.banUntil && new Date(user.banUntil) > new Date());
 }
+
+/** Banned, or the account was deleted: the socket must not stay connected. */
+export function isLockedOut(user: User): boolean {
+    return isBannedUser(user) || !!user.deletedAt;
+}

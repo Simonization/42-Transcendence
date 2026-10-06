@@ -45,6 +45,10 @@ export class InvitePlayerCommand {
             throw new BadRequestException(`That team is already full (${maxSize} players including substitutes)`);
         }
 
+        // 3c. The target must be a live account (deleted ones are tombstones).
+        const target = await this.userRepo.findOne({ where: { id: targetUserId } });
+        if (!target || target.deletedAt) throw new NotFoundException('User not found');
+
         // 4. Validation: Check if user is already a member
         if (team.members.some(m => m.id === targetUserId)) {
             throw new BadRequestException('User is already in this team');

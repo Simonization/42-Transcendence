@@ -7,7 +7,7 @@ import { Repository } from 'typeorm';
 import { ChatParticipant } from './entities/chat-participant.entity';
 import { Message } from './entities/message.entity';
 import { User } from '../users/entities/user.entity';
-import { extractTokenFromSocket, isBannedUser } from '../auth/socket-auth.util';
+import { extractTokenFromSocket, isLockedOut } from '../auth/socket-auth.util';
 
 @WebSocketGateway({
     cors: {
@@ -35,7 +35,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             const payload = this.jwtService.verify(token);
             const user = await this.userRepo.findOne({ where: { id: payload.sub } });
-            if (!user || isBannedUser(user)) {
+            if (!user || isLockedOut(user)) {
                 throw new UnauthorizedException('User is banned');
             }
             client.data.user = payload;
@@ -44,7 +44,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             client.use(async (_packet, next) => {
                 const latestUser = await this.userRepo.findOne({ where: { id: payload.sub } });
-                if (!latestUser || isBannedUser(latestUser)) {
+                if (!latestUser || isLockedOut(latestUser)) {
                     client.emit('force-logout', { reason: 'banned' });
                     client.disconnect(true);
                     return;
@@ -89,11 +89,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
     }
 
-    async disconnectUser(userId: number) {
+    async disconnectUser(userId: number, reason: 'banned' | 'account_deleted' = 'banned') {
         const roomName = `user_${userId}`;
         const sockets = await this.server.in(roomName).fetchSockets();
         sockets.forEach((socket) => {
-            socket.emit('force-logout', { reason: 'banned' });
+            socket.emit('force-logout', { reason });
             socket.disconnect(true);
         });
     }

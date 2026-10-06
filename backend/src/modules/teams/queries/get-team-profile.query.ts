@@ -7,11 +7,9 @@ import { GROUP_PHASE_TYPES } from '../../tournaments/services/bracket-generator.
 import { buildStandingsView } from '../../tournaments/services/standings-view';
 import { computePodium, Placement, placementOf } from '../../tournaments/public/podium';
 import { maxRosterSize, orderRoster, substituteIds, teamSizeOf } from '../utils/roster';
+import { isDeletedUser, PublicUser, toPublicUser } from '../../users/public-user';
 
-export interface TeamProfileMember {
-    id: number;
-    username: string;
-    avatarUrl: string | null;
+export interface TeamProfileMember extends PublicUser {
     isCaptain: boolean;
     isSubstitute: boolean;
 }
@@ -37,6 +35,8 @@ export interface TeamProfile {
     id: number;
     name: string;
     status: string;
+    /** The captain deleted their account and nobody was left to take over: read-only shell. */
+    captainless: boolean;
     tournament: { id: number; name: string; status: string } | null;
     teamSize: number;
     maxMembers: number;
@@ -67,9 +67,7 @@ export class GetTeamProfileQuery {
         const teamSize = teamSizeOf(team.tournament);
         const subs = substituteIds(team.members ?? [], team.captain_id, teamSize);
         const members: TeamProfileMember[] = orderRoster(team.members ?? [], team.captain_id).map((m) => ({
-            id: m.id,
-            username: m.username,
-            avatarUrl: m.avatarUrl ?? null,
+            ...toPublicUser(m),
             isCaptain: m.id === team.captain_id,
             isSubstitute: subs.has(m.id),
         }));
@@ -78,6 +76,7 @@ export class GetTeamProfileQuery {
             id: team.id,
             name: team.name,
             status: team.status,
+            captainless: isDeletedUser(team.members?.find((m) => m.id === team.captain_id)),
             teamSize,
             maxMembers: maxRosterSize(teamSize),
             members,

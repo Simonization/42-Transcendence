@@ -45,7 +45,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             relations: ['profile', 'settings']
         });
 
-        if (!user) {
+        // A deleted account's tokens die with it, whatever their expiry.
+        if (!user || user.deletedAt) {
             throw new UnauthorizedException();
         }
 

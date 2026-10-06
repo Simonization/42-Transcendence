@@ -105,9 +105,9 @@ export class AuthService {
     {
         const user = await this.userRepository.findOne({
             where: { username: dto.username },
-            select: ['id', 'username', 'mail', 'passwordHash', 'isEmailVerified', 'twoFactorEnabled', 'status', 'banUntil']
+            select: ['id', 'username', 'mail', 'passwordHash', 'isEmailVerified', 'twoFactorEnabled', 'status', 'banUntil', 'deletedAt']
         })
-        if (!user)
+        if (!user || user.deletedAt)
             throw new BadRequestException('Invalid credentials');
 
         if (this.isBannedUser(user)) {
@@ -204,10 +204,14 @@ export class AuthService {
 
             const user = await this.userRepository.findOne({
                 where: { id: payload.sub },
-                select: ['id', 'status', 'banUntil'],
+                select: ['id', 'status', 'banUntil', 'deletedAt'],
             });
 
-            if (!user || this.isBannedUser(user)) {
+            if (!user || user.deletedAt) {
+                await this.refreshTokenRepository.delete({ userId: payload.sub });
+                throw new UnauthorizedException('Invalid refresh token');
+            }
+            if (this.isBannedUser(user)) {
                 await this.refreshTokenRepository.delete({ userId: payload.sub });
                 if (user?.banUntil && new Date(user.banUntil) > new Date()) {
                     throw new UnauthorizedException(`BANNED_UNTIL:${new Date(user.banUntil).toISOString()}`);
@@ -416,10 +420,10 @@ export class AuthService {
     async verify2FA(userId: number, code: string) {
         const user = await this.userRepository.findOne({
             where: { id: userId },
-            select: ['id', 'username', 'twoFactorCode', 'twoFactorEnabled']
+            select: ['id', 'username', 'twoFactorCode', 'twoFactorEnabled', 'deletedAt']
         });
 
-        if (!user || !user.twoFactorEnabled) {
+        if (!user || !user.twoFactorEnabled || user.deletedAt) {
             throw new BadRequestException('Two-factor authentication is not enabled');
         }
 

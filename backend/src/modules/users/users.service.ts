@@ -14,6 +14,8 @@ import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 import { ChatGateway } from '../chat/chat.gateway';
+import { RealtimeService } from '../realtime/realtime.service';
+import { RealtimeEvents } from '../realtime/realtime.events';
 
 @Injectable()
 export class UsersService {
@@ -27,6 +29,7 @@ export class UsersService {
         private readonly updateProfileCmd: UpdateProfileCommand,
         private readonly deleteUserCmd: DeleteUserCommand,
         private readonly chatGateway: ChatGateway,
+        private readonly realtime: RealtimeService,
     ) {}
 
     async search(q: string, limit: number) {
@@ -34,8 +37,10 @@ export class UsersService {
             .leftJoinAndSelect('user.profile', 'profile')
             .select(['user.id', 'user.username', 'user.avatarUrl', 'user.status', 'user.role', 'profile']);
 
+        // Deleted accounts are tombstones: never found, invited or befriended.
+        qb.where('user.deletedAt IS NULL');
         if (q) {
-            qb.where('LOWER(user.username) LIKE :q', { q: `%${q.toLowerCase()}%` });
+            qb.andWhere('LOWER(user.username) LIKE :q', { q: `%${q.toLowerCase()}%` });
         }
 
         qb.orderBy('user.username', 'ASC').take(Math.min(limit, 100));
@@ -76,8 +81,20 @@ export class UsersService {
         return await this.updateProfileCmd.execute(userId, dto);
     }
 
+    /** Anonymises the account (see DeleteUserCommand), then signs it out everywhere. */
     async remove(userId: number) {
-        return await this.deleteUserCmd.execute(userId);
+        const result = await this.deleteUserCmd.execute(userId);
+
+        // Open sockets go now; the JWT strategy and the refresh endpoint refuse the rest.
+        await this.chatGateway.disconnectUser(userId, 'account_deleted');
+        for (const teamId of [...result.updatedTeamIds, ...result.deletedTeamIds]) {
+            const reason = result.deletedTeamIds.includes(teamId) ? 'team_deleted' : 'member_deleted';
+            this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason });
+        }
+        for (const tournamentId of result.tournamentIds) {
+            this.realtime.toTournament(tournamentId, RealtimeEvents.TOURNAMENT_UPDATED, { id: tournamentId, reason: 'member_deleted' });
+        }
+        return { message: 'Account deleted' };
     }
 
     /**
@@ -102,6 +119,7 @@ export class UsersService {
         return {
             users: users.map(user => ({
                 id: user.id,
+                isDeleted: !!user.deletedAt,
                 username: user.username,
                 mail: user.mail,
                 role: user.role,

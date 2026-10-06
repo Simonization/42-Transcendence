@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Chat } from '../entities/chat.entity';
+import { toPublicUser } from '../../users/public-user';
 
 @Injectable()
 export class GetConversationsQuery {
@@ -41,10 +42,10 @@ export class GetConversationsQuery {
                 id: chat.id,
                 type: chat.type,
                 title: chat.title,
-                participants: chat.participants.map(p => ({
-                    id: p.user.id,
-                    username: p.user.username,
-                })),
+                participants: chat.participants.map(p => {
+                    const u = toPublicUser(p.user);
+                    return { id: u.id, username: u.username, isDeleted: u.isDeleted };
+                }),
                 lastMessage: chat['lastMessage'],
                 isUnread: isUnread,
             };
