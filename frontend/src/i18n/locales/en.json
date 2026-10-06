@@ -824,7 +824,25 @@
     "invalid": "This invite link is invalid or no longer active.",
     "goToTeam": "GO TO MY TEAM",
     "goToTournaments": "TOURNAMENTS",
-    "retry": "TRY AGAIN"
+    "retry": "TRY AGAIN",
+    "loading": "Reading the invite…",
+    "team": "Team",
+    "tournament": "Tournament",
+    "roster": "Roster",
+    "members": "{count} / {max} players",
+    "join": "JOIN TEAM",
+    "cancel": "NOT NOW",
+    "leaveWarning": "Joining takes you out of your current team in this tournament:",
+    "leaveTeam": "You leave \"{team}\".",
+    "leaveCaptain": "You leave \"{team}\" and {successor} becomes its captain.",
+    "leaveDelete": "\"{team}\" is deleted: you are its only member.",
+    "blocker": {
+      "already_member": "You are already in this team.",
+      "team_not_open": "This team is locked and is not taking new members.",
+      "registration_closed": "Registration for this tournament is closed.",
+      "team_full": "This team is full.",
+      "locked_elsewhere": "You are registered with \"{team}\" in this tournament. Leave that team before joining another one."
+    }
   },
   "lft": {
     "tab": "LOOKING FOR TEAM",

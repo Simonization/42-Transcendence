@@ -27,6 +27,7 @@ import { GetJoinRequestsQuery } from './queries/get-join-requests.query';
 import { GetLookingForTeamQuery } from './queries/get-looking-for-team.query';
 import { GetTournamentAvailabilityQuery } from './queries/get-tournament-availability.query';
 import { GetTeamProfileQuery } from './queries/get-team-profile.query';
+import { PreviewJoinCodeQuery } from './queries/preview-join-code.query';
 import { publicInvitation, publicLookingForTeam, publicTeam } from '../users/public-views';
 
 @Injectable()
@@ -58,6 +59,7 @@ export class TeamsService {
         private readonly lftQuery: GetLookingForTeamQuery,
         private readonly availabilityQuery: GetTournamentAvailabilityQuery,
         private readonly profileQuery: GetTeamProfileQuery,
+        private readonly previewJoinQuery: PreviewJoinCodeQuery,
     ) {}
 
     async getProfile(teamId: number) {
@@ -149,6 +151,10 @@ export class TeamsService {
 
     async regenerateJoinCode(teamId: number, actorId: number) {
         return await this.joinCodeCmd.regenerate(teamId, actorId);
+    }
+
+    async previewJoinByCode(code: string, userId: number) {
+        return await this.previewJoinQuery.execute(code, userId);
     }
 
     async joinByCode(code: string, userId: number) {

@@ -37,6 +37,7 @@ import { LookingForTeamCommand } from './commands/looking-for-team.command';
 import { GetJoinRequestsQuery } from './queries/get-join-requests.query';
 import { GetLookingForTeamQuery } from './queries/get-looking-for-team.query';
 import { GetTournamentAvailabilityQuery } from './queries/get-tournament-availability.query';
+import { PreviewJoinCodeQuery } from './queries/preview-join-code.query';
 import { GetTeamProfileQuery } from './queries/get-team-profile.query';
 
 @Module({
@@ -75,6 +76,7 @@ import { GetTeamProfileQuery } from './queries/get-team-profile.query';
     GetLookingForTeamQuery,
     GetTournamentAvailabilityQuery,
     GetTeamProfileQuery,
+    PreviewJoinCodeQuery,
   ],
   exports: [TeamsService, TeamPermissionsService],
 })

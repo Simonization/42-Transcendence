@@ -27,6 +27,37 @@ export interface MyTournamentStatus {
   lookingForTeam?: LookingForTeamEntry | null
 }
 
+/** Why the holder of a join code cannot join right now (null: they can). */
+export type JoinBlocker =
+  | 'already_member'
+  | 'team_not_open'
+  | 'registration_closed'
+  | 'team_full'
+  | 'locked_elsewhere'
+
+/** One of my DRAFT teams that joining would take me out of. */
+export interface PlannedDeparture {
+  teamId: number
+  teamName: string
+  captain: boolean
+  /** I am its only member: the team is deleted. */
+  deletes: boolean
+  /** Who becomes captain when I leave. */
+  successor: string | null
+}
+
+/** What POST /teams/join/preview tells the holder of a join code. */
+export interface JoinPreview {
+  teamName: string
+  tournamentId: number | null
+  tournamentName: string | null
+  memberCount: number
+  maxMembers: number
+  blocker: JoinBlocker | null
+  lockedTeamName: string | null
+  leaving: PlannedDeparture[]
+}
+
 export const teamsApi = {
   /** A team's page: roster, tournament, results and placement (any logged-in user). */
   getProfile(teamId: number): Promise<TeamProfile> {
@@ -212,6 +243,16 @@ export const teamsApi = {
   regenerateJoinCode(teamId: number): Promise<{ joinCode: string }> {
     return api<{ joinCode: string }>(`/teams/${teamId}/join-code/regenerate`, {
       method: 'PATCH',
+    })
+  },
+
+  /**
+   * What joining with this code would do (changes nothing)
+   */
+  previewJoinByCode(code: string): Promise<JoinPreview> {
+    return api<JoinPreview>('/teams/join/preview', {
+      method: 'POST',
+      body: { code },
     })
   },
 

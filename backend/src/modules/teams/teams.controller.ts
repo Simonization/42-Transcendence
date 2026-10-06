@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req, Patch, Param, ParseIntPipe, Get, Query, Delete } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Patch, Param, ParseIntPipe, Get, Query, Delete, HttpCode } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -179,6 +179,17 @@ export class TeamsController {
     @UseGuards(JwtAuthGuard)
     async regenerateJoinCode(@Param('id', ParseIntPipe) id: number, @Req() req) {
         return await this.teamsService.regenerateJoinCode(id, req.user.id);
+    }
+
+    /**
+     * What joining with this code would do: team and tournament names, roster count, whether
+     * the caller can join, and which of their teams they would leave. Changes nothing.
+     */
+    @Post('join/preview')
+    @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
+    async previewJoinByCode(@Body() dto: JoinByCodeDto, @Req() req) {
+        return await this.teamsService.previewJoinByCode(dto.code, req.user.id);
     }
 
     /** Joins a team directly with its invite code. Any logged-in user. */

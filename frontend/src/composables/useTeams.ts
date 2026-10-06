@@ -4,7 +4,7 @@
  */
 
 import { ref } from 'vue'
-import { teamsApi } from '../api/teams'
+import { teamsApi, type JoinPreview } from '../api/teams'
 import { getErrorMessage } from '../utils/error'
 import type {
   BackendTeam,
@@ -206,6 +206,22 @@ export function useTeams() {
   }
 
   /**
+   * What joining with this code would do, without joining. Null on failure (see `error`).
+   */
+  const previewJoinByCode = async (code: string): Promise<JoinPreview | null> => {
+    isLoading.value = true
+    error.value = ''
+    try {
+      return await teamsApi.previewJoinByCode(code)
+    } catch (e) {
+      error.value = getErrorMessage(e, 'Failed to read the invite')
+      return null
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
    * Join a team with its invite code. Returns the team/tournament ids, or null on failure.
    */
   const joinByCode = async (
@@ -254,6 +270,7 @@ export function useTeams() {
     unlockTeam,
     transferCaptain,
     cancelInvitation,
+    previewJoinByCode,
     joinByCode,
     requestToJoin,
   }

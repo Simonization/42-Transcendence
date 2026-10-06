@@ -6,6 +6,7 @@ import { AcceptJoinRequestCommand } from './accept-join-request.command';
 import { DeclineJoinRequestCommand } from './decline-join-request.command';
 import { LookingForTeamCommand } from './looking-for-team.command';
 import { TeamMembershipService } from '../services/team-membership.service';
+import { PreviewJoinCodeQuery } from '../queries/preview-join-code.query';
 import { TeamStatus } from '../entities/team.entity';
 import { InvitationDirection, InvitationStatus } from '../entities/team-invitation.entity';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
@@ -253,5 +254,78 @@ describe('LookingForTeamCommand', () => {
         const { command, lftRepo } = build();
         await command.unflag(9, USER);
         expect(lftRepo.delete).toHaveBeenCalledWith({ userId: USER, tournamentId: 9 });
+    });
+});
+
+describe('PreviewJoinCodeQuery', () => {
+    function build(opts: { team?: any; otherTeams?: any[] } = {}) {
+        const fixture = teamFixture();
+        fixture.tournament.name = 'Autumn Cup';
+        const team = opts.team === undefined ? fixture : opts.team;
+        const ctx = mockDataSource();
+        ctx.manager.createQueryBuilder
+            .mockReturnValueOnce(mockQueryBuilder({ one: team }))
+            .mockReturnValue(mockQueryBuilder({ many: opts.otherTeams ?? [] }));
+        return { ...ctx, query: new PreviewJoinCodeQuery(ctx.dataSource, new TeamMembershipService()) };
+    }
+
+    it('shows the team and tournament names and the roster count, nothing more', async () => {
+        const preview = await build().query.execute('abcDEF2345', USER);
+        expect(preview).toEqual({
+            teamName: 'Blues',
+            tournamentId: 9,
+            tournamentName: 'Autumn Cup',
+            memberCount: 1,
+            maxMembers: 4,
+            blocker: null,
+            lockedTeamName: null,
+            leaving: [],
+        });
+        expect(JSON.stringify(preview)).not.toContain('abcDEF2345');
+    });
+
+    it('changes nothing', async () => {
+        const { query, manager } = build({
+            otherTeams: [{ id: 3, name: 'Solo', status: TeamStatus.DRAFT, captain_id: USER, members: [{ id: USER }] }],
+        });
+        await query.execute('abcDEF2345', USER);
+        expect(manager.save).not.toHaveBeenCalled();
+        expect(manager.delete).not.toHaveBeenCalled();
+    });
+
+    it('warns about the DRAFT teams the user would leave: captaincy passing on, or the team deleted', async () => {
+        const preview = await build({
+            otherTeams: [
+                { id: 3, name: 'Solo', status: TeamStatus.DRAFT, captain_id: USER, members: [{ id: USER }] },
+                { id: 4, name: 'Duo', status: TeamStatus.DRAFT, captain_id: USER, members: [{ id: USER }, { id: 8, username: 'trinity' }] },
+                { id: 6, name: 'Guest', status: TeamStatus.DRAFT, captain_id: 1, members: [{ id: 1 }, { id: USER }] },
+            ],
+        }).query.execute('abcDEF2345', USER);
+        expect(preview.leaving).toEqual([
+            { teamId: 3, teamName: 'Solo', captain: true, deletes: true, successor: null },
+            { teamId: 4, teamName: 'Duo', captain: true, deletes: false, successor: 'trinity' },
+            { teamId: 6, teamName: 'Guest', captain: false, deletes: false, successor: null },
+        ]);
+    });
+
+    it('says why joining would fail', async () => {
+        const locked = { id: 3, name: 'Locked FC', status: TeamStatus.LOCKED, captain_id: 100, members: [{ id: 100 }, { id: USER }] };
+        expect(await build({ otherTeams: [locked] }).query.execute('x', USER)).toMatchObject({
+            blocker: 'locked_elsewhere',
+            lockedTeamName: 'Locked FC',
+        });
+        expect((await build({ team: teamFixture({ members: [{ id: 1 }, { id: USER }] }) }).query.execute('x', USER)).blocker)
+            .toBe('already_member');
+        expect((await build({ team: teamFixture({ status: TeamStatus.LOCKED }) }).query.execute('x', USER)).blocker)
+            .toBe('team_not_open');
+        const closed = teamFixture();
+        closed.tournament.status = TournamentStatus.ONGOING;
+        expect((await build({ team: closed }).query.execute('x', USER)).blocker).toBe('registration_closed');
+        expect((await build({ team: teamFixture({ members: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }] }) }).query.execute('x', USER)).blocker)
+            .toBe('team_full');
+    });
+
+    it('404s on an unknown code', async () => {
+        await expect(build({ team: null }).query.execute('nope', USER)).rejects.toBeInstanceOf(NotFoundException);
     });
 });

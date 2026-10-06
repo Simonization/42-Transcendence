@@ -19,6 +19,7 @@ vi.mock('../../api/teams', () => ({
     transferCaptain: vi.fn(),
     cancelInvitation: vi.fn(),
     joinByCode: vi.fn(),
+    previewJoinByCode: vi.fn(),
     requestToJoin: vi.fn(),
   },
 }))
@@ -245,6 +246,16 @@ describe('useTeams', () => {
 
       api.joinByCode.mockRejectedValueOnce(new Error('full'))
       await expect(joinByCode('abc')).resolves.toBeNull()
+    })
+
+    it('previewJoinByCode returns the preview, or null with the error', async () => {
+      api.previewJoinByCode.mockResolvedValueOnce({ teamName: 'Blues' })
+      const { previewJoinByCode, error } = useTeams()
+      await expect(previewJoinByCode('abc')).resolves.toEqual({ teamName: 'Blues' })
+
+      api.previewJoinByCode.mockRejectedValueOnce(new Error('Invalid join code'))
+      await expect(previewJoinByCode('abc')).resolves.toBeNull()
+      expect(error.value).toBe('Failed to read the invite')
     })
 
     it('requestToJoin returns the request, or null on failure', async () => {

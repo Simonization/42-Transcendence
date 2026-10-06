@@ -824,7 +824,25 @@
     "invalid": "Bu davet bağlantısı geçersiz veya artık etkin değil.",
     "goToTeam": "TAKIMIMA GİT",
     "goToTournaments": "TURNUVALAR",
-    "retry": "TEKRAR DENE"
+    "retry": "TEKRAR DENE",
+    "loading": "Davet okunuyor…",
+    "team": "Takım",
+    "tournament": "Turnuva",
+    "roster": "Kadro",
+    "members": "{count} / {max} oyuncu",
+    "join": "TAKIMA KATIL",
+    "cancel": "ŞİMDİ DEĞİL",
+    "leaveWarning": "Bu takıma katılmak sizi bu turnuvadaki mevcut takımınızdan çıkarır:",
+    "leaveTeam": "\"{team}\" takımından ayrılırsınız.",
+    "leaveCaptain": "\"{team}\" takımından ayrılırsınız ve {successor} kaptan olur.",
+    "leaveDelete": "\"{team}\" silinir: tek üyesi sizsiniz.",
+    "blocker": {
+      "already_member": "Zaten bu takımdasınız.",
+      "team_not_open": "Bu takım kilitli ve yeni üye almıyor.",
+      "registration_closed": "Bu turnuvanın kayıtları kapandı.",
+      "team_full": "Bu takım dolu.",
+      "locked_elsewhere": "Bu turnuvada \"{team}\" takımına kayıtlısınız. Başka bir takıma katılmadan önce o takımdan ayrılın."
+    }
   },
   "lft": {
     "tab": "TAKIM ARIYOR",

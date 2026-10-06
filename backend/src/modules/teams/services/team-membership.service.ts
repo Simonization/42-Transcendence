@@ -11,6 +11,18 @@ export interface DepartedTeam {
     deleted: boolean;
 }
 
+/** What joining another team would do to one of the user's current DRAFT teams. */
+export interface PlannedDeparture {
+    teamId: number;
+    teamName: string;
+    /** The user captains it: captaincy passes to `successor`, or the team is deleted. */
+    captain: boolean;
+    /** The user is its only member, so the team is deleted. */
+    deletes: boolean;
+    /** Username of the member who would become captain. */
+    successor: string | null;
+}
+
 /**
  * Shared "one team per user per tournament" enforcement, used by every path that puts a user
  * onto a team: accepting an invite, joining by code, and accepting a join request.
@@ -31,13 +43,7 @@ export class TeamMembershipService {
         tournamentId: number,
         newTeamId: number,
     ): Promise<DepartedTeam[]> {
-        const otherTeams = await manager
-            .createQueryBuilder(Team, 'team')
-            .innerJoin('team.members', 'member', 'member.id = :userId', { userId })
-            .innerJoin('team.tournament', 'tournament', 'tournament.id = :tournamentId', { tournamentId })
-            .leftJoinAndSelect('team.members', 'allMembers')
-            .where('team.id != :newTeamId', { newTeamId })
-            .getMany();
+        const otherTeams = await this.otherTeams(manager, userId, tournamentId, newTeamId);
 
         const lockedElsewhere = otherTeams.find((t) => t.status === TeamStatus.LOCKED);
         if (lockedElsewhere) {
@@ -74,6 +80,46 @@ export class TeamMembershipService {
             departed.push({ teamId: otherTeam.id, deleted: false });
         }
         return departed;
+    }
+
+    /**
+     * Read-only: what `assertCanJoin` would do, for showing the user before they confirm.
+     * `lockedElsewhere` is the name of the LOCKED team that would make joining fail.
+     */
+    async planJoin(
+        manager: EntityManager,
+        userId: number,
+        tournamentId: number,
+        newTeamId: number,
+    ): Promise<{ lockedElsewhere: string | null; leaving: PlannedDeparture[] }> {
+        const otherTeams = await this.otherTeams(manager, userId, tournamentId, newTeamId);
+        const locked = otherTeams.find((t) => t.status === TeamStatus.LOCKED);
+        if (locked) return { lockedElsewhere: locked.name, leaving: [] };
+        return {
+            lockedElsewhere: null,
+            leaving: otherTeams.map((t) => {
+                const others = t.members.filter((m) => m.id !== userId);
+                const captain = t.captain_id === userId;
+                return {
+                    teamId: t.id,
+                    teamName: t.name,
+                    captain,
+                    deletes: captain && others.length === 0,
+                    successor: captain && others.length > 0 ? others[0].username : null,
+                };
+            }),
+        };
+    }
+
+    /** The user's other teams in this tournament, with their members. */
+    private otherTeams(manager: EntityManager, userId: number, tournamentId: number, newTeamId: number): Promise<Team[]> {
+        return manager
+            .createQueryBuilder(Team, 'team')
+            .innerJoin('team.members', 'member', 'member.id = :userId', { userId })
+            .innerJoin('team.tournament', 'tournament', 'tournament.id = :tournamentId', { tournamentId })
+            .leftJoinAndSelect('team.members', 'allMembers')
+            .where('team.id != :newTeamId', { newTeamId })
+            .getMany();
     }
 
     /** A user who just joined a team no longer needs to be on the looking-for-team board. */

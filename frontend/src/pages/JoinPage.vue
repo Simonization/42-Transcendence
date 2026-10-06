@@ -1,33 +1,48 @@
 <script setup lang="ts">
 /**
  * JoinPage — opens a team invite link (/join/:code).
+ *
+ * Shows what the code joins (team, tournament, roster count) and what joining would cost (the
+ * user's other DRAFT teams in this tournament: left, captaincy handed on, or deleted when they
+ * are alone in it). Nothing happens until the user clicks Join.
  * A logged-out visitor is sent to /auth and brought back here after signing in.
  */
 
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getAccessToken } from '../api'
+import type { JoinPreview } from '../api/teams'
 import { useAuthStore } from '../stores/auth'
 import { useTeams } from '../composables/useTeams'
 import { savePendingRedirect } from '../utils/postLoginRedirect'
 
 const REDIRECT_DELAY = 1200
 
-type State = 'joining' | 'success' | 'error'
+type State = 'loading' | 'preview' | 'joining' | 'success' | 'error'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
-const { joinByCode, error: joinError } = useTeams()
+const { previewJoinByCode, joinByCode, error: joinError } = useTeams()
 
-const state = ref<State>('joining')
+const state = ref<State>('loading')
 const errorMessage = ref('')
+const preview = ref<JoinPreview | null>(null)
 const tournamentId = ref<number | null>(null)
 
-async function run() {
-  state.value = 'joining'
+const code = computed(() => String(route.params.code ?? ''))
+
+const blockerText = computed(() => {
+  const p = preview.value
+  if (!p?.blocker) return ''
+  return t(`join.blocker.${p.blocker}`, { team: p.lockedTeamName ?? '' })
+})
+
+/** Loads the preview; never joins. */
+async function load() {
+  state.value = 'loading'
   errorMessage.value = ''
 
   const authenticated = getAccessToken() ? await authStore.checkAuth() : false
@@ -37,14 +52,26 @@ async function run() {
     return
   }
 
-  const code = String(route.params.code ?? '')
-  const result = code ? await joinByCode(code) : null
+  const result = code.value ? await previewJoinByCode(code.value) : null
+  if (!result) {
+    state.value = 'error'
+    errorMessage.value = code.value && joinError.value ? joinError.value : t('join.invalid')
+    return
+  }
+  preview.value = result
+  state.value = 'preview'
+}
+
+/** The only place that joins: the user clicked Join. */
+async function join() {
+  if (!preview.value || preview.value.blocker) return
+  state.value = 'joining'
+  const result = await joinByCode(code.value)
   if (!result) {
     state.value = 'error'
     errorMessage.value = joinError.value || t('join.invalid')
     return
   }
-
   tournamentId.value = result.tournamentId ?? null
   state.value = 'success'
   setTimeout(goToTeam, REDIRECT_DELAY)
@@ -58,17 +85,52 @@ function goToTeam() {
   )
 }
 
-onMounted(run)
+onMounted(load)
 </script>
 
 <template>
   <div class="auth-page">
     <div class="auth-panel">
-      <!-- Joining -->
-      <div v-if="state === 'joining'" class="state-container">
+      <!-- Loading the preview / joining -->
+      <div v-if="state === 'loading' || state === 'joining'" class="state-container">
         <div class="spinner"></div>
         <h2 class="state-title">{{ t('join.title') }}</h2>
-        <p class="state-text">{{ t('join.joining') }}</p>
+        <p class="state-text">{{ state === 'joining' ? t('join.joining') : t('join.loading') }}</p>
+      </div>
+
+      <!-- Preview: what the code joins, and what joining costs -->
+      <div v-else-if="state === 'preview' && preview" class="state-container">
+        <h2 class="state-title">{{ t('join.title') }}</h2>
+        <dl class="join-facts">
+          <dt>{{ t('join.team') }}</dt>
+          <dd class="join-team">{{ preview.teamName }}</dd>
+          <template v-if="preview.tournamentName">
+            <dt>{{ t('join.tournament') }}</dt>
+            <dd class="join-tournament">{{ preview.tournamentName }}</dd>
+          </template>
+          <dt>{{ t('join.roster') }}</dt>
+          <dd>{{ t('join.members', { count: preview.memberCount, max: preview.maxMembers }) }}</dd>
+        </dl>
+
+        <p v-if="preview.blocker" class="join-blocker" role="alert">{{ blockerText }}</p>
+
+        <div v-else-if="preview.leaving.length" class="join-warning" role="alert">
+          <p class="join-warning-title">{{ t('join.leaveWarning') }}</p>
+          <ul>
+            <li v-for="d in preview.leaving" :key="d.teamId">
+              <template v-if="d.deletes">{{ t('join.leaveDelete', { team: d.teamName }) }}</template>
+              <template v-else-if="d.captain">{{ t('join.leaveCaptain', { team: d.teamName, successor: d.successor ?? '' }) }}</template>
+              <template v-else>{{ t('join.leaveTeam', { team: d.teamName }) }}</template>
+            </li>
+          </ul>
+        </div>
+
+        <button v-if="!preview.blocker" class="join-btn join-confirm" @click="join">
+          {{ t('join.join') }}
+        </button>
+        <button class="join-btn join-btn-secondary" @click="router.push('/menu/tournaments')">
+          {{ t('join.cancel') }}
+        </button>
       </div>
 
       <!-- Success -->
@@ -83,7 +145,7 @@ onMounted(run)
         <div class="state-icon state-icon-error">&#x2715;</div>
         <h2 class="state-title">{{ t('join.failed') }}</h2>
         <p class="state-text" role="alert">{{ errorMessage }}</p>
-        <button class="join-btn" @click="run">{{ t('join.retry') }}</button>
+        <button class="join-btn" @click="load">{{ t('join.retry') }}</button>
         <button class="join-btn join-btn-secondary" @click="router.push('/menu/tournaments')">
           {{ t('join.goToTournaments') }}
         </button>
@@ -165,5 +227,50 @@ onMounted(run)
 .join-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
+}
+
+.join-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  width: 100%;
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+}
+
+.join-facts dt {
+  color: var(--text-tertiary);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+}
+
+.join-facts dd {
+  margin: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.join-team {
+  font-weight: var(--font-bold);
+}
+
+.join-blocker,
+.join-warning {
+  width: 100%;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.join-warning-title {
+  margin: 0 0 var(--space-2);
+  font-weight: var(--font-semibold);
+}
+
+.join-warning ul {
+  margin: 0;
+  padding-left: var(--space-4);
 }
 </style>

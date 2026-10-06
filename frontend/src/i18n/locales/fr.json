@@ -824,7 +824,25 @@
     "invalid": "Ce lien d'invitation est invalide ou n'est plus actif.",
     "goToTeam": "VOIR MON ÉQUIPE",
     "goToTournaments": "TOURNOIS",
-    "retry": "RÉESSAYER"
+    "retry": "RÉESSAYER",
+    "loading": "Lecture de l'invitation…",
+    "team": "Équipe",
+    "tournament": "Tournoi",
+    "roster": "Effectif",
+    "members": "{count} / {max} joueurs",
+    "join": "REJOINDRE L'ÉQUIPE",
+    "cancel": "PAS MAINTENANT",
+    "leaveWarning": "Rejoindre cette équipe vous retire de votre équipe actuelle dans ce tournoi :",
+    "leaveTeam": "Vous quittez « {team} ».",
+    "leaveCaptain": "Vous quittez « {team} » et {successor} en devient capitaine.",
+    "leaveDelete": "« {team} » est supprimée : vous en êtes le seul membre.",
+    "blocker": {
+      "already_member": "Vous faites déjà partie de cette équipe.",
+      "team_not_open": "Cette équipe est verrouillée et n'accepte plus de membres.",
+      "registration_closed": "Les inscriptions à ce tournoi sont closes.",
+      "team_full": "Cette équipe est complète.",
+      "locked_elsewhere": "Vous êtes inscrit avec « {team} » dans ce tournoi. Quittez cette équipe avant d'en rejoindre une autre."
+    }
   },
   "lft": {
     "tab": "CHERCHE ÉQUIPE",
