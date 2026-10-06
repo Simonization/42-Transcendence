@@ -33,7 +33,8 @@
     "disabled": "DISABLED",
     "beta": "BETA",
     "accept": "ACCEPT",
-    "decline": "DECLINE"
+    "decline": "DECLINE",
+    "create": "CREATE"
   },
   "auth": {
     "signIn": "SIGN IN",
@@ -306,7 +307,9 @@
     "unblock": "UNBLOCK",
     "chat": "CHAT",
     "online": "Online",
-    "offline": "Offline"
+    "offline": "Offline",
+    "invalidUserId": "No player with that username or ID.",
+    "updating": "UPDATING..."
   },
   "chat": {
     "title": "CHATS",

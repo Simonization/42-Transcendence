@@ -33,7 +33,8 @@
     "disabled": "DÉSACTIVÉ",
     "beta": "BÊTA",
     "accept": "ACCEPTER",
-    "decline": "REFUSER"
+    "decline": "REFUSER",
+    "create": "CRÉER"
   },
   "auth": {
     "signIn": "SE CONNECTER",
@@ -306,7 +307,9 @@
     "unblock": "DÉBLOQUER",
     "chat": "CHAT",
     "online": "En ligne",
-    "offline": "Hors ligne"
+    "offline": "Hors ligne",
+    "invalidUserId": "Aucun joueur avec ce nom d'utilisateur ou cet ID.",
+    "updating": "MISE À JOUR..."
   },
   "chat": {
     "title": "DISCUSSIONS",
