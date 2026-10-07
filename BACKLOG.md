@@ -172,9 +172,9 @@ Found by a QA review of `main`; fixed on the branch, not merged yet.
 
 Still open from that pass:
 
-- [ ] **First deploy of this branch runs three migrations** (`TournamentFlowWaves`,
-      `LegacyBracketRepair`, `AccountTombstone`) in one transaction. Take the dump as usual;
-      check after boot that old ONGOING brackets show READY matches.
+- [ ] **First deploy of this branch runs four migrations** (`TournamentFlowWaves`,
+      `LegacyBracketRepair`, `AccountTombstone`, `TeamNameUnique`) in one transaction. Take the
+      dump as usual; check after boot that old ONGOING brackets show READY matches.
 - [ ] **Check `TRUST_PROXY` on the box**: the default trusts loopback / private proxies, which
       fits Caddy → `127.0.0.1:3000`. If every visitor shares one rate-limit bucket, `req.ip`
       is the proxy's; set `TRUST_PROXY` to the hop count.
@@ -188,3 +188,24 @@ Still open from that pass:
 - [ ] Old group stages where a group got a single team have no match for it, so that team never
       reaches the standings; the legacy repair does not handle it.
 - [ ] `npm run test:db` is separate from `npm test` (it needs a free port and ~10 s); run both.
+
+## 8. Team / registration edge cases (E5, 2026-10-07)
+
+Reported by the QA pass, each reproduced on real Postgres first
+(`teams/team-registration-edges.db-spec.ts`). Rules written up in `docs/teams.md`.
+
+- [x] **Duplicate team names in one tournament.** Create / rename now refuse a name another team
+      of the tournament uses (case-insensitive, trimmed): `409 TEAM_NAME_TAKEN`, translated in the
+      SPA. Race-safe through the partial unique index `UQ_teams_tournament_name` (migration
+      `TeamNameUnique`, which renames existing duplicates to `<name> #<id>` first).
+- [x] **Invites after the registration deadline.** Only accepting checked it; `InvitePlayerCommand`
+      now refuses with the same 400. The join-request, accept-request and join-by-code paths
+      already refused (now pinned by the db-spec). The team page hides invite / link / accept
+      after the deadline and says why.
+- [x] **A LOCKED team stuck in DRAFT after a member left past the deadline** (lock is closed by
+      then, so it silently dropped out of the bracket). Decision: after the deadline, a leave that
+      would take a LOCKED team below its size is refused (`403 LEAVE_LOCKED_AFTER_DEADLINE`); a
+      substitute may still leave and the team stays LOCKED and checked in. Before the deadline a
+      substitute leaving no longer un-registers the team either (same rule as account deletion).
+      Account deletion still removes the member and demotes a short team; after the deadline only
+      the organiser moving the deadline brings it back.

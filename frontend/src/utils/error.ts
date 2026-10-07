@@ -10,6 +10,7 @@ export function getErrorMessage(e: unknown, fallback: string): string {
  */
 export const API_ERROR_KEYS: Readonly<Record<string, string>> = {
   TEAM_NAME_TAKEN: 'teams.nameTaken',
+  LEAVE_LOCKED_AFTER_DEADLINE: 'teams.leaveLockedAfterDeadline',
 }
 
 /** The i18n key for an error the backend tagged with a known code, otherwise null. */

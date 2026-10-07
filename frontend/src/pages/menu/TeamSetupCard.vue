@@ -156,9 +156,24 @@ const canUnlock = computed(() => canManage.value && isLocked.value && registrati
 
 const canRename = computed(() => canManage.value && !tournamentStarted.value)
 
-/** Members can leave a draft team any time, a locked one only while registration is open. */
+/** Leaving would take the roster below the game's team size (a starter leaves, not a substitute). */
+const leaveDropsBelowSize = computed(() => memberCount.value - 1 < requiredSize.value)
+
+/**
+ * Same rule as the backend (leave-team.command.ts): a draft team any time; a locked one before
+ * the start, and once registration closed only if the team keeps its size (it could not be
+ * locked again).
+ */
 const canLeave = computed(
-  () => !isCaptain.value && (!isLocked.value || registrationOpen.value),
+  () =>
+    !isCaptain.value &&
+    (!isLocked.value ||
+      (!tournamentStarted.value && (registrationOpen.value || !leaveDropsBelowSize.value))),
+)
+
+/** A starter of a locked team after the deadline: leaving is refused, say why. */
+const leaveBlockedAfterDeadline = computed(
+  () => !isCaptain.value && isLocked.value && !tournamentStarted.value && !registrationOpen.value && leaveDropsBelowSize.value,
 )
 
 const rosterEditable = computed(() => canManage.value && !isLocked.value)
@@ -227,7 +242,7 @@ const confirmCopy = computed(() => {
   return isLocked.value
     ? {
         title: t('teams.confirmLeaveLockedTitle'),
-        message: t('teams.confirmLeaveLockedMessage'),
+        message: t(leaveDropsBelowSize.value ? 'teams.confirmLeaveLockedMessage' : 'teams.confirmLeaveLockedSubMessage'),
         confirmLabel: t('tournament.leaveTeam'),
         danger: true,
       }
@@ -1073,6 +1088,9 @@ async function leaveTeam() {
             {{ t('tournament.leaveTeam') }}
           </button>
         </div>
+        <p v-else-if="leaveBlockedAfterDeadline" class="ts-hint" data-testid="leave-blocked">
+          {{ t('teams.leaveLockedAfterDeadline') }}
+        </p>
       </div>
 
     </template>

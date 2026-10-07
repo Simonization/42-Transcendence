@@ -783,6 +783,8 @@
     "confirmTransferMessage": "{name} kaptan olacak. Siz takımda yönetici olarak kalırsınız. Bunu yalnızca yeni kaptan geri alabilir.",
     "confirmLeaveLockedTitle": "Kayıtlı takımdan ayrılınsın mı?",
     "confirmLeaveLockedMessage": "Takımınız kilitli. Ayrılırsanız takım yeniden üye arama durumuna döner ve turnuvada kalması için kaptanın tekrar kilitlemesi gerekir.",
+    "confirmLeaveLockedSubMessage": "Takımınızda siz olmadan da yeterli oyuncu var: takım kilitli ve kayıtlı kalır.",
+    "leaveLockedAfterDeadline": "Kayıtlar kapandı: takımınız kilitli ve artık bir as oyuncusunu kaybedemez, çünkü yeniden kilitlenemez. Oynayamayacaksanız organizatöre başvurun.",
     "confirmLeaveTitle": "Takımdan ayrılınsın mı?",
     "confirmLeaveMessage": "\"{name}\" takımından ayrılacaksınız.",
     "inviteLinkTitle": "DAVET BAĞLANTISI",

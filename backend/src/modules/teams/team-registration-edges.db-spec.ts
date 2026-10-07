@@ -183,3 +183,54 @@ describe('2. nobody gets onto a roster after the registration deadline', () => {
         expect(await ds.query(`SELECT "user_id" FROM "team_members" WHERE "team_id" = $1`, [tm.id])).toEqual([{ user_id: cap.id }]);
     });
 });
+
+describe('3. leaving a LOCKED team', () => {
+    const leave = () => new LeaveTeamCommand(ds, realtime);
+    const lock = () => new LockTeamCommand(ds.getRepository(Team), allow, realtime);
+    const statusOf = async (id: number) => (await ds.getRepository(Team).findOneByOrFail({ id }));
+
+    it('after the deadline, a leave that would drop the team below its size is refused; the team stays LOCKED and checked in', async () => {
+        const t = await tournament({ gameId: 2 });
+        const [cap, mate] = [await user(), await user()];
+        const tm = await team(t.id, [cap, mate], TeamStatus.LOCKED);
+        await ds.query(`UPDATE "teams" SET "checked_in_at" = now() WHERE "id" = $1`, [tm.id]);
+        await pastDeadline(t);
+
+        const err = await leave().execute(tm.id, mate.id).catch((e) => e);
+        expect(err).toBeInstanceOf(ForbiddenException);
+        expect(err.getResponse()).toMatchObject({ statusCode: 403, error: 'LEAVE_LOCKED_AFTER_DEADLINE' });
+
+        const after = await statusOf(tm.id);
+        expect(after.status).toBe(TeamStatus.LOCKED);
+        expect(after.checked_in_at).not.toBeNull();
+        const members = await ds.query(`SELECT "user_id" FROM "team_members" WHERE "team_id" = $1 ORDER BY "user_id"`, [tm.id]);
+        expect(members.map((m: any) => m.user_id)).toEqual([cap.id, mate.id].sort((a, b) => a - b));
+    });
+
+    it('after the deadline, a substitute may still leave: the team keeps its size and stays LOCKED and checked in', async () => {
+        const t = await tournament({ gameId: 2 });
+        const [cap, mate, sub] = [await user(), await user(), await user()];
+        const tm = await team(t.id, [cap, mate, sub], TeamStatus.LOCKED);
+        await ds.query(`UPDATE "teams" SET "checked_in_at" = now() WHERE "id" = $1`, [tm.id]);
+        await pastDeadline(t);
+
+        await leave().execute(tm.id, sub.id);
+
+        const after = await statusOf(tm.id);
+        expect(after.status).toBe(TeamStatus.LOCKED);
+        expect(after.checked_in_at).not.toBeNull();
+    });
+
+    it('before the deadline, a leave below the size reverts the team to DRAFT, and it can be re-locked once refilled', async () => {
+        const t = await tournament({ gameId: 2, closesInMs: 60 * 60 * 1000 });
+        const [cap, mate, next] = [await user(), await user(), await user()];
+        const tm = await team(t.id, [cap, mate], TeamStatus.LOCKED);
+
+        await leave().execute(tm.id, mate.id);
+        expect((await statusOf(tm.id)).status).toBe(TeamStatus.DRAFT);
+
+        await ds.query(`INSERT INTO "team_members" ("team_id", "user_id") VALUES ($1, $2)`, [tm.id, next.id]);
+        await lock().execute(tm.id, cap.id);
+        expect((await statusOf(tm.id)).status).toBe(TeamStatus.LOCKED);
+    });
+});

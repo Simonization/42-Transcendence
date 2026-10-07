@@ -157,6 +157,49 @@ describe('TeamSetupCard', () => {
       expect(teamsApi.leaveTeam).toHaveBeenCalledWith(5)
     })
 
+    it('after the deadline a starter of a locked team cannot leave, and is told why', async () => {
+      const members = [{ id: 1, username: 'cap' }, { id: 2, username: 'bob' }, { id: 3, username: 'cy' }]
+      setup({
+        me: 2,
+        team: teamFixture({ status: 'LOCKED', members }),
+        tournament: { ...TOURNAMENT, registration_closes_at: new Date(Date.now() - 60_000).toISOString() },
+      })
+      const wrapper = await mountCard()
+
+      expect(buttonByText(wrapper, 'LEAVE TEAM')).toBeUndefined()
+      expect(wrapper.find('[data-testid="leave-blocked"]').text()).toContain('Registration has closed')
+    })
+
+    it('after the deadline a substitute may still leave a locked team, which stays registered', async () => {
+      const members = [1, 2, 3, 4].map((id) => ({ id, username: `p${id}` }))
+      setup({
+        me: 4,
+        team: teamFixture({ status: 'LOCKED', members }),
+        tournament: { ...TOURNAMENT, registration_closes_at: new Date(Date.now() - 60_000).toISOString() },
+      })
+      teamsApi.leaveTeam.mockResolvedValue({ message: 'ok' })
+      const wrapper = await mountCard()
+
+      await buttonByText(wrapper, 'LEAVE TEAM')!.trigger('click')
+      expect(dialog()?.textContent).toContain('stays locked and registered')
+      await clickDialog('.btn-danger')
+      expect(teamsApi.leaveTeam).toHaveBeenCalledWith(5)
+      expect(wrapper.find('[data-testid="leave-blocked"]').exists()).toBe(false)
+    })
+
+    it('a refused leave (403 LEAVE_LOCKED_AFTER_DEADLINE) is explained in the active locale', async () => {
+      i18n.global.locale.value = 'fr'
+      setup({ me: 2, team: teamFixture({ status: 'LOCKED' }) })
+      teamsApi.leaveTeam.mockRejectedValue(new ApiError(403, 'LEAVE_LOCKED_AFTER_DEADLINE', 'Registration has closed'))
+      const wrapper = await mountCard()
+
+      await buttonByText(wrapper, 'QUITTER')!.trigger('click')
+      await clickDialog('.btn-danger')
+      await flushPromises()
+
+      expect(useNotificationsStore().notifications.map((n) => n.message).join('\n')).toContain('Les inscriptions sont closes')
+    })
+
     it('hides leave once the tournament started and the team is locked', async () => {
       setup({
         me: 2,

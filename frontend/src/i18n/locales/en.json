@@ -783,6 +783,8 @@
     "confirmTransferMessage": "{name} becomes the captain. You stay in the team as an admin. Only the new captain can undo this.",
     "confirmLeaveLockedTitle": "Leave a registered team?",
     "confirmLeaveLockedMessage": "Your team is locked. If you leave, it goes back to recruiting and the captain must lock it again to stay in the tournament.",
+    "confirmLeaveLockedSubMessage": "Your team keeps enough players without you: it stays locked and registered.",
+    "leaveLockedAfterDeadline": "Registration has closed: your team is locked and cannot lose a starter any more, since it could not be locked again. Ask the organiser if you cannot play.",
     "confirmLeaveTitle": "Leave team?",
     "confirmLeaveMessage": "You will leave \"{name}\".",
     "inviteLinkTitle": "INVITE LINK",

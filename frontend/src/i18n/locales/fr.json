@@ -783,6 +783,8 @@
     "confirmTransferMessage": "{name} devient capitaine. Vous restez dans l'équipe en tant qu'administrateur. Seul le nouveau capitaine peut annuler.",
     "confirmLeaveLockedTitle": "Quitter une équipe inscrite ?",
     "confirmLeaveLockedMessage": "Votre équipe est verrouillée. Si vous partez, elle repasse en recrutement et le capitaine devra la verrouiller à nouveau pour rester dans le tournoi.",
+    "confirmLeaveLockedSubMessage": "Votre équipe garde assez de joueurs sans vous : elle reste verrouillée et inscrite.",
+    "leaveLockedAfterDeadline": "Les inscriptions sont closes : votre équipe est verrouillée et ne peut plus perdre de titulaire, car elle ne pourrait plus être verrouillée. Contactez l'organisateur si vous ne pouvez pas jouer.",
     "confirmLeaveTitle": "Quitter l'équipe ?",
     "confirmLeaveMessage": "Vous allez quitter « {name} ».",
     "inviteLinkTitle": "LIEN D'INVITATION",

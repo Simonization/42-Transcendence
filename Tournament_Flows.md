@@ -154,6 +154,10 @@ Backend validates `members.length === phase1.game.teamSize`. Throws 400 if the c
 
 > The tournament can only start once enough teams are `LOCKED` to fill Phase 1.
 
+> Team names are unique per tournament (case-insensitive), nobody can be invited or join after
+> the registration deadline, and a member cannot leave a LOCKED team after the deadline when that
+> would leave it short of players. See `docs/teams.md`.
+
 ---
 
 ## 6. User — Match History
