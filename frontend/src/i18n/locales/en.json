@@ -533,7 +533,6 @@
     "displayName": "Display Name",
     "displayNamePlaceholder": "Your display name",
     "emailLabel": "Email",
-    "emailPlaceholder": "your@email.com",
     "inGamePlaceholder": "Your in-game username",
     "teamNamePlaceholder": "Your team name",
     "selectMembers": "Select Team Members (1-4) *",

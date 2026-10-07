@@ -533,7 +533,6 @@
     "displayName": "Nom d'affichage",
     "displayNamePlaceholder": "Votre nom d'affichage",
     "emailLabel": "E-mail",
-    "emailPlaceholder": "votre@email.com",
     "inGamePlaceholder": "Votre pseudo en jeu",
     "teamNamePlaceholder": "Nom de votre équipe",
     "selectMembers": "Sélectionner les membres de l'équipe (1-4) *",

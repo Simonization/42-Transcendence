@@ -51,7 +51,7 @@ export const REQUIRED_KEYS = ['auth.signIn', 'auth.createAccount', 'auth.email',
  * grep when this was written), so nothing renders them. Warned about, not failed. Delete the entry
  * when the key is fixed or removed; never add a key that the UI actually uses.
  */
-const KNOWN_UNCOMPILABLE = new Set(['registration.emailPlaceholder']);
+const KNOWN_UNCOMPILABLE = new Set();
 
 // ---------------------------------------------------------------- helpers (exported for tests)
 
