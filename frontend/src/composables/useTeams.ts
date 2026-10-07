@@ -5,7 +5,7 @@
 
 import { ref } from 'vue'
 import { teamsApi, type JoinPreview } from '../api/teams'
-import { getErrorMessage } from '../utils/error'
+import { apiErrorKey, getErrorMessage } from '../utils/error'
 import type {
   BackendTeam,
   TeamInvitation,
@@ -17,6 +17,8 @@ export function useTeams() {
   const myInvitations = ref<TeamInvitation[]>([])
   const isLoading = ref(false)
   const error = ref('')
+  /** i18n key of the last create error when the backend tagged it with a known code. */
+  const errorKey = ref<string | null>(null)
 
   /**
    * Create a team for a tournament.
@@ -25,12 +27,14 @@ export function useTeams() {
   const createTeam = async (data: CreateTeamDto): Promise<BackendTeam | null> => {
     isLoading.value = true
     error.value = ''
+    errorKey.value = null
     try {
       const team = await teamsApi.create(data)
       myTeam.value = team
       return team
     } catch (e) {
       error.value = getErrorMessage(e, 'Failed to create team')
+      errorKey.value = apiErrorKey(e)
       return null
     } finally {
       isLoading.value = false
@@ -258,6 +262,7 @@ export function useTeams() {
     myInvitations,
     isLoading,
     error,
+    errorKey,
     createTeam,
     invitePlayer,
     kickPlayer,

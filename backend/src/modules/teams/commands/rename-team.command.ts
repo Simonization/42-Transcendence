@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Team } from '../entities/team.entity';
 import { TournamentStatus } from '../../tournaments/entities/tournament.entity';
 import { TeamPermissionsService } from '../services/team-permissions.service';
+import { assertTeamNameFree, cleanTeamName, isTeamNameConflict, teamNameTaken } from '../utils/team-name';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
 
@@ -28,8 +29,21 @@ export class RenameTeamCommand {
             throw new BadRequestException('Cannot rename a team once the tournament has started');
         }
 
-        team.name = name;
-        const saved = await this.teamRepo.save(team);
+        // Unique per tournament (clear 409); a concurrent rename to the same name passes this
+        // check too, and the unique index refuses whichever write comes second.
+        const clean = cleanTeamName(name);
+        if (team.tournament?.id != null) {
+            await assertTeamNameFree(this.teamRepo.manager, team.tournament.id, clean, team.id);
+        }
+
+        team.name = clean;
+        let saved: Team;
+        try {
+            saved = await this.teamRepo.save(team);
+        } catch (err) {
+            if (isTeamNameConflict(err)) throw teamNameTaken();
+            throw err;
+        }
 
         this.realtime.toTeam(teamId, RealtimeEvents.TEAM_UPDATED, { id: teamId, reason: 'team_renamed' });
         if (team.tournament?.id) {

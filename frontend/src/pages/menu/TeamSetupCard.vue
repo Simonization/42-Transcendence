@@ -27,6 +27,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import RegistrationCountdown from '../../components/tournaments/RegistrationCountdown.vue'
 import { useNow } from '../../composables/useNow'
 import { checkinStateOf, isRegistrationOpen } from '../../utils/registration'
+import { apiErrorKey } from '../../utils/error'
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -39,8 +40,13 @@ const notifications = useNotificationsStore()
 const tournamentId = computed(() => Number(route.params.id))
 const me = computed(() => authStore.user)
 
-/** The backend's message when it sent one, otherwise the localized fallback. */
+/**
+ * A localized message for errors the backend tags with a known code (utils/error.ts), else the
+ * backend's message when it sent one, otherwise the localized fallback.
+ */
 function errorText(err: unknown, fallbackKey: string): string {
+  const key = apiErrorKey(err)
+  if (key) return t(key)
   const message = (err as { message?: string } | null)?.message
   return message || t(fallbackKey)
 }

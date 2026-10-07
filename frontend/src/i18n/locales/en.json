@@ -768,6 +768,7 @@
     "renamePlaceholder": "New team name (min 3 chars)",
     "renamed": "Team renamed.",
     "renameFailed": "Failed to rename team",
+    "nameTaken": "Another team in this tournament already uses that name. Pick another one.",
     "cancelInvite": "CANCEL",
     "cancelInviteTitle": "Cancel this invitation",
     "inviteCancelled": "Invitation cancelled.",

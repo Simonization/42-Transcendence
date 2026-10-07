@@ -94,6 +94,9 @@ function assert(condition: unknown, message: string): asserts condition {
 }
 
 async function checkSchema(): Promise<void> {
+    // Indexes an entity declares with `synchronize: false` (expression indexes TypeORM cannot
+    // build) exist only after the migrations: they must be there, and are left out of the diff.
+    let manual: string[] = [];
     const migrated = await withDataSource(options('verify_migrated'), async (ds) => {
         await ds.runMigrations({ transaction: 'all' });
         const pending = await ds.driver.createSchemaBuilder().log();
@@ -102,7 +105,16 @@ async function checkSchema(): Promise<void> {
             for (const q of pending.upQueries) console.error('  ' + q.query.trim());
             throw new Error('schema check failed: the migrations do not produce the entities\' schema');
         }
-        return snapshot(ds);
+        manual = ds.entityMetadatas.flatMap((m) =>
+            m.indices.filter((i) => i.synchronize === false && i.name).map((i) => i.name),
+        );
+        const lines = await snapshot(ds);
+        for (const name of manual) {
+            if (!lines.some((l) => l.startsWith('index ') && l.includes(`"${name}"`))) {
+                throw new Error(`schema check failed: no migration creates the index ${name}`);
+            }
+        }
+        return lines.filter((l) => !manual.some((name) => l.startsWith('index ') && l.includes(`"${name}"`)));
     });
     const synced = await withDataSource(options('verify_synced', { synchronize: true }), snapshot);
 
@@ -113,7 +125,10 @@ async function checkSchema(): Promise<void> {
         for (const l of onlySynced) console.error('  only after synchronize: ' + l);
         throw new Error('schema check failed: migrated and synchronized schemas differ');
     }
-    console.log(`schema: OK (${migrated.length} catalog entries identical, nothing left to generate)`);
+    console.log(
+        `schema: OK (${migrated.length} catalog entries identical, nothing left to generate; ` +
+            `${manual.length} migration-only index(es) present: ${manual.join(', ') || 'none'})`,
+    );
 }
 
 /** Old-shape rows, as the app of the Baseline deploy wrote them. */
@@ -131,7 +146,9 @@ const SEED = `
     INSERT INTO "teams" ("id", "name", "status", "captain_id", "tournamentId") VALUES
         (10, 'Ten', 'LOCKED', 1, 1), (11, 'Eleven', 'LOCKED', 2, 1),
         (12, 'Twelve', 'LOCKED', 3, 1), (13, 'Thirteen', 'LOCKED', 4, 1),
-        (20, 'Twenty', 'DRAFT', 5, 2);
+        (20, 'Twenty', 'DRAFT', 5, 2),
+        -- Same name as team 20 once trimmed and lower-cased (TeamNameUnique renames it).
+        (21, ' twenty ', 'DRAFT', 4, 2);
     INSERT INTO "team_members" ("team_id", "user_id") VALUES (10, 1), (11, 2), (12, 3), (13, 4), (20, 5);
     INSERT INTO "team_invitations" ("team_id", "sender_id", "receiver_id", "status")
         VALUES (10, 1, 5, 'PENDING'), (11, 2, 5, 'DECLINED');
@@ -206,8 +223,13 @@ async function checkUpgrade(): Promise<void> {
             'seed_order backfilled from LOCKED teams',
         );
 
-        const teams: any[] = await ds.query(`SELECT "id", "join_code" FROM "teams" ORDER BY "id"`);
-        assert(teams.length === 8, 'teams kept');
+        const teams: any[] = await ds.query(`SELECT "id", "name", "join_code" FROM "teams" ORDER BY "id"`);
+        assert(teams.length === 9, 'teams kept');
+        const nameOf = (id: number) => teams.find((t) => t.id === id)?.name;
+        assert(nameOf(20) === 'Twenty' && nameOf(21) === 'twenty #21', 'duplicate team name renamed, oldest kept');
+        const [{ n: nameIndexes }] = await ds.query(
+            `SELECT count(*)::int AS n FROM pg_indexes WHERE indexname = 'UQ_teams_tournament_name'`);
+        assert(nameIndexes === 1, 'team name index built');
         assert(teams.every((t) => /^[A-HJ-NP-Za-km-z2-9]{10}$/.test(t.join_code)), 'join codes in the app format');
         assert(new Set(teams.map((t) => t.join_code)).size === teams.length, 'join codes unique');
 
@@ -247,6 +269,8 @@ async function checkUpgrade(): Promise<void> {
         await ds.runMigrations({ transaction: 'all' });
         const [final] = await ds.query(`SELECT "team1_id", "team2_id" FROM "matches" WHERE "id" = 100`);
         assert(final.team1_id === null && final.team2_id === 13, 're-run after revert');
+        const [again] = await ds.query(`SELECT "name" FROM "teams" WHERE "id" = 21`);
+        assert(again.name === 'twenty #21', 'team names stable across revert and re-run');
     });
     console.log('upgrade: OK (old rows carried over, revert and re-run clean)');
 }

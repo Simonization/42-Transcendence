@@ -768,6 +768,7 @@
     "renamePlaceholder": "Nouveau nom d'équipe (3 caractères min.)",
     "renamed": "Équipe renommée.",
     "renameFailed": "Impossible de renommer l'équipe",
+    "nameTaken": "Une autre équipe de ce tournoi porte déjà ce nom. Choisissez-en un autre.",
     "cancelInvite": "ANNULER",
     "cancelInviteTitle": "Annuler cette invitation",
     "inviteCancelled": "Invitation annulée.",

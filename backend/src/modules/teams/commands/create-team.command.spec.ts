@@ -45,6 +45,13 @@ describe('CreateTeamCommand', () => {
         expect(teamRepo.save).not.toHaveBeenCalled();
     });
 
+    it('trims the name, and refuses one that is too short once trimmed (400)', async () => {
+        const team: any = await build().command.execute({ name: '  Reds  ', tournament_id: 9 }, user);
+        expect(team.name).toBe('Reds');
+        await expect(build().command.execute({ name: '  ab   ', tournament_id: 9 }, user))
+            .rejects.toBeInstanceOf(BadRequestException);
+    });
+
     it('refuses when registration is not open, or the tournament does not exist', async () => {
         await expect(build({ tournament: { id: 9, status: TournamentStatus.ONGOING } }).command.execute(dto, user))
             .rejects.toBeInstanceOf(BadRequestException);

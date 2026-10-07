@@ -12,10 +12,11 @@ import { useAuthStore } from '../../../stores/auth'
 import { useFriendsStore } from '../../../stores/friends'
 
 // Hoist mock functions so they're available inside vi.mock factory
-const { mockCreateTeam, mockInvitePlayer, mockLockTeam } = vi.hoisted(() => ({
+const { mockCreateTeam, mockInvitePlayer, mockLockTeam, mockErrorKey } = vi.hoisted(() => ({
   mockCreateTeam: vi.fn(),
   mockInvitePlayer: vi.fn(),
   mockLockTeam: vi.fn(),
+  mockErrorKey: { value: null as string | null },
 }))
 
 vi.mock('../../../composables/useTeams', () => ({
@@ -23,6 +24,7 @@ vi.mock('../../../composables/useTeams', () => ({
     myTeam: { value: null },
     isLoading: { value: false },
     error: { value: '' },
+    errorKey: mockErrorKey,
     createTeam: mockCreateTeam,
     invitePlayer: mockInvitePlayer,
     lockTeam: mockLockTeam,
@@ -73,6 +75,7 @@ describe('TournamentRegistrationModal', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockErrorKey.value = null
     mockCreateTeam.mockResolvedValue({ id: 1, name: 'Test Team' })
     mockInvitePlayer.mockResolvedValue({})
     mockLockTeam.mockResolvedValue({ id: 1 })
@@ -228,6 +231,29 @@ describe('TournamentRegistrationModal', () => {
         name: 'testuser Team',
         tournament_id: 1,
       })
+    })
+
+    it('retries once with the user id when the generated solo name is taken in the tournament', async () => {
+      mockCreateTeam
+        .mockImplementationOnce(async () => {
+          mockErrorKey.value = 'teams.nameTaken'
+          return null
+        })
+        .mockImplementationOnce(async () => {
+          mockErrorKey.value = null
+          return { id: 1, name: 'testuser Team 1', status: 'DRAFT', members: [] }
+        })
+      mount(TournamentRegistrationModal, { props: soloProps })
+      await flushPromises()
+
+      ;(document.querySelector('.checkbox-accept input') as HTMLInputElement).click()
+      await flushPromises()
+      ;(document.querySelector('button.modal-btn-primary') as HTMLButtonElement).click()
+      await flushPromises()
+
+      const userId = useAuthStore().user!.id
+      expect(mockCreateTeam).toHaveBeenNthCalledWith(2, { name: `testuser Team ${userId}`, tournament_id: 1 })
+      expect(mockLockTeam).toHaveBeenCalledWith(1)
     })
 
     it('should call lockTeam immediately after createTeam for solo', async () => {

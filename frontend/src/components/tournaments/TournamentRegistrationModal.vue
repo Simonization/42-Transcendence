@@ -41,7 +41,7 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const friendsStore = useFriendsStore()
 const notifications = useNotificationsStore()
-const { myTeam, isLoading, error: teamError, createTeam, invitePlayer, lockTeam } = useTeams()
+const { myTeam, isLoading, error: teamError, errorKey: teamErrorKey, createTeam, invitePlayer, lockTeam } = useTeams()
 
 const now = useNow()
 const deadlinePassed = computed(
@@ -135,13 +135,21 @@ const handleSubmit = async () => {
       ? (authStore.user?.username ?? 'Solo') + ' Team'
       : teamName.value.trim()
 
-    const team = await createTeam({
+    let team = await createTeam({
       name,
       tournament_id: props.tournamentId,
     })
+    // Team names are unique per tournament, case-insensitively: the generated solo name can
+    // clash ("Bob Team" / "bob Team"), so retry once with the user id appended.
+    if (!team && isSolo.value && teamErrorKey.value === 'teams.nameTaken' && authStore.user) {
+      team = await createTeam({ name: `${name} ${authStore.user.id}`, tournament_id: props.tournamentId })
+    }
 
     if (!team) {
-      notifications.error(teamError.value || t('teams.createFailed'), 4000)
+      notifications.error(
+        teamErrorKey.value ? t(teamErrorKey.value) : teamError.value || t('teams.createFailed'),
+        4000,
+      )
       return
     }
 

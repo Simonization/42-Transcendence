@@ -1,7 +1,7 @@
 import { Tournament } from "src/modules/tournaments/entities/tournament.entity";
 import { User } from "src/modules/users/entities/user.entity";
 import { TeamAdmin } from "./team-admin.entity";
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 // src/modules/teams/entities/team.entity.ts
 export enum TeamStatus {
@@ -10,6 +10,11 @@ export enum TeamStatus {
     ARCHIVED = 'ARCHIVED'  // Tournament is over
 }
 
+// Team names are unique per tournament, case-insensitive and trimmed: a partial unique index on
+// ("tournamentId", lower(btrim("name"))) WHERE "tournamentId" IS NOT NULL. TypeORM cannot
+// declare an expression index, so the TeamNameUnique migration owns it; `synchronize: false`
+// keeps synchronize (local dev) from dropping it. See utils/team-name.ts.
+@Index('UQ_teams_tournament_name', { synchronize: false })
 @Entity('teams')
 export class Team {
     @PrimaryGeneratedColumn()

@@ -49,6 +49,7 @@ vi.mock('../../../api/users', () => ({ usersApi }))
 import TeamSetupCard from '../TeamSetupCard.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useNotificationsStore } from '../../../stores/notifications'
+import { ApiError } from '../../../types'
 
 const TOURNAMENT = {
   id: 1,
@@ -483,6 +484,36 @@ describe('TeamSetupCard', () => {
 
       const messages = useNotificationsStore().notifications.map((n) => n.message)
       expect(messages).toContain("Impossible de renommer l'équipe")
+    })
+
+    it.each([
+      ['en', 'RENAME', 'SAVE', 'Another team in this tournament already uses that name. Pick another one.'],
+      ['fr', 'RENOMMER', 'ENREGISTRER', 'Une autre équipe de ce tournoi porte déjà ce nom. Choisissez-en un autre.'],
+    ])('a taken team name (409 TEAM_NAME_TAKEN) is explained in the active locale (%s)', async (locale, rename, save, expected) => {
+      i18n.global.locale.value = locale as 'en' | 'fr'
+      setup()
+      teamsApi.rename.mockRejectedValue(new ApiError(409, 'TEAM_NAME_TAKEN', 'A team with that name is already registered in this tournament'))
+      const wrapper = await mountCard()
+
+      await buttonByText(wrapper, rename)!.trigger('click')
+      await wrapper.find('.ts-team-title-block input').setValue('Blues')
+      await buttonByText(wrapper, save)!.trigger('click')
+      await flushPromises()
+
+      expect(useNotificationsStore().notifications.map((n) => n.message)).toContain(expected)
+    })
+
+    it('a taken name on create is explained too', async () => {
+      setup({ team: null })
+      teamsApi.create.mockRejectedValue(new ApiError(409, 'TEAM_NAME_TAKEN', 'taken'))
+      const wrapper = await mountCard()
+
+      await wrapper.find('.ts-create-card input').setValue('Blues')
+      await buttonByText(wrapper, 'CREATE')!.trigger('click')
+      await flushPromises()
+
+      expect(useNotificationsStore().notifications.map((n) => n.message))
+        .toContain('Another team in this tournament already uses that name. Pick another one.')
     })
   })
 })

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Team, TeamStatus } from '../entities/team.entity';
@@ -8,6 +8,7 @@ import { Tournament } from '../../tournaments/entities/tournament.entity';
 import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 import { LookingForTeam } from '../entities/looking-for-team.entity';
 import { generateJoinCode } from '../utils/join-code';
+import { assertTeamNameFree, cleanTeamName, isTeamNameConflict, teamNameTaken } from '../utils/team-name';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
 
@@ -21,6 +22,8 @@ export class CreateTeamCommand {
     ) {}
 
     async execute(dto: CreateTeamDto, user: User): Promise<Team> {
+        const name = cleanTeamName(dto.name);
+
         // 1. Check if tournament exists
         const tournament = await this.tournamentRepo.findOneBy({ id: dto.tournament_id });
         if (!tournament) throw new NotFoundException('Tournament not found');
@@ -37,9 +40,13 @@ export class CreateTeamCommand {
             throw new ConflictException('You already have a team in this tournament');
         }
 
-        // 3. Create the team in DRAFT status, with a unique join code
+        // 3. The name is free in this tournament (clear 409). Two creates racing for the same
+        //    name both pass this check; the unique index then refuses the second insert.
+        await assertTeamNameFree(this.teamRepo.manager, tournament.id, name);
+
+        // 4. Create the team in DRAFT status, with a unique join code
         const team = this.teamRepo.create({
-            name: dto.name,
+            name,
             status: TeamStatus.DRAFT,
             captain_id: user.id,
             tournament: tournament,
@@ -47,7 +54,13 @@ export class CreateTeamCommand {
             join_code: await this.uniqueJoinCode(),
         });
 
-        const saved = await this.teamRepo.save(team);
+        let saved: Team;
+        try {
+            saved = await this.teamRepo.save(team);
+        } catch (err) {
+            if (isTeamNameConflict(err)) throw teamNameTaken();
+            throw err;
+        }
 
         // Creating a team means the user is no longer "looking for one" in this tournament.
         await this.dataSource.manager.delete(LookingForTeam, { userId: user.id, tournamentId: tournament.id });

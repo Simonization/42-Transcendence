@@ -768,6 +768,7 @@
     "renamePlaceholder": "Yeni takım adı (en az 3 karakter)",
     "renamed": "Takımın adı değiştirildi.",
     "renameFailed": "Takımın adı değiştirilemedi",
+    "nameTaken": "Bu turnuvadaki başka bir takım bu adı zaten kullanıyor. Başka bir ad seçin.",
     "cancelInvite": "İPTAL",
     "cancelInviteTitle": "Bu daveti iptal et",
     "inviteCancelled": "Davet iptal edildi.",

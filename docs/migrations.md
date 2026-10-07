@@ -21,6 +21,7 @@ Current migrations:
 | `1790793133773` | `TournamentFlowWaves1790793133773` | Match slots and scores, match chat, check-in, registration deadline, seeding, join codes, join requests, looking-for-team. Carries existing brackets over from the old `match_teams` table. |
 | `1790800000000` | `LegacyBracketRepair1790800000000` | Data only: makes brackets the old engine started playable (byes resolved, empty leaves cancelled) and gives started tournaments a seed order. No-op on current data. |
 | `1790800100000` | `AccountTombstone1790800100000` | `users.deleted_at`: deleted accounts are anonymised tombstones (see `DeleteUserCommand`). |
+| `1790800200000` | `TeamNameUnique1790800200000` | Team names unique per tournament, case-insensitive and trimmed: renames existing duplicates (`<name> #<id>`, the oldest team keeps its name), then the partial unique index `UQ_teams_tournament_name`. |
 
 ## Environment
 
@@ -77,6 +78,12 @@ Starts a throwaway Postgres 15 (the `embedded-postgres` dev dependency, no Docke
 - a database at the Baseline, holding rows in the old shape (including a stalled old-engine
   bracket), goes through the later migrations with its data carried over and repaired, reverts
   to the Baseline, and migrates again.
+
+An index TypeORM cannot express (an expression index such as `UQ_teams_tournament_name`) is
+declared on its entity with `@Index('<name>', { synchronize: false })` and created by a
+migration. The check requires it to exist after the migrations and leaves it out of the
+comparison with the synchronized schema; `synchronize: false` also stops a local
+`DB_SYNCHRONIZE=true` database from dropping it (such a database simply never has it).
 
 It is not part of `npm test` (it needs ~30 s and a free port).
 
