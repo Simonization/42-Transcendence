@@ -1,0 +1,81 @@
+name: CI
+
+# Same gate as `make check` (scripts/check.sh), split into jobs so they run in parallel.
+# No secrets, no deploy: this only reads the repo.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (jest, build, test:db, migration:verify)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - name: Unit tests
+        run: npx jest
+      - name: Build
+        run: npx nest build
+      # embedded-postgres downloads a Postgres 15 binary through npm (no Docker, no service
+      # container) and listens on 127.0.0.1:55441 / 55440, which are free on the runner.
+      - name: DB tests (embedded Postgres)
+        run: npm run test:db
+      - name: Migrations match the entities
+        run: npm run migration:verify
+
+  frontend:
+    name: Frontend (vitest, build) and i18n checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - name: Unit tests
+        run: npx vitest run
+        working-directory: frontend
+      - name: Type-check and build
+        run: npm run build
+        working-directory: frontend
+      - name: Checker unit tests
+        run: node --test scripts/check-i18n.test.mjs scripts/check-spa-keys.test.mjs
+      - name: Locale parity (duplicate keys, missing keys, placeholders)
+        run: node scripts/check-i18n.mjs
+      - name: Built SPA does not show raw i18n keys
+        run: node scripts/check-spa-keys.mjs
+
+  backend-image:
+    name: Production backend image (resvg on alpine)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend/Dockerfile.prod
+        run: docker build -f backend/Dockerfile.prod -t transcendence-backend:ci backend
+      - name: "@resvg/resvg-js loads and renders inside the image"
+        run: docker run --rm -i transcendence-backend:ci node - < scripts/smoke-resvg.cjs
