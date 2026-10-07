@@ -1,0 +1,14 @@
+# Everything the harness generates lives in .work/ (embedded Postgres data dir, logs, the SMTP
+# sink's mail log, screenshots, state files holding tokens). Never commit any of it.
+.work/
+node_modules/
+*.log
+*.dump
+*.sql
+pgdata/
+mail.log
+state-*.json
+superadmin-*.json
+shots/
+.env
+.env.*
