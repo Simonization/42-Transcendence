@@ -545,26 +545,18 @@ export class AuthService {
     return { accessToken, refreshToken };
 }
 
-    async googleLogin(googleUser: any) {
-        let user = await this.userRepository.findOne({ 
-            where: { mail: googleUser.mail } 
+    /**
+     * Logs in the user GoogleStrategy.validate returned. That strategy has already found or
+     * created the account (CreateUserCommand), so this only issues the tokens (or the 2FA code).
+     */
+    async googleLogin(googleUser: Pick<User, 'mail'>) {
+        const user = await this.userRepository.findOne({
+            where: { mail: googleUser.mail }
         });
-
         if (!user) {
-            const newUser = this.userRepository.create({
-                username: googleUser.email.split('@')[0] + Math.floor(Math.random() * 1000),
-                mail: googleUser.email,
-                firstName: googleUser.firstName,
-                lastName: googleUser.lastName,
-                avatarUrl: googleUser.picture,
-                passwordHash: 'OAUTH_USER',
-                isEmailVerified: true,
-            });
-            user = await this.userRepository.save(newUser);
-            user.firstName = googleUser.firstName;
-            user.lastName = googleUser.lastName;
-            user.avatarUrl = googleUser.picture;
+            throw new UnauthorizedException('Google account not found');
         }
+
         if (user.twoFactorEnabled) {
             const code = await this.issue2faCode(user);
 

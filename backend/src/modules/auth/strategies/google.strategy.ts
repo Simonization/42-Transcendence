@@ -30,7 +30,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     // Map Google Profile to your CreateUserDto structure
     const userDto = {
         mail: emails[0].value,
-        username: emails[0].value.split('@')[0] + Math.floor(Math.random() * 1000), // Ensure unique username
+        username: emails[0].value.split('@')[0], // base only: CreateUserCommand adds a free random suffix
         password: '', // Not used for Google
         picture: photos[0].value
     };

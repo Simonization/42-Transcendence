@@ -180,8 +180,11 @@ Still open from that pass:
       is the proxy's; set `TRUST_PROXY` to the hop count.
 - [x] The admin user list (`ManageUsersTab`) showed deleted accounts under their placeholder
       name (`deleted-user-<id>`); it now uses `isDeleted`: "Deleted user", no actions.
-- [ ] *(reasoned)* **Google sign-up creates no user**: `AuthService.googleLogin` builds the
-      new user from `googleUser.email`, but the strategy sets `mail`. Untouched here.
+- [x] **Google sign-up**: not broken (`GoogleStrategy.validate` already finds or creates the
+      user through `CreateUserCommand`), but `AuthService.googleLogin` carried a dead
+      create-user branch (it read `googleUser.email`, the strategy sets `mail`); removed. A
+      taken generated username made the callback 409: the command now draws a fresh suffix
+      (up to 10 attempts, widening range, retries a unique-index race). `google-oauth.db-spec.ts`.
 - [ ] Old group stages where a group got a single team have no match for it, so that team never
       reaches the standings; the legacy repair does not handle it.
 - [ ] `npm run test:db` is separate from `npm test` (it needs a free port and ~10 s); run both.
