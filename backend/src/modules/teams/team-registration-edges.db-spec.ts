@@ -140,3 +140,46 @@ describe('1. team names are unique within a tournament', () => {
         await expect(team(t.id, [await user()], TeamStatus.DRAFT, ' wolves ')).rejects.toThrow(/duplicate key/);
     });
 });
+
+describe('2. nobody gets onto a roster after the registration deadline', () => {
+    const closed = (e: unknown) => {
+        expect(e).toBeInstanceOf(BadRequestException);
+        expect((e as BadRequestException).message).toBe('Tournament is not open for registration');
+    };
+
+    it('the invite command refuses after the deadline, with the same 400 as accept', async () => {
+        const t = await tournament();
+        const cap = await user();
+        const tm = await team(t.id, [cap]);
+        await pastDeadline(t);
+        const invite = new InvitePlayerCommand(
+            ds.getRepository(Team), ds.getRepository(TeamInvitation), ds.getRepository(User), notifications, allow, realtime,
+        );
+
+        closed(await invite.execute(tm.id, (await user()).id, cap.id).catch((e) => e));
+        const [{ n }] = await ds.query(`SELECT count(*)::int AS n FROM "team_invitations" WHERE "team_id" = $1`, [tm.id]);
+        expect(n).toBe(0);
+    });
+
+    it('accepting an invitation, a join request, sending one and joining by code all refuse after the deadline', async () => {
+        const t = await tournament();
+        const cap = await user();
+        const tm = await team(t.id, [cap]);
+        const [invited, requester, other] = [await user(), await user(), await user()];
+        const inv = await ds.getRepository(TeamInvitation).save({
+            team_id: tm.id, sender_id: cap.id, receiver_id: invited.id, status: InvitationStatus.PENDING, direction: InvitationDirection.INVITE,
+        });
+        const req = await ds.getRepository(TeamInvitation).save({
+            team_id: tm.id, sender_id: requester.id, receiver_id: cap.id, status: InvitationStatus.PENDING, direction: InvitationDirection.REQUEST,
+        });
+        await pastDeadline(t);
+        const membership = new TeamMembershipService();
+
+        closed(await new AcceptInvitationCommand(ds, ds.getRepository(TeamInvitation), notifications, membership, realtime).execute(inv.id, invited.id).catch((e) => e));
+        closed(await new AcceptJoinRequestCommand(ds, notifications, allow, membership, realtime).execute(req.id, cap.id).catch((e) => e));
+        closed(await new CreateJoinRequestCommand(ds.getRepository(Team), ds.getRepository(TeamInvitation), notifications, allow, realtime).execute(tm.id, other.id).catch((e) => e));
+        const [{ join_code }] = await ds.query(`SELECT "join_code" FROM "teams" WHERE "id" = $1`, [tm.id]);
+        closed(await new JoinByCodeCommand(ds, membership, realtime).execute(join_code, other.id).catch((e) => e));
+        expect(await ds.query(`SELECT "user_id" FROM "team_members" WHERE "team_id" = $1`, [tm.id])).toEqual([{ user_id: cap.id }]);
+    });
+});

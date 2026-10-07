@@ -6,6 +6,7 @@ import { JoinByCodeCommand } from './join-by-code.command';
 import { CreateJoinRequestCommand } from './create-join-request.command';
 import { AcceptJoinRequestCommand } from './accept-join-request.command';
 import { AcceptInvitationCommand } from './accept-invitation.command';
+import { InvitePlayerCommand } from './invite-player.command';
 import { LookingForTeamCommand } from './looking-for-team.command';
 import { GetTournamentAvailabilityQuery } from '../queries/get-tournament-availability.query';
 import { TeamMembershipService } from '../services/team-membership.service';
@@ -83,6 +84,24 @@ describe('registration deadline', () => {
         const command = new JoinByCodeCommand(ctx.dataSource, new TeamMembershipService(), mockRealtime());
         await expect(command.execute('abc', USER)).rejects.toThrow(closedMessage);
         expect(ctx.runner.rollbackTransaction).toHaveBeenCalled();
+    });
+
+    it.each([[past, false], [future, true]])('invite (deadline %s -> allowed %s)', async (closesAt, allowed) => {
+        const inviteRepo = mockRepo({ findOne: jest.fn().mockResolvedValue(null), save: jest.fn(async (x) => ({ ...x, id: 33 })) });
+        const command = new InvitePlayerCommand(
+            mockRepo({ findOne: jest.fn().mockResolvedValue(team(closesAt, { members: [{ id: 1 }] })) }),
+            inviteRepo,
+            mockRepo({ findOne: jest.fn().mockResolvedValue({ id: USER, username: 'neo' }) }),
+            mockNotifications(),
+            mockPermissions(),
+            mockRealtime(),
+        );
+        const run = command.execute(5, USER, 1);
+        if (allowed) await expect(run).resolves.toBeDefined();
+        else {
+            await expect(run).rejects.toThrow(closedMessage);
+            expect(inviteRepo.save).not.toHaveBeenCalled();
+        }
     });
 
     it('join request is refused after the deadline', async () => {

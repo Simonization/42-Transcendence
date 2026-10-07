@@ -163,6 +163,15 @@ const canLeave = computed(
 
 const rosterEditable = computed(() => canManage.value && !isLocked.value)
 
+/**
+ * New members (invite, invite link, join requests) only while registration is open: the backend
+ * refuses every one of those paths after the deadline.
+ */
+const canGrowRoster = computed(() => rosterEditable.value && registrationOpen.value)
+
+/** A draft team whose registration closed: say why nobody can be added any more. */
+const rosterClosed = computed(() => rosterEditable.value && !registrationOpen.value && !tournamentStarted.value)
+
 const inviteLink = computed(() =>
   joinCode.value ? `${window.location.origin}/join/${joinCode.value}` : '',
 )
@@ -885,7 +894,7 @@ async function leaveTeam() {
               <div class="ts-slot-info">
                 <span class="ts-slot-empty-label">{{ t('tournament.emptySlot') }}</span>
                 <button
-                  v-if="canManage && !isLocked"
+                  v-if="canGrowRoster"
                   class="ts-invite-btn"
                   @click="showInvitePanel = true"
                 >
@@ -896,8 +905,11 @@ async function leaveTeam() {
           </div>
         </div>
 
+        <!-- Registration closed: no invite, link or join request can add anyone any more -->
+        <p v-if="rosterClosed" class="ts-hint" data-testid="roster-closed">{{ t('teams.rosterClosedHint') }}</p>
+
         <!-- Invite panel (captain / admin) -->
-        <div v-if="canManage && !isLocked" class="ts-invite-panel">
+        <div v-if="canGrowRoster" class="ts-invite-panel">
           <button class="ts-invite-toggle" @click="showInvitePanel = !showInvitePanel">
             {{ showInvitePanel ? '▲' : '▼' }} {{ t('tournament.invitePlayer') }}
           </button>
@@ -934,7 +946,7 @@ async function leaveTeam() {
         </div>
 
         <!-- Invite link (members see it; captain/admins can regenerate) -->
-        <div v-if="joinCode && !isLocked" class="ts-link-panel">
+        <div v-if="joinCode && !isLocked && registrationOpen" class="ts-link-panel">
           <h4 class="ts-subtitle">{{ t('teams.inviteLinkTitle') }}</h4>
           <p class="ts-hint">{{ t('teams.inviteLinkHint') }}</p>
           <div class="ts-form-row">
@@ -970,7 +982,7 @@ async function leaveTeam() {
               <div class="ts-slot-actions">
                 <button
                   class="ts-btn ts-btn-sm ts-btn-accent"
-                  :disabled="isSubmitting || memberCount >= maxSize"
+                  :disabled="isSubmitting || memberCount >= maxSize || !registrationOpen"
                   @click="answerRequest(req.id, true)"
                 >
                   {{ t('common.accept') }}

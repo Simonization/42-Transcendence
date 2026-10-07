@@ -354,6 +354,29 @@ describe('TeamSetupCard', () => {
       expect(useNotificationsStore().notifications.some((n) => n.message === 'Check-in is closed')).toBe(true)
     })
 
+    it('after the deadline a draft team gets no invite, link or join-request accept, and says why', async () => {
+      setup({ tournament: withTournament({ registration_closes_at: PAST() }) })
+      teamsApi.getJoinRequests.mockResolvedValue([
+        { id: 40, team_id: 5, sender_id: 9, sender: { id: 9, username: 'zed' }, status: 'PENDING' },
+      ])
+      const wrapper = await mountCard()
+
+      expect(wrapper.find('.ts-invite-panel').exists()).toBe(false)
+      expect(wrapper.find('.ts-invite-btn').exists()).toBe(false)
+      expect(wrapper.find('.ts-link-panel').exists()).toBe(false)
+      expect(wrapper.find('.ts-requests-panel .ts-request').findAll('button')[0].attributes('disabled')).toBeDefined()
+      expect(wrapper.find('[data-testid="roster-closed"]').text()).toContain('Registration has closed')
+    })
+
+    it('before the deadline the invite actions are there and no closed hint', async () => {
+      setup({ tournament: withTournament({ registration_closes_at: FUTURE() }) })
+      const wrapper = await mountCard()
+
+      expect(wrapper.find('.ts-invite-panel').exists()).toBe(true)
+      expect(wrapper.find('.ts-invite-btn').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="roster-closed"]').exists()).toBe(false)
+    })
+
     it('shows the deadline countdown while registration is open, and blocks locking after it passes', async () => {
       const closes = new Date(Date.now() + 2 * 86_400_000 + 4 * 3_600_000 + 60_000).toISOString()
       setup({ tournament: withTournament({ registration_closes_at: closes }) })

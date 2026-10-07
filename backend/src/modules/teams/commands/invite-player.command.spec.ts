@@ -10,7 +10,7 @@ describe('InvitePlayerCommand roster cap', () => {
         status: TeamStatus.DRAFT,
         captain_id: 1,
         members: Array.from({ length: memberCount }, (_, i) => ({ id: i + 1 })),
-        tournament: { id: 9, phases: [{ order: 1, game: { teamSize: 2 } }] },
+        tournament: { id: 9, status: 'REGISTRATION_OPEN', phases: [{ order: 1, game: { teamSize: 2 } }] },
     });
 
     function build(memberCount: number) {

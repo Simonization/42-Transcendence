@@ -810,6 +810,7 @@
     "spotsLeft": "{count} yer kaldı",
     "teamFull": "TAKIM DOLU",
     "registrationClosed": "Kayıtlar kapandı",
+    "rosterClosedHint": "Kayıtlar kapandı: artık kimse bu takıma davet, bağlantı ya da istekle katılamaz.",
     "lockedCannotJoin": "Takımınız kilitliyken başka bir takıma katılamazsınız. Önce ondan ayrılın."
   },
   "errors": {

@@ -810,6 +810,7 @@
     "spotsLeft": "{count} place(s) restante(s)",
     "teamFull": "ÉQUIPE COMPLÈTE",
     "registrationClosed": "Inscriptions closes",
+    "rosterClosedHint": "Les inscriptions sont closes : plus personne ne peut rejoindre cette équipe, ni par invitation, ni par lien, ni par demande.",
     "lockedCannotJoin": "Vous ne pouvez pas rejoindre une autre équipe tant que la vôtre est verrouillée. Quittez-la d'abord."
   },
   "errors": {

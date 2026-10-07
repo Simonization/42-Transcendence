@@ -10,6 +10,7 @@ import { TeamPermissionsService } from '../services/team-permissions.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { RealtimeEvents } from '../../realtime/realtime.events';
 import { maxRosterSize, teamSizeOf } from '../utils/roster';
+import { assertRegistrationOpen } from '../../tournaments/services/registration-window';
 
 @Injectable()
 export class InvitePlayerCommand {
@@ -38,6 +39,10 @@ export class InvitePlayerCommand {
         if (team.status === TeamStatus.LOCKED) {
             throw new BadRequestException('Cannot invite players to a locked team');
         }
+
+        // 3a. Not after the deadline or the start: the invitation could never be accepted
+        //     (accept-invitation refuses the same way), so it is not sent at all.
+        assertRegistrationOpen(team.tournament);
 
         // 3b. Validation: the bench is capped (teamSize starters + a few substitutes)
         const maxSize = maxRosterSize(teamSizeOf(team.tournament));

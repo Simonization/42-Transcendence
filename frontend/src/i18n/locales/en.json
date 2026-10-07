@@ -810,6 +810,7 @@
     "spotsLeft": "{count} spot(s) left",
     "teamFull": "TEAM FULL",
     "registrationClosed": "Registration closed",
+    "rosterClosedHint": "Registration has closed: nobody can join this team any more, by invitation, link or request.",
     "lockedCannotJoin": "You cannot join another team while yours is locked. Leave it first."
   },
   "errors": {
