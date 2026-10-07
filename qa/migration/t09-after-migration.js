@@ -63,7 +63,8 @@ const allMatches = (t) => t.phases.flatMap(p => p.matches || []);
   console.log('# old chat + friends');
   r = await api(b3cap, 'GET', '/chat/rooms');
   check(r.status === 200 && JSON.stringify(r.body).includes('hello from prod'), 'old DM visible', r.body);
-  const room = r.body[0];
+  // Not rooms[0]: finishing a match above created match-chat rooms, which can sort first.
+  const room = r.body.find((x) => JSON.stringify(x).includes('hello from prod')) || r.body[0];
   r = await api(b3cap, 'GET', `/chat/rooms/${room.id}/messages`);
   check(r.status === 200 && r.body.length === 1, 'old messages readable', r.body);
   r = await api(b3cap, 'GET', '/social/friends');

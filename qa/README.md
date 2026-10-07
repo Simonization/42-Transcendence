@@ -2,8 +2,8 @@
 
 A local, self-contained test rig that boots the **built** backend (`backend/dist`) and the
 **built** SPA (`frontend/dist`) from this checkout against a throwaway embedded Postgres, then
-drives them the way users and clients do: ~470 checks over HTTP, Socket.IO and a headless
-Chromium. It complements the unit suites (`npm test` in `backend/` and `frontend/`) and
+drives them the way users and clients do: ~420 checks over HTTP, Socket.IO and a headless
+Chromium (plus 22 in the production-upgrade scenario). It complements the unit suites (`npm test` in `backend/` and `frontend/`) and
 `npm run test:db`: those test pieces, this tests the assembled application, including auth,
 migrations, the tournament engine, realtime and the UI.
 
@@ -86,8 +86,11 @@ node qa/t04-matchloop.js        # any tNN script, directly; prints "  ok ..." / 
 unique names, so they can be re-run against the same stack. A fresh database is only created when
 the stack boots.
 
-Runtime: a full run takes a few minutes on a laptop (see the table below); booting the stack is
-about 15 s. The whole suite is serial on purpose: it shares one database and one super admin.
+Runtime: the full run (10 scripts, 423 checks) took 3.3 minutes on a quiet WSL2 machine and
+about 5 minutes when it was busy (booting the stack 5-40 s; per script: t02 20-65 s, t10 about
+65 s, t13 35 s, the others 2-40 s); `--no-ui` is about 2 minutes quiet. The migration scenario takes about 30 s once the old backend is
+built (the first run adds the old `npm ci` + build, a few minutes). The suite is serial on
+purpose: it shares one database and one super admin.
 
 ## Configuration
 
@@ -116,7 +119,7 @@ Only `qa/.work/`, `node_modules/` and similar generated files are ignored by `qa
 | `t04-matchloop` | permissions before start (403 for non-admins, 401 anonymous), seeding, report / confirm rules (outsider, plain member, draw, negative score), dispute then admin resolve, undo, history, private fields on matches, deleting a started tournament |
 | `t05-teams` | team creation (one per user per tournament), invite / decline / cancel / accept, join codes and join requests, rename / transfer captaincy / team admin / leave, lock / unlock / looking-for-team, accepting an invite leaves DRAFT teams but never a LOCKED one, `max_participants`, registration deadline, check-in |
 | `t06-public-realtime-chat` | public share page and `og.png` without login (no e-mails in the JSON), Socket.IO rooms with several clients (live bracket / roster events, who may join which room), per-match chat access control |
-| `t07-leak-sweep` | the remaining read endpoints, scanned for other users' private fields |
+| `t07-leak-sweep` | the remaining read endpoints, scanned for other users' private fields. Two exposures are deliberate in the product and listed in `KNOWN` (printed as `known` lines, not failures): `status` (presence) on `/social/friends` and `/users/search`, and `role` on `/users/search`. If you decide those should be private too, delete the `KNOWN` entries and the check will fail until the API stops sending them |
 | `t14-edges` | seeding validation and capacity at start, withdrawal, concurrent confirms, join requests, deleting a team with a pending invite, deleting (anonymising) accounts |
 | `t10-ui` | browser: login through the form, every `/menu/*` page renders with no console / page errors and no 4xx/5xx API calls, 404 and `/menu` redirects, `/join/<code>` joins in the UI, admin pages, a second browser sees a reported score live (socket refetch), public `/t/<id>` page, anonymous redirect to `/auth`. Screenshots go to `qa/.work/shots/` |
 | `t13-ui-matchloop` | browser: admin starts a tournament from the admin UI (confirm dialog lists the team that will be dropped), captain reports a score by clicking, opposing captain sees CONFIRM live and confirms, the tournament completes with a podium, match chat opens from the bracket; plain members get no REPORT button |
@@ -176,5 +179,5 @@ first run takes several minutes.
 - Browser checks are tied to the current markup (class names such as `article.match-card`,
   `input.score-input`, button labels in English). A UI redesign will need those selectors updated.
 - Google OAuth and real SMTP are not covered (dummy credentials, mail sink).
-- Postgres 15 via `embedded-postgres`; production runs the Postgres version of
-  `docker-compose.prod.yml`.
+- Postgres 15 via `embedded-postgres`, the same major version as `docker-compose.prod.yml`
+  (`postgres:15`); the platform binary comes with the `backend/` install (`@embedded-postgres/*`).
