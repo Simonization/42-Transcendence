@@ -41,6 +41,8 @@ export interface User {
   lastName?: string | null;
   avatarUrl?: string | null;
   createdAt?: string;
+  /** True for a deleted account (tombstone); only the admin user list sends it for full users */
+  isDeleted?: boolean;
   /** Related entities */
   profile: UserProfile;
   settings: UserSettings;

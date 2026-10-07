@@ -178,8 +178,8 @@ Still open from that pass:
 - [ ] **Check `TRUST_PROXY` on the box**: the default trusts loopback / private proxies, which
       fits Caddy → `127.0.0.1:3000`. If every visitor shares one rate-limit bucket, `req.ip`
       is the proxy's; set `TRUST_PROXY` to the hop count.
-- [ ] The admin user list (`ManageUsersTab`) shows deleted accounts under their placeholder
-      name (`deleted-user-<id>`); the API now sends `isDeleted`, the tab does not use it yet.
+- [x] The admin user list (`ManageUsersTab`) showed deleted accounts under their placeholder
+      name (`deleted-user-<id>`); it now uses `isDeleted`: "Deleted user", no actions.
 - [ ] *(reasoned)* **Google sign-up creates no user**: `AuthService.googleLogin` builds the
       new user from `googleUser.email`, but the strategy sets `mail`. Untouched here.
 - [ ] Old group stages where a group got a single team have no match for it, so that team never

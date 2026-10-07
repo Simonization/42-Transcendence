@@ -8,6 +8,7 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAdminUsers } from '../../composables/useAdminUsers'
 import ConfirmDialog from '../common/ConfirmDialog.vue'
+import { isDeletedUser, userLabel } from '../../utils/deletedUser'
 
 const { t } = useI18n()
 const {
@@ -181,24 +182,31 @@ onMounted(() => fetchUsers())
                 <button class="action-link action-link-save" @click="confirmEdit">{{ $t('common.save') }}</button>
                 <button class="action-link" @click="cancelEdit">{{ $t('common.cancel') }}</button>
               </template>
+              <template v-else-if="isDeletedUser(u)">
+                <span class="deleted-user-text">{{ userLabel(u, t) }}</span>
+              </template>
               <template v-else>
                 <span class="username-text">{{ u.username }}</span>
                 <div class="display-name-text">{{ u.profile?.displayName || '-' }}</div>
               </template>
             </td>
-            <td>{{ u.mail }}</td>
+            <td>{{ isDeletedUser(u) ? '-' : u.mail }}</td>
             <td>
-              <span class="role-badge">{{ getRoleName(u.role) }}</span>
+              <span v-if="isDeletedUser(u)" class="role-badge">-</span>
+              <span v-else class="role-badge">{{ getRoleName(u.role) }}</span>
             </td>
             <td>
+              <span v-if="isDeletedUser(u)" class="status-badge status-deleted">-</span>
               <span
+                v-else
                 class="status-badge"
                 :class="u.status === 1 ? 'status-banned' : 'status-active'"
               >
                 {{ u.status === 1 ? $t('admin.userBanned') : $t('admin.userActive') }}
               </span>
             </td>
-            <td class="cell-actions">
+            <td v-if="isDeletedUser(u)" class="cell-actions"></td>
+            <td v-else class="cell-actions">
               <button class="action-link" @click="startEdit(u.id, 'username', u.username)">
                 {{ $t('admin.editAction') }} username
               </button>
@@ -497,6 +505,11 @@ onMounted(() => fetchUsers())
   color: var(--text-primary);
 }
 
+.deleted-user-text {
+  font-style: italic;
+  color: var(--text-tertiary);
+}
+
 .inline-edit-input {
   padding: var(--space-1) var(--space-2);
   font-family: var(--font-sans);
@@ -525,6 +538,10 @@ onMounted(() => fetchUsers())
 .status-banned {
   background: var(--color-error);
   color: white;
+}
+
+.status-deleted {
+  color: var(--text-tertiary);
 }
 
 .role-badge {
