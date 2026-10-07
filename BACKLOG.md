@@ -28,12 +28,11 @@ sync. The backend also refuses to start without `JWT_SECRET`.
 
 ## 1. Ops
 
-- [ ] **Login is impossible in production** until SMTP is configured: login requires a
-      verified email and verification is email-only.
-- [ ] **Google OAuth** needs a client under your own Google Cloud project (the current
-      credentials belong to a teammate's).
+- [x] **Login in production**: SMTP (Gmail app password) configured and deployed 2026-10-07;
+      real signup + verification mail verified.
+- [x] **Google OAuth** with an own Google Cloud client, deployed and verified 2026-10-07.
 - [x] **Real TypeORM migrations**, so deploys stop needing a one-off `synchronize`. — see `docs/migrations.md`
-- [~] **Database backups** for this app's volume. — script updated 2026-09-30 (infra repo), install on the server pending
+- [x] **Database backups** for this app's volume. — nightly cron on the box (verified 2026-10-07); off-box copy via `infra/pull-backups.sh`
 - [x] **Committed TLS private key** `nginx/ssl/transcendence.key`. It's the self-signed
       localhost dev cert, but remove it from git and generate it in `make setup`.
 
