@@ -11,8 +11,8 @@
 #        i18n checker (+ its unit tests) -> built-SPA key smoke
 #
 # Needs: bash, Node 22 + npm. No Docker: test:db and migration:verify use an embedded Postgres
-# on ports 55441 / 55440 (override with TEST_DB_PORT / MIGRATION_VERIFY_PORT). Missing
-# node_modules are installed with `npm ci` first. E2E=1 additionally renders /login in headless
+# on ports 55441 / 55440 (override with TEST_DB_PORT / MIGRATION_VERIFY_PORT). Missing or
+# stale node_modules (lockfile newer than the last install) are installed with `npm ci` first. E2E=1 additionally renders /login in headless
 # Chromium when Playwright is installed (see scripts/check-spa-keys.mjs).
 set -u -o pipefail
 
@@ -82,7 +82,11 @@ step() {
 ensure_deps() { # <dir> <npm ci args...>
     local dir="$1"
     shift
-    if [ ! -d "$ROOT/$dir/node_modules" ] || [ "${CHECK_INSTALL:-0}" = "1" ]; then
+    # Also reinstall when package-lock.json is newer than what npm last installed: a stale
+    # node_modules (an old vue-i18n alpha) once failed the check on a clean main.
+    local marker="$ROOT/$dir/node_modules/.package-lock.json"
+    if [ ! -d "$ROOT/$dir/node_modules" ] || [ "${CHECK_INSTALL:-0}" = "1" ] \
+        || { [ -w "$ROOT/$dir/node_modules" ] && [ "$ROOT/$dir/package-lock.json" -nt "$marker" ]; }; then
         step "install $dir" "$dir" npm ci "$@"
     fi
 }
